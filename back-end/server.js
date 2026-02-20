@@ -1,6 +1,6 @@
 const http = require("http");
 
-const port = Number(process.env.PORT) || 8080;
+const port = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
   if (req.url === "/healthz") {
