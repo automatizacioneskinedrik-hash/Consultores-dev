@@ -39,3 +39,6 @@ steps:
 images:
   - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
   - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
