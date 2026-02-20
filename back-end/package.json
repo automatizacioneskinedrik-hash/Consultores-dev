@@ -1,0 +1,10 @@
+{
+  "name": "kinedrik-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal backend service for Cloud Build image generation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
