@@ -1,0 +1,41 @@
+﻿substitutions:
+  _AR_REPO: europe-southwest1-docker.pkg.dev/observatorio-dev/repo-observatorio-dev
+  _BACKEND_IMAGE: backend
+  _FRONTEND_IMAGE: frontend
+
+steps:
+  - id: Build backend image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - back-end/Dockerfile
+      - -t
+      - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
+      - back-end
+
+  - id: Build frontend image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - front-end/Dockerfile
+      - -t
+      - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
+      - front-end
+
+  - id: Push backend image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
+
+  - id: Push frontend image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
+
+images:
+  - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
+  - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA

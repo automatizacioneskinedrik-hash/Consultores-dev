@@ -1,0 +1,239 @@
+:root {
+  --navy: #040025;
+  --blue: #0040a4;
+  --off: #e7e7e7;
+  /* Colores para los íconos */
+  --c-blue: #2b6cff;
+  --c-lilac: #b586ff;
+  --c-orange: #ff7a00;
+  --c-sky: #4f8dff;
+  --c-red: #ff5a5a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  font-family: "Inter", "Arial", sans-serif;
+  background: var(--off);
+  color: #0b0b22;
+  line-height: 1.6;
+}
+
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: var(--off);
+  padding: 40px 24px;
+}
+
+.sideDecor {
+  position: absolute;
+  top: 36px;
+  bottom: 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sideDecor.left {
+  left: 36px;
+}
+
+.sideDecor.right {
+  right: 36px;
+}
+
+.sideLine {
+  width: 10px;
+  /* altura responsive: dividir espacio disponible entre 3 segmentos */
+  height: calc((100vh - 72px) / 3);
+  min-height: 80px;
+  max-height: 300px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(8, 6, 20, 0.03);
+}
+
+.sideLine.orange {
+  background: linear-gradient(180deg, #ffdcc0, #ffb07a);
+}
+.sideLine.blue {
+  background: linear-gradient(180deg, #c9dbff, #8eaeff);
+}
+.sideLine.lilac {
+  background: linear-gradient(180deg, #f0e6ff, #d6c3ff);
+}
+
+.loginWrap {
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logoBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.miniBars {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.miniBars .mb {
+  width: 8px;
+  height: 26px;
+  border-radius: 6px;
+}
+.miniBars .o {
+  background: var(--c-orange);
+}
+.miniBars .b {
+  background: var(--c-blue);
+}
+.miniBars .l {
+  background: var(--c-lilac);
+}
+
+.logoText {
+  font-weight: 900;
+  color: var(--navy);
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+.logoText .mirroredK {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.card {
+  margin-top: 20px;
+  width: 520px;
+  background: linear-gradient(180deg, #f3f3f4 0%, #efefef 100%);
+  border-radius: 14px;
+  padding: 28px 38px;
+  box-shadow:
+    0 30px 50px rgba(5, 6, 20, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.cardTitle {
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: var(--navy);
+}
+
+.cardSub {
+  margin-top: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+form {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.label {
+  font-weight: 700;
+  text-align: left;
+  font-size: 13px;
+  color: #333;
+}
+
+.input {
+  padding: 12px 14px;
+  border: none;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(5, 6, 20, 0.06);
+  position: relative;
+}
+
+.emailDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(5, 6, 20, 0.12);
+  margin-top: -4px;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.emailOption {
+  padding: 12px 14px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.emailOption:last-child {
+  border-bottom: none;
+}
+
+.emailOption:hover {
+  background-color: #f5f5f5;
+  color: var(--navy);
+}
+
+.errorMessage {
+  color: var(--c-red);
+  font-weight: 700;
+  font-size: 13px;
+  text-align: left;
+}
+
+.btn {
+  background: var(--navy);
+  border: none;
+  color: #fff;
+  padding: 16px 18px;
+  border-radius: 16px;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 22px 30px rgba(4, 3, 30, 0.36);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn span {
+  font-weight: 800;
+}
+.btn .arrow {
+  margin-left: 14px;
+}
+
+.footer {
+  margin-top: 28px;
+  color: #9aa0a6;
+  font-size: 12px;
+  text-align: center;
+}

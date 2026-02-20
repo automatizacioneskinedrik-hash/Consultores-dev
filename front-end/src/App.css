@@ -1,0 +1,355 @@
+:root {
+  --navy: #040025;
+  --blue: #0040a4;
+  --off: #e7e7e7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  background: var(--off);
+  overflow-x: hidden; /* evitar scroll horizontal global */
+}
+
+/* APP SHELL */
+.appShell {
+  /* leave room for the fixed sidebar without shifting the viewport */
+  width: calc(100% - 215px);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin-left: 215px;
+  overflow-x: hidden;
+}
+
+/* HEADER FULL WIDTH CORRECTO */
+.topbar {
+  width: 100%;
+  height: 56px;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 🔥 separa izquierda y derecha */
+  padding: 0 28px; /* 🔥 controla distancia a bordes */
+}
+
+/* ELIMINAMOS headerInner visualmente */
+.headerInner {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* BRAND */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandName {
+  color: white;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.brandBars {
+  display: flex;
+  gap: 6px;
+}
+
+.bar {
+  width: 4px;
+  height: 16px;
+}
+
+.barOrange {
+  background: #ff7a00;
+}
+.barBlue {
+  background: #2b6cff;
+}
+.barLilac {
+  background: #b586ff;
+}
+
+/* USER */
+.user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userName {
+  color: white;
+  font-size: 13px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* MAIN */
+.mainContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: min(1100px, 94%);
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* TITLES */
+.title {
+  font-size: 40px;
+  font-weight: 900;
+  color: #0b0b22;
+  line-height: 1.1;
+  margin-bottom: 16px;
+}
+
+.highlight {
+  color: var(--blue);
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 32px;
+}
+
+/* DROP ZONE */
+.dropZone {
+  margin: 0 auto 30px auto;
+  padding: 40px 20px;
+  border: 2px solid var(--blue);
+  border-radius: 26px;
+  background: white;
+  width: 720px;
+  max-width: 100%;
+}
+
+.micCircle {
+  width: 68px;
+  height: 68px;
+  background: #0a0b2a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 18px;
+}
+
+.dropZone h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.dropZone p {
+  font-size: 13px;
+  color: var(--blue);
+}
+
+/* FOOTER */
+.footer {
+  margin-top: 35px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #999;
+}
+
+.mirroredK {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* ================= PROGRESS BAR ================= */
+
+.progressSection {
+  width: 720px;
+  max-width: 100%;
+  margin: 30px auto 0 auto;
+  text-align: left;
+}
+
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.percent {
+  font-weight: 700;
+  color: var(--blue);
+}
+
+.progressBar {
+  width: 100%;
+  height: 10px;
+  background: #e3e3e3;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--blue);
+  transition: width 0.25s ease;
+}
+
+.progressBottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 6px;
+  color: #777;
+}
+
+/* PAGE-LEVEL USER (top-right) */
+.pageUser {
+  position: fixed;
+  top: 28px; /* bajar un poco más */
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1000;
+}
+
+.userNameSmall {
+  color: #0b0b22;
+  font-weight: 700;
+  font-size: 13px; /* tamaño reducido */
+  white-space: nowrap;
+}
+
+.avatarSmall {
+  width: 36px; /* avatar más pequeño */
+  height: 36px;
+  border-radius: 50%; /* circular */
+  background: #0a0b2a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* MODAL STYLES */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  text-align: center;
+}
+
+.modalContent p {
+  font-size: 16px;
+  color: var(--navy);
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modalButtons button {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btnYes {
+  background: var(--blue);
+  color: white;
+}
+
+.btnYes:hover {
+  background: #0033a0;
+}
+
+.btnNo {
+  background: #e3e3e3;
+  color: var(--navy);
+}
+
+.btnNo:hover {
+  background: #d0d0d0;
+}
+
+.successMessage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: #f0f9ff;
+  border: 2px solid #0040a4;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.successMessage p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0040a4;
+}
