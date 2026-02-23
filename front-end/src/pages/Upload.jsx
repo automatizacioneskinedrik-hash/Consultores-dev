@@ -101,6 +101,8 @@ export default function Upload() {
   const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleFile = (file) => {
     if (!file) return;
@@ -132,14 +134,37 @@ export default function Upload() {
     }, 40);
   };
 
-  const handleYes = () => {
-    setShowModal(false);
-    // Mostrar modal de éxito
-    setShowSuccessModal(true);
+  const handleYes = async () => {
+  setShowModal(false);
+  setErrorMsg("");
+  setIsUploading(true);
 
-    // Aquí puedes agregar la lógica para enviar el archivo a tu API
-    console.log("Enviando archivo:", fileMeta.name);
-  };
+  try {
+    const form = new FormData();
+    form.append("audio", fileMeta); // 👈 el backend espera "audio"
+
+    const res = await fetch("http://localhost:3001/api/upload-audio", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data?.error || "Error subiendo el archivo.");
+    }
+
+    // Éxito
+    setShowSuccessModal(true);
+    console.log("✅ Archivo subido:", data.file);
+  } catch (err) {
+    setErrorMsg(err.message || "Error desconocido.");
+    // si quieres, resetea el flujo:
+    // setFileMeta(null);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
