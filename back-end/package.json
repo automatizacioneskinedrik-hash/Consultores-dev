@@ -9,10 +9,13 @@
     "start": "nodemon server.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "morgan": "^1.10.1",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
