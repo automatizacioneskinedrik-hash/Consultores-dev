@@ -48,27 +48,45 @@ export default function Login() {
     return value.toLowerCase().endsWith(".eadic@gmail.com");
   };
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = async (e) => {
+  e.preventDefault();
 
-    const cleanEmail = email.trim().toLowerCase();
-    if (!cleanEmail) return;
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return;
 
-    if (!isInstitutionalEmail(cleanEmail)) {
-      // ✅ evita que quede una sesión previa “válida”
-      localStorage.removeItem("kinedrix_email");
-      setError(
-        "Solo se permiten correos institucionales que terminen en .eadic@gmail.com",
-      );
-      return;
+  if (!isInstitutionalEmail(cleanEmail)) {
+    localStorage.removeItem("kinedrix_email");
+    setError("Solo se permiten correos institucionales que terminen en .eadic@gmail.com");
+    return;
+  }
+
+  setError("");
+
+  try {
+    const res = await fetch("http://localhost:3001/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleanEmail }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      throw new Error(data?.error || "No autorizado");
     }
 
-    setError("");
+    // Guardar sesión local (mejorará luego con JWT)
     localStorage.setItem("kinedrix_email", cleanEmail);
-    saveEmail(cleanEmail); // guardar en historial
-    navigate("/upload");
-  };
+    localStorage.setItem("kinedrix_user", JSON.stringify(data.user));
+    saveEmail(cleanEmail);
 
+    navigate("/upload");
+  } catch (err) {
+    localStorage.removeItem("kinedrix_email");
+    setError(err.message || "Error validando usuario");
+  }
+};
+  
   return (
     <div className="loginPage">
       {/* Decoración lateral izquierda */}
