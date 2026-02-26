@@ -2,13 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Admin from "./pages/Admin";
+import { getCurrentLoginEmail } from "./utils/user";
 
 function isLoggedIn() {
-  return Boolean(localStorage.getItem("kinedrix_email"));
+  return Boolean(getCurrentLoginEmail());
 }
 
 function isAdmin() {
-  const email = localStorage.getItem("kinedrix_email") || "";
+  const email = getCurrentLoginEmail();
   return email === "admin.eadic@gmail.com"; // <-- cambia por tu admin real
 }
 

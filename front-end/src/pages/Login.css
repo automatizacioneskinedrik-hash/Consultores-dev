@@ -213,12 +213,12 @@ form {
   background: var(--navy);
   border: none;
   color: #fff;
-  padding: 16px 18px;
+  padding: 13px 18px;
   border-radius: 16px;
   font-weight: 900;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 22px 30px rgba(4, 3, 30, 0.36);
+  box-shadow: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -235,5 +235,54 @@ form {
   margin-top: 28px;
   color: #9aa0a6;
   font-size: 12px;
+  text-align: center;
+}
+
+.googleSection {
+  margin-top: 16px;
+}
+
+.googleDivider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 14px;
+}
+
+.googleDivider::before {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d9dde8;
+}
+
+.googleDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d9dde8;
+}
+
+.googleDivider span {
+  padding: 0;
+  background: transparent;
+  color: #5b6470;
+  font-size: 12px;
+}
+
+.googleButtonWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.googleButtonWrap > div {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.googleStatus {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #566074;
   text-align: center;
 }

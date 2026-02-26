@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser } from "../utils/user";
 import "../styles/Sidebar.css";
@@ -81,6 +81,7 @@ function BrandLogo() {
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showNoAccessModal, setShowNoAccessModal] = useState(false);
   const { fullName: storedNameFromUtil, email } = getUser();
   const emailRaw = email || "";
   const isAdmin = emailRaw === "admin.eadic@gmail.com";
@@ -94,7 +95,7 @@ export default function Sidebar() {
     if (isAdmin) {
       navigate("/admin");
     } else {
-      alert("No tienes permiso para acceder a esta sección");
+      setShowNoAccessModal(true);
     }
   };
 
@@ -135,6 +136,31 @@ export default function Sidebar() {
         <div className="sidebarBadge">
           <span className="badgeName">{storedName}</span>
           <span className="statusDot" aria-hidden="true" />
+        </div>
+      )}
+
+      {showNoAccessModal && (
+        <div
+          className="noAccessOverlay"
+          onMouseDown={() => setShowNoAccessModal(false)}
+        >
+          <div
+            className="noAccessModal"
+            onMouseDown={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Acceso denegado"
+          >
+            <h3>Acceso denegado</h3>
+            <p>No tienes permiso para acceder a esta seccion.</p>
+            <button
+              className="noAccessBtn"
+              type="button"
+              onClick={() => setShowNoAccessModal(false)}
+            >
+              Entendido
+            </button>
+          </div>
         </div>
       )}
     </div>

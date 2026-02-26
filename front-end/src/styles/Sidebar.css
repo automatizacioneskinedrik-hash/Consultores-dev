@@ -140,3 +140,49 @@
   box-shadow: 0 0 0 3px rgba(40, 199, 111, 0.12);
   vertical-align: middle;
 }
+
+.noAccessOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 0, 37, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+}
+
+.noAccessModal {
+  width: min(420px, calc(100vw - 32px));
+  background: linear-gradient(180deg, #f3f3f4 0%, #efefef 100%);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow:
+    0 22px 40px rgba(5, 6, 20, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.noAccessModal h3 {
+  color: var(--navy, #040025);
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.noAccessModal p {
+  color: #4f5565;
+  font-size: 14px;
+  margin: 0;
+}
+
+.noAccessBtn {
+  margin-top: 16px;
+  border: none;
+  background: var(--blue, #0040a4);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}

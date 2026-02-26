@@ -5,15 +5,19 @@ import morgan from "morgan";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { Storage } from "@google-cloud/storage";
+import { OAuth2Client } from "google-auth-library";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Configuración nombre bucket Google Cloud Storage.
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 if (!BUCKET_NAME) {
-  console.error("❌ Falta GCS_BUCKET_NAME en .env");
-  process.exit(1);
+  console.warn("GCS_BUCKET_NAME no definido. Endpoints de audio deshabilitados temporalmente.");
+}
+if (!GOOGLE_CLIENT_ID) {
+  console.warn("GOOGLE_CLIENT_ID no definido. Login con Google deshabilitado.");
 }
 
 app.use(
@@ -28,8 +32,9 @@ app.use(express.json());
 
 
 // Credenciales cliente Google Cloud Storage.
-const storage = new Storage();
-const bucket = storage.bucket(BUCKET_NAME);
+const storage = BUCKET_NAME ? new Storage() : null;
+const bucket = BUCKET_NAME ? storage.bucket(BUCKET_NAME) : null;
+const googleAuthClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 function slugify(s = "") {
   return s
@@ -40,9 +45,66 @@ function slugify(s = "") {
     .replace(/[^a-z0-9._-]/g, "_");
 }
 
+function isInstitutionalEmail(value = "") {
+  return value.toLowerCase().endsWith(".eadic@gmail.com");
+}
+
+app.post("/api/auth/google", async (req, res) => {
+  try {
+    if (!googleAuthClient || !GOOGLE_CLIENT_ID) {
+      return res.status(503).json({ ok: false, error: "Login con Google no configurado en servidor" });
+    }
+
+    const { credential } = req.body || {};
+    if (!credential) {
+      return res.status(400).json({ ok: false, error: "credential es requerido" });
+    }
+
+    const ticket = await googleAuthClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) {
+      return res.status(401).json({ ok: false, error: "Token de Google invalido" });
+    }
+
+    const email = (payload.email || "").toLowerCase().trim();
+    if (!payload.email_verified || !email) {
+      return res.status(401).json({ ok: false, error: "Google no devolvio un correo verificado" });
+    }
+
+    if (!isInstitutionalEmail(email)) {
+      return res.status(403).json({
+        ok: false,
+        error: "Solo se permiten correos institucionales que terminen en .eadic@gmail.com",
+      });
+    }
+
+    const fullName = (payload.name || email.split("@")[0] || "").trim();
+    return res.json({
+      ok: true,
+      user: {
+        email,
+        fullName,
+        picture: payload.picture || "",
+        googleId: payload.sub || "",
+      },
+    });
+  } catch (err) {
+    console.error("Google auth error:", err.message);
+    return res.status(401).json({ ok: false, error: "No se pudo validar el login de Google" });
+  }
+});
+
 // Creación Signed URL para subir desde React a Google Cloud Storage
 app.post("/api/uploads/signed-url", async (req, res) => {
   try {
+    if (!bucket || !BUCKET_NAME) {
+      return res.status(503).json({ ok: false, error: "Uploads deshabilitados: falta GCS_BUCKET_NAME" });
+    }
+
     const { originalName, contentType, userId, meetingType } = req.body;
 
     if (!originalName || !contentType) {
@@ -91,6 +153,10 @@ app.post("/api/uploads/signed-url", async (req, res) => {
 // 2) (Opcional) Confirmación de subida / registro
 app.post("/api/uploads/complete", async (req, res) => {
   try {
+    if (!bucket || !BUCKET_NAME) {
+      return res.status(503).json({ ok: false, error: "Uploads deshabilitados: falta GCS_BUCKET_NAME" });
+    }
+
     const { objectPath } = req.body;
     if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
 
@@ -109,5 +175,9 @@ app.post("/api/uploads/complete", async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`✅ Backend corriendo en http://localhost:${PORT}`);
-  console.log(`✅ Bucket: ${BUCKET_NAME}`);
+  if (BUCKET_NAME) {
+    console.log(`✅ Bucket: ${BUCKET_NAME}`);
+  } else {
+    console.log("⚠️ Bucket no configurado (modo solo login)");
+  }
 });

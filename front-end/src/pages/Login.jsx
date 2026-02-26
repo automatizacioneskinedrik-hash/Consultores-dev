@@ -1,12 +1,16 @@
+import { GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearCurrentLoginEmail, setUser } from "../utils/user";
 import "./Login.css";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
   // Cargar correos guardados al montar
   const [savedEmails, setSavedEmails] = useState(() => {
@@ -57,6 +61,7 @@ export default function Login() {
     if (!isInstitutionalEmail(cleanEmail)) {
       // ✅ evita que quede una sesión previa “válida”
       localStorage.removeItem("kinedrix_email");
+      clearCurrentLoginEmail();
       setError(
         "Solo se permiten correos institucionales que terminen en .eadic@gmail.com",
       );
@@ -64,9 +69,42 @@ export default function Login() {
     }
 
     setError("");
-    localStorage.setItem("kinedrix_email", cleanEmail);
+    setUser({ fullName: cleanEmail.split("@")[0], email: cleanEmail });
     saveEmail(cleanEmail); // guardar en historial
     navigate("/upload");
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      setGoogleLoading(true);
+      setError("");
+
+      const credential = credentialResponse?.credential;
+      if (!credential) throw new Error("Google no devolvió credencial válida");
+
+      const response = await fetch(`${apiBaseUrl}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.ok || !data?.user?.email) {
+        throw new Error(data?.error || "No se pudo iniciar sesión con Google");
+      }
+
+      setUser({ fullName: data.user.fullName || "", email: data.user.email });
+      saveEmail(data.user.email);
+      navigate("/upload");
+    } catch (err) {
+      setError(err.message || "Error al iniciar sesión con Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google canceló o no pudo completar el inicio de sesión");
   };
 
   return (
@@ -142,6 +180,16 @@ export default function Login() {
               <span className="arrow">→</span>
             </button>
           </form>
+
+          <div className="googleSection">
+            <div className="googleDivider">
+              <span>o continuar con Google</span>
+            </div>
+            <div className="googleButtonWrap">
+              <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+            </div>
+            {googleLoading && <div className="googleStatus">Validando cuenta de Google...</div>}
+          </div>
         </div>
 
         <div className="footer">
