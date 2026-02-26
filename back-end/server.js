@@ -5,7 +5,10 @@ import morgan from "morgan";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { Storage } from "@google-cloud/storage";
+import { BigQuery } from "@google-cloud/bigquery";
+import { error } from "console";
 
+const bigquery= new BigQuery({projectId:process.env.GCP_PROJECT_ID});
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -39,6 +42,41 @@ function slugify(s = "") {
     .replace(/\s+/g, "_")
     .replace(/[^a-z0-9._-]/g, "_");
 }
+
+app.post("/api/auth/login", async(req,res)=>{
+  try{
+    const email=(req.body.email || "").trim().toLowerCase();
+    if(!email) return res.status(400).json({ok:false,error:"Email requerido"});
+    const query= `
+      SELECT email, estado
+      FROM \`${process.env.GCP_PROJECT_ID}.${process.env.BQ_DATASET}.${process.env.BQ_TABLE}\`
+      WHERE LOWER(email) = @email
+      LIMIT 1
+    `;
+
+    const options = {query, params:{email},};
+    const [rows] = await bigquery.query(options);
+    if (!rows.length) {
+      return res.status(401).json({ ok: false, error: "Correo no autorizado" });
+    }
+    const user = rows[0];
+    if (!user.estado) {
+      return res.status(403).json({ ok: false, error: "Usuario inactivo" });
+    }
+
+    return res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        email: user.email        
+      },
+    });
+  }catch(err){
+    console.error(err);
+    return res.status(500).json({ok:false,error:"Error validando usuario"});
+  }
+});
+
 
 // Creación Signed URL para subir desde React a Google Cloud Storage
 app.post("/api/uploads/signed-url", async (req, res) => {
