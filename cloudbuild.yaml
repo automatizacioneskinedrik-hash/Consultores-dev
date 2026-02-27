@@ -1,9 +1,7 @@
-substitutions:
-  _AR_REPO: europe-southwest1-docker.pkg.dev/consultores-dev/repo-consultores-dev
-  _BACKEND_IMAGE: backend
-  _FRONTEND_IMAGE: frontend
-
 steps:
+  # ============================
+  # 🔹 1. BACKEND: CONSTRUCCIÓN Y SUBIDA
+  # ============================
   - id: Build backend image
     name: gcr.io/cloud-builders/docker
     args:
@@ -12,17 +10,9 @@ steps:
       - back-end/Dockerfile
       - -t
       - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
-      - back-end
-
-  - id: Build frontend image
-    name: gcr.io/cloud-builders/docker
-    args:
-      - build
-      - -f
-      - front-end/Dockerfile
       - -t
-      - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
-      - front-end
+      - ${_AR_REPO}/${_BACKEND_IMAGE}:latest
+      - back-end
 
   - id: Push backend image
     name: gcr.io/cloud-builders/docker
@@ -30,11 +20,66 @@ steps:
       - push
       - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
 
+  # ============================
+  # 🔹 2. BACKEND: DESPLIEGUE A CLOUD RUN (NUEVO)
+  # ============================
+  - id: deploy-backend
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_BACKEND_SERVICE}'
+      - '--image=${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA'
+      - '--region=europe-southwest1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+  # ============================
+  # 🔹 3. FRONTEND: CONSTRUCCIÓN Y SUBIDA
+  # ============================
+  - id: Build frontend image
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - front-end/Dockerfile
+      - --build-arg=NEXT_PUBLIC_API_BASE_URL=${_API_BASE_URL}
+      - --build-arg=NEXT_PUBLIC_GOOGLE_CLIENT_ID=${_GOOGLE_CLIENT_ID}
+      - -t
+      - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
+      - -t
+      - ${_AR_REPO}/${_FRONTEND_IMAGE}:latest
+      - front-end
+
   - id: Push frontend image
     name: gcr.io/cloud-builders/docker
     args:
       - push
       - ${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA
+
+  # ============================
+  # 🔹 4. FRONTEND: DESPLIEGUE A CLOUD RUN (NUEVO)
+  # ============================
+  - id: deploy-frontend
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_FRONTEND_SERVICE}'
+      - '--image=${_AR_REPO}/${_FRONTEND_IMAGE}:$SHORT_SHA'
+      - '--region=europe-southwest1'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+# ============================
+# 🔹 VARIABLES BASE
+# ============================
+substitutions:
+  _AR_REPO: europe-southwest1-docker.pkg.dev/consultores-dev/repo-consultores-dev
+  _BACKEND_IMAGE: backend
+  _FRONTEND_IMAGE: frontend
 
 images:
   - ${_AR_REPO}/${_BACKEND_IMAGE}:$SHORT_SHA
