@@ -48,7 +48,10 @@ export default function Login() {
 
   const isInstitutionalEmail = (value) => {
     const emailValue = value.toLowerCase();
-    return emailValue.endsWith(".eadic@gmail.com");
+    return (
+      emailValue.endsWith(".eadic@gmail.com") ||
+      emailValue.endsWith("@kinedrik.com")
+    );
   };
 
   const onSubmit = (e) => {
