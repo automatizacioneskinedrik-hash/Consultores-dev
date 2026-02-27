@@ -10,7 +10,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
   // Cargar correos guardados al montar
   const [savedEmails, setSavedEmails] = useState(() => {
@@ -47,10 +48,7 @@ export default function Login() {
 
   const isInstitutionalEmail = (value) => {
     const emailValue = value.toLowerCase();
-    return (
-      emailValue.endsWith(".eadic@gmail.com") ||
-      emailValue.endsWith("@kinedrik.com")
-    );
+    return emailValue.endsWith(".eadic@gmail.com");
   };
 
   const onSubmit = (e) => {
@@ -184,13 +182,20 @@ export default function Login() {
               <span>o continuar con Google</span>
             </div>
             <div className="googleButtonWrap">
-              <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+              />
             </div>
-            {googleLoading && <div className="googleStatus">Validando cuenta de Google...</div>}
+            {googleLoading && (
+              <div className="googleStatus">Validando cuenta de Google...</div>
+            )}
           </div>
         </div>
 
-        <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
+        <div className="footer">
+          © KINEDRIK Audio Inc. Todos los derechos reservados.
+        </div>
       </div>
     </div>
   );
