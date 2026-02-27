@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -10,7 +10,7 @@ import { OAuth2Client } from "google-auth-library";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configuración nombre bucket Google Cloud Storage.
+// Configuracion nombre bucket Google Cloud Storage.
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 if (!BUCKET_NAME) {
@@ -98,7 +98,7 @@ app.post("/api/auth/google", async (req, res) => {
   }
 });
 
-// Creación Signed URL para subir desde React a Google Cloud Storage
+// Creacion Signed URL para subir desde React a Google Cloud Storage
 app.post("/api/uploads/signed-url", async (req, res) => {
   try {
     if (!bucket || !BUCKET_NAME) {
@@ -150,7 +150,7 @@ app.post("/api/uploads/signed-url", async (req, res) => {
   }
 });
 
-// 2) (Opcional) Confirmación de subida / registro
+// 2) (Opcional) Confirmacion de subida / registro
 app.post("/api/uploads/complete", async (req, res) => {
   try {
     if (!bucket || !BUCKET_NAME) {
@@ -165,7 +165,7 @@ app.post("/api/uploads/complete", async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    // Aquí es donde luego guardarías en DB: userId, fecha, gcs_uri, status...
+    // Aqui es donde luego guardarias en DB: userId, fecha, gcs_uri, status...
     return res.json({ ok: true, message: "Subida confirmada", objectPath });
   } catch (err) {
     console.error(err);
@@ -174,10 +174,10 @@ app.post("/api/uploads/complete", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Backend corriendo en http://localhost:${PORT}`);
+  console.log(`Backend corriendo en http://localhost:${PORT}`);
   if (BUCKET_NAME) {
-    console.log(`✅ Bucket: ${BUCKET_NAME}`);
+    console.log(`Bucket: ${BUCKET_NAME}`);
   } else {
-    console.log("⚠️ Bucket no configurado (modo solo login)");
+    console.log("Bucket no configurado (modo solo login)");
   }
 });
