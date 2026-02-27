@@ -333,6 +333,33 @@ body {
   align-items: center;
 }
 
+.roleTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  height: 24px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 10px;
+  background: var(--bg-primary, #e7e7e7);
+  color: var(--text-secondary, #6c757d);
+  border: 1px solid var(--border-color, #d0d0d0);
+}
+
+.roleTagAdmin {
+  background: var(--bg-primary, #e7e7e7);
+  color: var(--text-secondary, #6c757d);
+  border: 1px solid var(--border-color, #d0d0d0);
+}
+
+.roleTagUser {
+  background: var(--bg-primary, #e7e7e7);
+  color: var(--text-secondary, #6c757d);
+  border: 1px solid var(--border-color, #d0d0d0);
+}
+
 .iconBtn {
   background: transparent;
   border: none;

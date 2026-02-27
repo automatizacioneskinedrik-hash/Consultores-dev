@@ -1,4 +1,4 @@
-import { GoogleLogin } from "@react-oauth/google";
+﻿import { GoogleLogin } from "@react-oauth/google";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { clearCurrentLoginEmail, setUser } from "../utils/user";
@@ -24,14 +24,12 @@ export default function Login() {
 
   const saveEmail = (emailToSave) => {
     try {
-      // Guardar directamente en localStorage de forma sincrónica
       const saved = JSON.parse(localStorage.getItem("kinedrix_emails") || "[]");
       const updated = [emailToSave, ...saved.filter((e) => e !== emailToSave)];
       localStorage.setItem(
         "kinedrix_emails",
         JSON.stringify(updated.slice(0, 5)),
       );
-      // Actualizar estado también para inmediatez en UI
       setSavedEmails(updated.slice(0, 5));
     } catch {
       // ignore storage errors
@@ -48,8 +46,11 @@ export default function Login() {
   );
 
   const isInstitutionalEmail = (value) => {
-    // ✅ ESTRICTO: debe terminar en ".eadic@gmail.com"
-    return value.toLowerCase().endsWith(".eadic@gmail.com");
+    const emailValue = value.toLowerCase();
+    return (
+      emailValue.endsWith(".eadic@gmail.com") ||
+      emailValue.endsWith("@kinedrik.com")
+    );
   };
 
   const onSubmit = (e) => {
@@ -59,18 +60,17 @@ export default function Login() {
     if (!cleanEmail) return;
 
     if (!isInstitutionalEmail(cleanEmail)) {
-      // ✅ evita que quede una sesión previa “válida”
       localStorage.removeItem("kinedrix_email");
       clearCurrentLoginEmail();
       setError(
-        "Solo se permiten correos institucionales que terminen en .eadic@gmail.com",
+        "Solo se permiten correos institucionales que terminen en .eadic@gmail.com o @kinedrik.com",
       );
       return;
     }
 
     setError("");
     setUser({ fullName: cleanEmail.split("@")[0], email: cleanEmail });
-    saveEmail(cleanEmail); // guardar en historial
+    saveEmail(cleanEmail);
     navigate("/upload");
   };
 
@@ -80,7 +80,7 @@ export default function Login() {
       setError("");
 
       const credential = credentialResponse?.credential;
-      if (!credential) throw new Error("Google no devolvió credencial válida");
+      if (!credential) throw new Error("Google no devolvio credencial valida");
 
       const response = await fetch(`${apiBaseUrl}/api/auth/google`, {
         method: "POST",
@@ -90,33 +90,31 @@ export default function Login() {
 
       const data = await response.json();
       if (!response.ok || !data?.ok || !data?.user?.email) {
-        throw new Error(data?.error || "No se pudo iniciar sesión con Google");
+        throw new Error(data?.error || "No se pudo iniciar sesion con Google");
       }
 
       setUser({ fullName: data.user.fullName || "", email: data.user.email });
       saveEmail(data.user.email);
       navigate("/upload");
     } catch (err) {
-      setError(err.message || "Error al iniciar sesión con Google");
+      setError(err.message || "Error al iniciar sesion con Google");
     } finally {
       setGoogleLoading(false);
     }
   };
 
   const handleGoogleError = () => {
-    setError("Google canceló o no pudo completar el inicio de sesión");
+    setError("Google cancelo o no pudo completar el inicio de sesion");
   };
 
   return (
     <div className="loginPage">
-      {/* Decoración lateral izquierda */}
       <div className="sideDecor left" aria-hidden="true">
         <span className="sideLine orange" />
         <span className="sideLine blue" />
         <span className="sideLine lilac" />
       </div>
 
-      {/* Decoración lateral derecha */}
       <div className="sideDecor right" aria-hidden="true">
         <span className="sideLine orange" />
         <span className="sideLine blue" />
@@ -143,7 +141,7 @@ export default function Login() {
           </p>
 
           <form onSubmit={onSubmit}>
-            <label className="label">Correo electrónico</label>
+            <label className="label">Correo electronico</label>
 
             <input
               className="input"
@@ -176,7 +174,7 @@ export default function Login() {
             {error && <div className="errorMessage">{error}</div>}
 
             <button className="btn" type="submit">
-              <span>Iniciar sesión</span>
+              <span>Iniciar sesion</span>
               <span className="arrow">→</span>
             </button>
           </form>
@@ -192,9 +190,7 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="footer">
-          © KINEDRIꓘ Audio Inc. Todos los derechos reservados.
-        </div>
+        <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
       </div>
     </div>
   );
