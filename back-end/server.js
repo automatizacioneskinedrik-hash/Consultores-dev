@@ -107,7 +107,7 @@ app.post("/api/uploads/signed-url", async (req, res) => {
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
 
-    const objectPath = `audios/${safeUser}/${yyyy}/${mm}/${dd}/${safeMeeting}/${id}${ext}`;
+    const objectPath = `audios/${safeUser}/${yyyy}/${mm}/${dd}/${id}${ext}`;
     const file = bucket.file(objectPath);
 
     const [uploadUrl] = await file.getSignedUrl({
