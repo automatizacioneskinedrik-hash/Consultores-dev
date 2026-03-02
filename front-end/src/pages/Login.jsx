@@ -2,13 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Cargar correos guardados al montar
   const [savedEmails, setSavedEmails] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("kinedrix_emails") || "[]");
@@ -20,14 +21,9 @@ export default function Login() {
 
   const saveEmail = (emailToSave) => {
     try {
-      // Guardar directamente en localStorage de forma sincrónica
       const saved = JSON.parse(localStorage.getItem("kinedrix_emails") || "[]");
       const updated = [emailToSave, ...saved.filter((e) => e !== emailToSave)];
-      localStorage.setItem(
-        "kinedrix_emails",
-        JSON.stringify(updated.slice(0, 5)),
-      );
-      // Actualizar estado también para inmediatez en UI
+      localStorage.setItem("kinedrix_emails", JSON.stringify(updated.slice(0, 5)));
       setSavedEmails(updated.slice(0, 5));
     } catch {
       // ignore storage errors
@@ -40,63 +36,59 @@ export default function Login() {
   };
 
   const filteredEmails = savedEmails.filter((e) =>
-    e.toLowerCase().includes(email.toLowerCase().trim()),
+    e.toLowerCase().includes(email.toLowerCase().trim())
   );
 
   const isInstitutionalEmail = (value) => {
-    // ✅ ESTRICTO: debe terminar en ".eadic@gmail.com"
     return value.toLowerCase().endsWith(".eadic@gmail.com");
   };
 
   const onSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const cleanEmail = email.trim().toLowerCase();
-  if (!cleanEmail) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) return;
 
-  if (!isInstitutionalEmail(cleanEmail)) {
-    localStorage.removeItem("kinedrix_email");
-    setError("Solo se permiten correos institucionales que terminen en .eadic@gmail.com");
-    return;
-  }
-
-  setError("");
-
-  try {
-    const res = await fetch("http://localhost:3001/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: cleanEmail }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.ok) {
-      throw new Error(data?.error || "No autorizado");
+    if (!isInstitutionalEmail(cleanEmail)) {
+      localStorage.removeItem("kinedrix_email");
+      setError("Solo se permiten correos institucionales que terminen en .eadic@gmail.com");
+      return;
     }
 
-    // Guardar sesión local (mejorará luego con JWT)
-    localStorage.setItem("kinedrix_email", cleanEmail);
-    localStorage.setItem("kinedrix_user", JSON.stringify(data.user));
-    saveEmail(cleanEmail);
+    setError("");
 
-    navigate("/upload");
-  } catch (err) {
-    localStorage.removeItem("kinedrix_email");
-    setError(err.message || "Error validando usuario");
-  }
-};
-  
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data?.error || "No autorizado");
+      }
+
+      localStorage.setItem("kinedrix_email", cleanEmail);
+      localStorage.setItem("kinedrix_user", JSON.stringify(data.user));
+      saveEmail(cleanEmail);
+
+      navigate("/upload");
+    } catch (err) {
+      localStorage.removeItem("kinedrix_email");
+      setError(err.message || "Error validando usuario");
+    }
+  };
+
   return (
     <div className="loginPage">
-      {/* Decoración lateral izquierda */}
       <div className="sideDecor left" aria-hidden="true">
         <span className="sideLine orange" />
         <span className="sideLine blue" />
         <span className="sideLine lilac" />
       </div>
 
-      {/* Decoración lateral derecha */}
       <div className="sideDecor right" aria-hidden="true">
         <span className="sideLine orange" />
         <span className="sideLine blue" />
@@ -123,7 +115,7 @@ export default function Login() {
           </p>
 
           <form onSubmit={onSubmit}>
-            <label className="label">Correo electrónico</label>
+            <label className="label">Correo electronico</label>
 
             <input
               className="input"
@@ -156,15 +148,13 @@ export default function Login() {
             {error && <div className="errorMessage">{error}</div>}
 
             <button className="btn" type="submit">
-              <span>Iniciar sesión</span>
-              <span className="arrow">→</span>
+              <span>Iniciar sesion</span>
+              <span className="arrow">-&gt;</span>
             </button>
           </form>
         </div>
 
-        <div className="footer">
-          © KINEDRIꓘ Audio Inc. Todos los derechos reservados.
-        </div>
+        <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
       </div>
     </div>
   );
