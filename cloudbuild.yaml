@@ -35,7 +35,6 @@ steps:
       - --platform=managed
       - --allow-unauthenticated
       - --set-env-vars=NODE_ENV=production
-      - --set-env-vars=PORT=8080
       - --set-env-vars=CORS_ORIGIN=${_CORS_ORIGIN}
       - --set-env-vars=GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}
       - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID}
