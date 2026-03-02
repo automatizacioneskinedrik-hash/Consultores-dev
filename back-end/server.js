@@ -1,23 +1,151 @@
-const http = require("http");
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import { Storage } from "@google-cloud/storage";
+import { BigQuery } from "@google-cloud/bigquery";
+import { error } from "console";
 
-const port = process.env.PORT || 8080;
+const bigquery= new BigQuery({projectId:process.env.GCP_PROJECT_ID});
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-const server = http.createServer((req, res) => {
-  if (req.url === "/healthz") {
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ status: "ok" }));
-    return;
+// Configuración nombre bucket Google Cloud Storage.
+const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
+if (!BUCKET_NAME) {
+  console.error("❌ Falta GCS_BUCKET_NAME en .env");
+  process.exit(1);
+}
+
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
+
+app.use(morgan("dev"));
+app.use(express.json());
+
+
+// Credenciales cliente Google Cloud Storage.
+const storage = new Storage();
+const bucket = storage.bucket(BUCKET_NAME);
+
+function slugify(s = "") {
+  return s
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9._-]/g, "_");
+}
+
+app.post("/api/auth/login", async(req,res)=>{
+  try{
+    const email=(req.body.email || "").trim().toLowerCase();
+    if(!email) return res.status(400).json({ok:false,error:"Email requerido"});
+    const query= `
+      SELECT email, estado
+      FROM \`${process.env.GCP_PROJECT_ID}.${process.env.BQ_DATASET}.${process.env.BQ_TABLE}\`
+      WHERE LOWER(email) = @email
+      LIMIT 1
+    `;
+
+    const options = {query, params:{email},};
+    const [rows] = await bigquery.query(options);
+    if (!rows.length) {
+      return res.status(401).json({ ok: false, error: "Correo no autorizado" });
+    }
+    const user = rows[0];
+    if (!user.estado) {
+      return res.status(403).json({ ok: false, error: "Usuario inactivo" });
+    }
+
+    return res.json({
+      ok: true,
+      user: {
+        id: user.id,
+        email: user.email        
+      },
+    });
+  }catch(err){
+    console.error(err);
+    return res.status(500).json({ok:false,error:"Error validando usuario"});
   }
-
-  res.writeHead(200, { "Content-Type": "application/json" });
-  res.end(
-    JSON.stringify({
-      service: "kinedrik-backend",
-      status: "running",
-    }),
-  );
 });
 
-server.listen(port, () => {
-  console.log(`Backend listening on port ${port}`);
+
+// Creación Signed URL para subir desde React a Google Cloud Storage
+app.post("/api/uploads/signed-url", async (req, res) => {
+  try {
+    const { originalName, contentType, userId, meetingType } = req.body;
+
+    if (!originalName || !contentType) {
+      return res.status(400).json({ ok: false, error: "originalName y contentType son requeridos" });
+    }
+
+    if (!contentType.startsWith("audio/")) {
+      return res.status(400).json({ ok: false, error: "Solo se permiten archivos de audio" });
+    }
+
+    const safeUser = slugify(userId || "anonymous");
+    const safeMeeting = slugify(meetingType || "general");
+    const ext = path.extname(originalName) || "";
+    const id = uuidv4();
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+
+    // Ruta final al bucket de Google Cloud Storage
+    const objectPath = `audios/${safeUser}/${yyyy}/${mm}/${dd}/${safeMeeting}/${id}${ext}`;
+
+    const file = bucket.file(objectPath);
+
+    // Signed URL v4 para PUT (subida)
+    const [uploadUrl] = await file.getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires: Date.now() + 10 * 60 * 1000, // 10 minutos
+      contentType, // obliga a que el PUT use ese content-type
+    });
+
+    return res.json({
+      ok: true,
+      uploadUrl,
+      bucket: BUCKET_NAME,
+      objectPath,
+      gcsUri: `gs://${BUCKET_NAME}/${objectPath}`,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// 2) (Opcional) Confirmación de subida / registro
+app.post("/api/uploads/complete", async (req, res) => {
+  try {
+    const { objectPath } = req.body;
+    if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
+
+    // Verifica que exista en GCS
+    const file = bucket.file(objectPath);
+    const [exists] = await file.exists();
+    if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
+
+    // Aquí es donde luego guardarías en DB: userId, fecha, gcs_uri, status...
+    return res.json({ ok: true, message: "Subida confirmada", objectPath });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ Backend corriendo en http://localhost:${PORT}`);
+  console.log(`✅ Bucket: ${BUCKET_NAME}`);
 });

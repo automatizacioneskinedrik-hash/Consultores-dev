@@ -101,45 +101,93 @@ export default function Upload() {
   const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleFile = (file) => {
-    if (!file) return;
-
-    setFileMeta(file);
-    setProgress(0);
-    setStatus("SUBIENDO...");
-
-    simulateUpload(file);
+  if (!file) return;
+  setFileMeta(file);
+  setProgress(0);
+  setStatus("");
+  setShowModal(true); // o si quieres que primero “suba” y luego pregunte, déjalo como lo tienes, pero ya no simules
   };
 
-  const simulateUpload = (file) => {
-    let uploaded = 0;
-    const total = file.size;
-    const chunk = total / 100;
+  const handleYes = async () => {
+  setShowModal(false);
+  setErrorMsg("");
+  setIsUploading(true);
 
-    const interval = setInterval(() => {
-      uploaded += chunk;
+  try {
+    // 1) Pedir URL firmada al backend
+    const signRes = await fetch("http://localhost:3001/api/uploads/signed-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        originalName: fileMeta.name,
+        contentType: fileMeta.type,
+        userId: user?.email || "anonymous",       // o user.id si lo tienes
+        meetingType: "venta",                      // ajusta según tu app
+      }),
+    });
 
-      const percent = Math.min(Math.round((uploaded / total) * 100), 100);
+    const signData = await signRes.json();
+    if (!signRes.ok || !signData.ok) {
+      throw new Error(signData?.error || "No se pudo generar URL de subida.");
+    }
 
-      setProgress(percent);
+    const { uploadUrl, objectPath } = signData;
 
-      if (percent >= 100) {
-        clearInterval(interval);
-        setStatus("COMPLETADO");
-        setShowModal(true);
-      }
-    }, 40);
-  };
+    // 2) Subir directo a GCS con progreso real (XHR)
+    await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", uploadUrl, true);
+      xhr.setRequestHeader("Content-Type", fileMeta.type);
 
-  const handleYes = () => {
-    setShowModal(false);
-    // Mostrar modal de éxito
+      xhr.upload.onprogress = (evt) => {
+        if (evt.lengthComputable) {
+          const percent = Math.round((evt.loaded / evt.total) * 100);
+          setProgress(percent);
+          setStatus("SUBIENDO...");
+        }
+      };
+
+      xhr.onload = () => {
+        console.log("GCS upload status:", xhr.status);
+        console.log("GCS upload response:", xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) resolve();
+        else reject(new Error(`Error subiendo a GCS (status ${xhr.status})`));
+      };
+
+      xhr.onerror = () => 
+        console.log("GCS upload network error");
+        reject(new Error("Error de red subiendo a GCS."));
+      xhr.send(fileMeta);
+    });
+
+    setStatus("COMPLETADO");
+
+    // 3) Confirmar (opcional pero recomendado)
+    const completeRes = await fetch("http://localhost:3001/api/uploads/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objectPath }),
+    });
+
+    const completeData = await completeRes.json();
+    if (!completeRes.ok || !completeData.ok) {
+      throw new Error(completeData?.error || "No se pudo confirmar la subida.");
+    }
+
+    // Éxito UI
     setShowSuccessModal(true);
-
-    // Aquí puedes agregar la lógica para enviar el archivo a tu API
-    console.log("Enviando archivo:", fileMeta.name);
-  };
+    console.log("✅ Audio subido a GCS:", objectPath);
+  } catch (err) {
+    setErrorMsg(err.message || "Error desconocido.");
+    setStatus("ERROR");
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
