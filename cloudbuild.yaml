@@ -34,7 +34,13 @@ steps:
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
-      - --set-env-vars=NODE_ENV=production,PORT=8080,CORS_ORIGIN=${_CORS_ORIGIN},GCS_BUCKET_NAME=${_GCS_BUCKET_NAME},GCP_PROJECT_ID=${_GCP_PROJECT_ID},BQ_DATASET=${_BQ_DATASET},BQ_TABLE=${_BQ_TABLE}
+      - --set-env-vars=NODE_ENV=production
+      - --set-env-vars=PORT=8080
+      - --set-env-vars=CORS_ORIGIN=${_CORS_ORIGIN}
+      - --set-env-vars=GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}
+      - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID}
+      - --set-env-vars=BQ_DATASET=${_BQ_DATASET}
+      - --set-env-vars=BQ_TABLE=${_BQ_TABLE}
 
   - id: build-frontend
     name: gcr.io/cloud-builders/docker
@@ -78,7 +84,7 @@ steps:
 
 substitutions:
   _REGION: europe-southwest1
-  _AR_REPO: europe-southwest1-docker.pkg.dev/$PROJECT_ID/repo-consultores-dev
+  _AR_REPO: europe-southwest1-docker.pkg.dev/consultores-dev/repo-consultores-dev
   _BACKEND_IMAGE: backend
   _FRONTEND_IMAGE: frontend
   _BACKEND_SERVICE: backend-dev

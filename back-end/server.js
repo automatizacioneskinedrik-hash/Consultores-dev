@@ -6,22 +6,30 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { Storage } from "@google-cloud/storage";
 import { BigQuery } from "@google-cloud/bigquery";
-import { error } from "console";
 
-const bigquery= new BigQuery({projectId:process.env.GCP_PROJECT_ID});
+const bigquery = new BigQuery({ projectId: process.env.GCP_PROJECT_ID });
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configuración nombre bucket Google Cloud Storage.
 const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
 if (!BUCKET_NAME) {
-  console.error("❌ Falta GCS_BUCKET_NAME en .env");
+  console.error("Missing GCS_BUCKET_NAME in environment variables");
   process.exit(1);
 }
 
+const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -29,8 +37,6 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 
-
-// Credenciales cliente Google Cloud Storage.
 const storage = new Storage();
 const bucket = storage.bucket(BUCKET_NAME);
 
@@ -43,22 +49,25 @@ function slugify(s = "") {
     .replace(/[^a-z0-9._-]/g, "_");
 }
 
-app.post("/api/auth/login", async(req,res)=>{
-  try{
-    const email=(req.body.email || "").trim().toLowerCase();
-    if(!email) return res.status(400).json({ok:false,error:"Email requerido"});
-    const query= `
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const email = (req.body.email || "").trim().toLowerCase();
+    if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
+
+    const query = `
       SELECT email, estado
       FROM \`${process.env.GCP_PROJECT_ID}.${process.env.BQ_DATASET}.${process.env.BQ_TABLE}\`
       WHERE LOWER(email) = @email
       LIMIT 1
     `;
 
-    const options = {query, params:{email},};
+    const options = { query, params: { email } };
     const [rows] = await bigquery.query(options);
+
     if (!rows.length) {
       return res.status(401).json({ ok: false, error: "Correo no autorizado" });
     }
+
     const user = rows[0];
     if (!user.estado) {
       return res.status(403).json({ ok: false, error: "Usuario inactivo" });
@@ -68,17 +77,15 @@ app.post("/api/auth/login", async(req,res)=>{
       ok: true,
       user: {
         id: user.id,
-        email: user.email        
+        email: user.email,
       },
     });
-  }catch(err){
+  } catch (err) {
     console.error(err);
-    return res.status(500).json({ok:false,error:"Error validando usuario"});
+    return res.status(500).json({ ok: false, error: "Error validando usuario" });
   }
 });
 
-
-// Creación Signed URL para subir desde React a Google Cloud Storage
 app.post("/api/uploads/signed-url", async (req, res) => {
   try {
     const { originalName, contentType, userId, meetingType } = req.body;
@@ -100,17 +107,14 @@ app.post("/api/uploads/signed-url", async (req, res) => {
     const mm = String(now.getMonth() + 1).padStart(2, "0");
     const dd = String(now.getDate()).padStart(2, "0");
 
-    // Ruta final al bucket de Google Cloud Storage
     const objectPath = `audios/${safeUser}/${yyyy}/${mm}/${dd}/${safeMeeting}/${id}${ext}`;
-
     const file = bucket.file(objectPath);
 
-    // Signed URL v4 para PUT (subida)
     const [uploadUrl] = await file.getSignedUrl({
       version: "v4",
       action: "write",
-      expires: Date.now() + 10 * 60 * 1000, // 10 minutos
-      contentType, // obliga a que el PUT use ese content-type
+      expires: Date.now() + 10 * 60 * 1000,
+      contentType,
     });
 
     return res.json({
@@ -126,18 +130,15 @@ app.post("/api/uploads/signed-url", async (req, res) => {
   }
 });
 
-// 2) (Opcional) Confirmación de subida / registro
 app.post("/api/uploads/complete", async (req, res) => {
   try {
     const { objectPath } = req.body;
     if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
 
-    // Verifica que exista en GCS
     const file = bucket.file(objectPath);
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    // Aquí es donde luego guardarías en DB: userId, fecha, gcs_uri, status...
     return res.json({ ok: true, message: "Subida confirmada", objectPath });
   } catch (err) {
     console.error(err);
@@ -146,6 +147,7 @@ app.post("/api/uploads/complete", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ Backend corriendo en http://localhost:${PORT}`);
-  console.log(`✅ Bucket: ${BUCKET_NAME}`);
+  console.log(`Backend corriendo en puerto ${PORT}`);
+  console.log(`Bucket: ${BUCKET_NAME}`);
+  console.log(`CORS_ORIGIN: ${allowedOrigins.join(", ")}`);
 });
