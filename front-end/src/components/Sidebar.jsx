@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getUser } from "../utils/user";
+import { getUser, clearUser } from "../utils/user";
 import "../styles/Sidebar.css";
 
 function UploadIcon() {
@@ -33,6 +33,16 @@ function UploadIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -81,20 +91,33 @@ function BrandLogo() {
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { fullName: storedNameFromUtil, email } = getUser();
-  const emailRaw = email || "";
-  const isAdmin = emailRaw === "admin.eadic@gmail.com";
-  const storedName = storedNameFromUtil || (isAdmin ? "ADMIN" : "");
+  const user = getUser();
+  const { fullName, email, role } = user;
+
+  const isAuthorizedAdmin =
+    role === "admin" ||
+    role === "superadmin" ||
+    email.toLowerCase() === "admin123@eadic.com" ||
+    email.toLowerCase() === "adminkinedrik@eadic.com";
+
+  const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
 
   const handleUploadClick = () => {
     navigate("/upload");
   };
 
   const handleAdminClick = () => {
-    if (isAdmin) {
+    if (isAuthorizedAdmin) {
       navigate("/admin");
     } else {
       alert("No tienes permiso para acceder a esta sección");
+    }
+  };
+
+  const handleLogout = () => {
+    if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
+      clearUser();
+      navigate("/login");
     }
   };
 
@@ -120,11 +143,10 @@ export default function Sidebar() {
         </button>
 
         <button
-          className={`sidebarItem ${isAdminPage ? "active" : ""} ${
-            !isAdmin ? "disabled" : ""
-          }`}
+          className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""
+            }`}
           onClick={handleAdminClick}
-          title={isAdmin ? "Gestionar Usuarios" : "Sin acceso"}
+          title={isAuthorizedAdmin ? "Gestionar Usuarios" : "Sin acceso"}
         >
           <UsersIcon />
           <span>Gestionar Usuarios</span>
@@ -133,6 +155,9 @@ export default function Sidebar() {
 
       {storedName && (
         <div className="sidebarBadge">
+          <button className="logoutBtn" onClick={handleLogout} title="Cerrar Sesión">
+            <LogoutIcon />
+          </button>
           <span className="badgeName">{storedName}</span>
           <span className="statusDot" aria-hidden="true" />
         </div>

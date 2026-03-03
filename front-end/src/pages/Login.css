@@ -65,9 +65,11 @@ body {
 .sideLine.orange {
   background: linear-gradient(180deg, #ffdcc0, #ffb07a);
 }
+
 .sideLine.blue {
   background: linear-gradient(180deg, #c9dbff, #8eaeff);
 }
+
 .sideLine.lilac {
   background: linear-gradient(180deg, #f0e6ff, #d6c3ff);
 }
@@ -93,17 +95,21 @@ body {
   gap: 8px;
   align-items: center;
 }
+
 .miniBars .mb {
   width: 8px;
   height: 26px;
   border-radius: 6px;
 }
+
 .miniBars .o {
   background: var(--c-orange);
 }
+
 .miniBars .b {
   background: var(--c-blue);
 }
+
 .miniBars .l {
   background: var(--c-lilac);
 }
@@ -114,6 +120,7 @@ body {
   font-size: 28px;
   letter-spacing: 2px;
 }
+
 .logoText .mirroredK {
   display: inline-block;
   transform: scaleX(-1);
@@ -154,14 +161,37 @@ body {
   gap: 10px;
 }
 
-.googleButtonWrap {
+.googleCustomBtn {
   width: 100%;
+  max-width: 320px;
+  background: white;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  padding: 10px 24px;
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 12px;
+  font-family: 'Google Sans', 'Inter', sans-serif;
+  font-weight: 500;
+  color: #3c4043;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
-.googleButtonWrap > div {
-  margin: 0 auto;
+.googleCustomBtn:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+}
+
+.googleCustomBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.googleCustomBtn svg {
+  flex-shrink: 0;
 }
 
 form {
@@ -253,6 +283,7 @@ form {
 .btn span {
   font-weight: 800;
 }
+
 .btn .arrow {
   margin-left: 14px;
 }
@@ -264,3 +295,46 @@ form {
   text-align: center;
 }
 
+.separator {
+  margin: 30px 0 20px;
+  position: relative;
+  text-align: center;
+}
+
+.separator::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e0e0e0;
+  z-index: 1;
+}
+
+.separator span {
+  background: #f3f3f4;
+  padding: 0 15px;
+  color: #888;
+  font-size: 12px;
+  position: relative;
+  z-index: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adminForm {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.adminBtn {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.inputGroup {
+  text-align: left;
+}

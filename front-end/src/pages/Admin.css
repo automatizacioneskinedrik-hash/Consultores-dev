@@ -14,6 +14,7 @@
   --icon-neutral: #c0c0c0;
   --icon-hover: #040025;
 }
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -61,17 +62,21 @@ body {
   gap: 8px;
   align-items: center;
 }
+
 .brandBars .bar {
   width: 6px;
   height: 18px;
   border-radius: 6px;
 }
+
 .bar.barOrange {
   background: var(--brand-orange);
 }
+
 .bar.barBlue {
   background: var(--brand-blue);
 }
+
 .bar.barLilac {
   background: var(--brand-purple);
 }
@@ -81,10 +86,12 @@ body {
   align-items: center;
   gap: 12px;
 }
+
 .adminName {
   color: #fff;
   font-weight: 600;
 }
+
 .avatar {
   width: 36px;
   height: 36px;
@@ -116,6 +123,7 @@ body {
   color: var(--text-primary);
   font-weight: 800;
 }
+
 .cardHeader p {
   font-size: 14px;
   color: var(--text-secondary);
@@ -178,9 +186,11 @@ body {
     border-color 180ms ease;
   color: var(--text-primary);
 }
+
 .searchBox input::placeholder {
   color: var(--text-light);
 }
+
 .searchBox input:focus {
   outline: none;
   box-shadow: 0 4px 12px rgba(64, 0, 37, 0.08);
@@ -200,6 +210,7 @@ body {
   gap: 12px;
   align-items: center;
 }
+
 .pillBtn {
   background: #fff;
   border: 1px solid #e6e9ee;
@@ -207,6 +218,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
 }
+
 .addBtn {
   background: var(--navy);
   color: #ffffff;
@@ -220,6 +232,7 @@ body {
     box-shadow 140ms ease,
     transform 140ms ease;
 }
+
 .addBtn:hover {
   box-shadow: 0 6px 16px rgba(4, 0, 37, 0.2);
   transform: translateY(-1px);
@@ -445,6 +458,7 @@ body {
   backdrop-filter: blur(4px);
   z-index: 60;
 }
+
 .modal {
   background: #ffffff;
   border-radius: 14px;
@@ -462,11 +476,13 @@ body {
   gap: 12px;
   margin-bottom: 16px;
 }
+
 .modalHeader h2 {
   font-size: 22px;
   color: #071033;
   margin: 0;
 }
+
 .closeBtn {
   background: transparent;
   border: none;
@@ -479,6 +495,7 @@ body {
   color: #4b5563;
   font-size: 18px;
 }
+
 .closeBtn:hover {
   background: #f3f4f6;
 }
@@ -487,6 +504,7 @@ body {
   display: block;
   margin-bottom: 14px;
 }
+
 .labelText {
   display: block;
   font-size: 14px;
@@ -494,6 +512,7 @@ body {
   margin-bottom: 8px;
   font-weight: 600;
 }
+
 .input {
   width: 100%;
   padding: 12px 14px;
@@ -506,12 +525,14 @@ body {
     border-color 140ms ease,
     transform 140ms ease;
 }
+
 .input:focus {
   outline: none;
   border-color: rgba(43, 108, 255, 0.28);
   box-shadow: 0 10px 30px rgba(43, 108, 255, 0.06);
   transform: translateY(-1px);
 }
+
 .formError {
   color: #b91c1c;
   background: rgba(249, 215, 218, 0.4);
@@ -527,6 +548,7 @@ body {
   justify-content: flex-end;
   margin-top: 14px;
 }
+
 .ghostBtn {
   background: transparent;
   border: 1px solid #e6e9ee;
@@ -535,6 +557,7 @@ body {
   cursor: pointer;
   color: #111827;
 }
+
 .primaryBtn {
   background: var(--navy);
   color: #fff;
@@ -544,9 +567,11 @@ body {
   cursor: pointer;
   box-shadow: 0 16px 32px rgba(4, 3, 30, 0.18);
 }
+
 .ghostBtn:hover {
   background: #fbfbfc;
 }
+
 .primaryBtn:hover {
   transform: translateY(-2px);
 }
@@ -559,14 +584,32 @@ body {
   text-align: center;
 }
 
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  font-weight: 700;
+  color: var(--blue);
+  backdrop-filter: blur(4px);
+}
+
 @media (max-width: 900px) {
   .adminCard {
     margin: 16px;
     padding: 20px;
   }
+
   .adminContent {
     padding: 18px;
   }
+
   .addBtn {
     padding: 10px 12px;
   }

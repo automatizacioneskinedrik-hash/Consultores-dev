@@ -8,8 +8,17 @@ function isLoggedIn() {
 }
 
 function isAdmin() {
-  const email = localStorage.getItem("kinedrix_email") || "";
-  return email === "admin.eadic@gmail.com"; // <-- cambia por tu admin real
+  try {
+    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
+    return (
+      user.role === "admin" ||
+      user.role === "superadmin" ||
+      user.email.toLowerCase() === "admin123@eadic.com" ||
+      user.email.toLowerCase() === "adminkinedrik@eadic.com"
+    );
+  } catch {
+    return false;
+  }
 }
 
 function AdminRoute({ children }) {

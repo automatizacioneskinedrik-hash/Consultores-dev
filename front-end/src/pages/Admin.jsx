@@ -1,96 +1,63 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaPencilAlt, FaTrashAlt } from "react-icons/fa"; // Agregar importación de iconos
+import { FaPencilAlt, FaTrashAlt } from "react-icons/fa";
 import Sidebar from "../components/Sidebar";
 import "./Admin.css";
 
-const STORAGE_KEY = "kinedrix_users_v1";
-const DEFAULT_USERS = [
-  { id: "u1", name: "Alejandro García", email: "alejandro.g@kinedrik.com" },
-  { id: "u2", name: "Beatriz López", email: "b.lopez@kinedrik.com" },
-  { id: "u3", name: "Carlos Martínez", email: "carlos.mtz@kinedrik.com" },
-  { id: "u4", name: "Elena Rodríguez", email: "elena.rodriguez@kinedrik.com" },
-];
-
-function getInitials(fullName = "") {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  const first = parts[0]?.[0] || "";
-  const second = parts.length > 1 ? parts[1]?.[0] || "" : "";
-  return (first + second).toUpperCase();
-}
-
-function makeId() {
-  return `u_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-function safeLoadUsers() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function safeSaveUsers(users) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      className="iSearch"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      />
-      <path
-        d="M16.2 16.2 21 21"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 export default function Admin() {
-  const [users, setUsers] = useState(() => safeLoadUsers() ?? DEFAULT_USERS);
-  const [query, setQuery] = useState("");
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [queryStr, setQueryStr] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [mode, setMode] = useState("create"); // "create" | "edit"
+  const [mode, setMode] = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [role, setRole] = useState("user");
   const [formError, setFormError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
   const itemsPerPage = 4;
 
+  const currentUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
+    } catch {
+      return {};
+    }
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`);
+      const data = await res.json();
+      if (data.ok) {
+        setUsers(data.users);
+      } else {
+        console.error("Error from API:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    safeSaveUsers(users);
-  }, [users]);
+    fetchUsers();
+  }, []);
 
   const filteredUsers = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = queryStr.trim().toLowerCase();
     if (!q) return users;
     return users.filter(
       (u) =>
-        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+        (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q),
     );
-  }, [users, query]);
+  }, [users, queryStr]);
 
-  // Paginación
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIdx, startIdx + itemsPerPage);
@@ -100,6 +67,7 @@ export default function Admin() {
     setEditingId(null);
     setName("");
     setEmail("");
+    setRole("user");
     setFormError("");
     setIsModalOpen(true);
   };
@@ -109,6 +77,7 @@ export default function Admin() {
     setEditingId(u.id);
     setName(u.name);
     setEmail(u.email);
+    setRole(u.role || "user");
     setFormError("");
     setIsModalOpen(true);
   };
@@ -133,35 +102,84 @@ export default function Admin() {
     return "";
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     const error = validate(name, email);
     if (error) {
       setFormError(error);
       return;
     }
+
+    setIsSaving(true);
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
-    if (mode === "create") {
-      const newUser = { id: makeId(), name: cleanName, email: cleanEmail };
-      setUsers((prev) => [newUser, ...prev]);
-    } else {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === editingId ? { ...u, name: cleanName, email: cleanEmail } : u,
-        ),
-      );
+
+    try {
+      const url = mode === "create"
+        ? `${API_BASE_URL}/api/admin/users`
+        : `${API_BASE_URL}/api/admin/users/${editingId}`;
+
+      const method = mode === "create" ? "POST" : "PUT";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, role }),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        await fetchUsers();
+        closeModal();
+      } else {
+        setFormError(data.error || "Error al guardar");
+      }
+    } catch (err) {
+      setFormError("Error de conexión con el servidor");
+      console.error(err);
+    } finally {
+      setIsSaving(false);
     }
-    closeModal();
   };
 
-  const onDelete = (u) => {
-    const ok = window.confirm(
-      `¿Eliminar a "${u.name}"?\n\nEsta acción no se puede deshacer.`,
-    );
-    if (!ok) return;
-    setUsers((prev) => prev.filter((x) => x.id !== u.id));
+  const onDelete = async (u) => {
+    if (!window.confirm(`¿Eliminar a "${u.name}"?\nEsta acción no se puede deshacer.`)) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/users/${u.id}`, {
+        method: "DELETE",
+        headers: {
+          "X-Admin-Role": currentUser.role || "user"
+        }
+      });
+      const data = await res.json();
+      if (data.ok) {
+        await fetchUsers();
+      } else {
+        alert(data.error || "Error al eliminar");
+      }
+    } catch (err) {
+      alert("Error de conexión al eliminar");
+      console.error(err);
+    }
   };
+
+  function SearchIcon() {
+    return (
+      <svg className="iSearch" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M16.2 16.2 21 21" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  function getInitials(fullName = "") {
+    const parts = fullName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "";
+    const first = parts[0]?.[0] || "";
+    const second = parts.length > 1 ? parts[1]?.[0] || "" : "";
+    return (first + second).toUpperCase();
+  }
 
   return (
     <>
@@ -179,9 +197,9 @@ export default function Admin() {
                 <SearchIcon />
                 <input
                   type="text"
-                  value={query}
+                  value={queryStr}
                   onChange={(e) => {
-                    setQuery(e.target.value);
+                    setQueryStr(e.target.value);
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar por nombre o correo..."
@@ -205,6 +223,7 @@ export default function Admin() {
                   <div className="headerCell emailHeader">
                     CORREO ELECTRÓNICO
                   </div>
+                  <div className="headerCell roleHeader" style={{ flex: '1' }}>ROL</div>
                   <div className="headerCell actionsHeader">ACCIONES</div>
                 </div>
                 <div className="userCards">
@@ -228,6 +247,9 @@ export default function Admin() {
                               <div className="userEmail">{u.email}</div>
                             </div>
                           </div>
+                          <div className="userRole" style={{ flex: '1', fontSize: '12px', fontWeight: '600', color: u.role === 'admin' ? '#f49b1a' : '#6c3af6' }}>
+                            {u.role === 'admin' ? 'ADMIN' : (u.role === 'superadmin' ? 'SUPERADMIN' : 'USUARIO')}
+                          </div>
                           <div className="actions">
                             <button
                               className="iconBtn"
@@ -237,14 +259,17 @@ export default function Admin() {
                             >
                               <FaPencilAlt />
                             </button>
-                            <button
-                              className="iconBtn deleteBtn"
-                              title="Eliminar"
-                              onClick={() => onDelete(u)}
-                              aria-label="Eliminar"
-                            >
-                              <FaTrashAlt />
-                            </button>
+                            {/* Restricted Deletion: Admin cannot delete other Admin */}
+                            {!(currentUser.role === 'admin' && u.role === 'admin') && (
+                              <button
+                                className="iconBtn deleteBtn"
+                                title="Eliminar"
+                                onClick={() => onDelete(u)}
+                                aria-label="Eliminar"
+                              >
+                                <FaTrashAlt />
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -273,9 +298,8 @@ export default function Admin() {
                         (page) => (
                           <button
                             key={page}
-                            className={`paginationBtn ${
-                              currentPage === page ? "active" : ""
-                            }`}
+                            className={`paginationBtn ${currentPage === page ? "active" : ""
+                              }`}
                             onClick={() => setCurrentPage(page)}
                           >
                             {page}
@@ -299,10 +323,13 @@ export default function Admin() {
           </div>
 
           <div className="footerNote">
-            ● TODOS LOS CAMBIOS EN ESTA SECCIÓN SON AUDITADOS POR EL SISTEMA DE
-            SEGURIDAD KINEDRIꓘ.
+            ● TODOS LOS CAMBIOS EN ESTA SECCIÓN SON SINCRONIZADOS CON FIREBASE FIRESTORE.
           </div>
         </main>
+
+        {loading && (
+          <div className="loadingOverlay">Cargando usuarios...</div>
+        )}
 
         {isModalOpen && (
           <div className="modalOverlay" onMouseDown={closeModal}>
@@ -350,6 +377,18 @@ export default function Admin() {
                     placeholder="correo@dominio.com"
                   />
                 </label>
+                <label className="field">
+                  <span className="labelText">Rol del usuario</span>
+                  <select
+                    className="input"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    style={{ background: '#1a1a1a', border: '1px solid #333', color: 'white', padding: '10px', borderRadius: '4px' }}
+                  >
+                    <option value="user">Usuario normal</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </label>
                 {formError && <div className="formError">{formError}</div>}
                 <div className="modalActions">
                   <button
@@ -359,8 +398,8 @@ export default function Admin() {
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="primaryBtn">
-                    {mode === "create" ? "Guardar" : "Guardar cambios"}
+                  <button type="submit" className="primaryBtn" disabled={isSaving}>
+                    {isSaving ? "Guardando..." : (mode === "create" ? "Guardar" : "Guardar cambios")}
                   </button>
                 </div>
               </form>

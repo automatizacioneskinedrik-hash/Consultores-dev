@@ -19,7 +19,9 @@ function parseGoogleCredential(credential) {
 export default function Login() {
   const navigate = useNavigate();
   const [error, setError] = useState("");
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const googleButtonRef = useRef(null);
 
   const saveEmail = (emailToSave) => {
@@ -28,14 +30,51 @@ export default function Login() {
       const updated = [emailToSave, ...saved.filter((e) => e !== emailToSave)];
       localStorage.setItem("kinedrix_emails", JSON.stringify(updated.slice(0, 5)));
     } catch {
-      // ignore storage errors
+
     }
+  };
+
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+
+    // Superadmin
+    if (email.toLowerCase() === "adminkinedrik@eadic.com" && password === "123456") {
+      const superAdminUser = {
+        id: "superadmin-1",
+        email: email,
+        role: "superadmin",
+      };
+      localStorage.setItem("kinedrix_email", email);
+      localStorage.setItem("kinedrix_user", JSON.stringify(superAdminUser));
+      saveEmail(email);
+      navigate("/upload");
+      setLoading(false);
+      return;
+    }
+
+    // Admin
+    if (email === "admin123@eadic.com" && password === "123456") {
+      const adminUser = {
+        id: "admin-1",
+        email: email,
+        role: "admin",
+      };
+      localStorage.setItem("kinedrix_email", email);
+      localStorage.setItem("kinedrix_user", JSON.stringify(adminUser));
+      saveEmail(email);
+      navigate("/upload");
+    } else {
+      setError("Credenciales de administrador incorrectas");
+    }
+    setLoading(false);
   };
 
   const handleGoogleCredential = useCallback(
     async (credentialResponse) => {
       try {
-        setGoogleLoading(true);
         setError("");
 
         const credential = credentialResponse?.credential;
@@ -63,54 +102,65 @@ export default function Login() {
       } catch (err) {
         localStorage.removeItem("kinedrix_email");
         setError(err.message || "Error al iniciar sesion con Google");
-      } finally {
-        setGoogleLoading(false);
       }
     },
     [navigate],
   );
 
+  const handleGoogleLogin = async () => {
+    try {
+      setError("");
+
+      if (!window.google) {
+        throw new Error("El servicio de Google no está cargado. Por favor, recarga la página.");
+      }
+
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+          setError("Haz clic en el botón de Google para continuar.");
+          setGoogleLoading(false);
+        }
+      });
+    } catch (err) {
+      setError(err.message || "Error al iniciar sesión con Google");
+      setGoogleLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID) {
-      setError("Falta VITE_GOOGLE_CLIENT_ID en la configuracion");
-      return;
-    }
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCredential,
+          cancel_on_tap_outside: false,
+        });
 
-    const initializeGoogle = () => {
-      if (!window.google?.accounts?.id || !googleButtonRef.current) return;
-
-      googleButtonRef.current.innerHTML = "";
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: "outline",
-        size: "large",
-        shape: "pill",
-        width: 320,
-        text: "signin_with",
-      });
+        // Render the visible button in the container
+        window.google.accounts.id.renderButton(
+          document.getElementById("googleBtnContainer"),
+          {
+            theme: "outline",
+            size: "large",
+            width: 320,
+            text: "continue_with",
+            shape: "pill"
+          }
+        );
+      }
     };
+    script.onerror = () => {
+      setError("No se pudo cargar el script de Google. Verifica tu conexión.");
+    };
+    document.body.appendChild(script);
 
-    if (window.google?.accounts?.id) {
-      initializeGoogle();
-      return;
-    }
-
-    let script = document.getElementById(GOOGLE_SCRIPT_ID);
-    if (!script) {
-      script = document.createElement("script");
-      script.id = GOOGLE_SCRIPT_ID;
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    script.addEventListener("load", initializeGoogle);
     return () => {
-      script.removeEventListener("load", initializeGoogle);
+      const existing = document.querySelector(`script[src="https://accounts.google.com/gsi/client"]`);
+      if (existing) document.body.removeChild(existing);
     };
   }, [handleGoogleCredential]);
 
@@ -146,12 +196,49 @@ export default function Login() {
           <p className="cardSub">Accede a la plataforma con tu cuenta de Google</p>
 
           <div className="googleSection">
-            <div className="googleButtonWrap" ref={googleButtonRef} />
-            {error && <div className="errorMessage">{error}</div>}
-            {googleLoading && (
-              <div className="googleStatus">Validando cuenta de Google...</div>
+            <div
+              id="googleBtnContainer"
+              style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}
+            ></div>
+            {error && (
+              <div className="errorMessage" style={{ color: '#ff4d4d', marginTop: '10px', fontSize: '13px' }}>
+                {error.includes("origin_mismatch")
+                  ? "Error: Esta URL (localhost) no está autorizada en Google Console. Por favor, usa el puerto autorizado o agrega este origen."
+                  : error}
+              </div>
             )}
           </div>
+
+          <div className="separator">
+            <span>o ingresa como administrador</span>
+          </div>
+
+          <form className="adminForm" onSubmit={handleAdminLogin}>
+            <div className="inputGroup">
+              <input
+                type="email"
+                className="input"
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="inputGroup">
+              <input
+                type="password"
+                className="input"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="btn adminBtn" disabled={loading}>
+              {loading ? "Iniciando..." : "Entrar como Admin"}
+              {!loading && <span className="arrow">→</span>}
+            </button>
+          </form>
         </div>
 
         <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
