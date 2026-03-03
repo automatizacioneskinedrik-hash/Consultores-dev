@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
@@ -89,7 +89,7 @@ export default function Login() {
         size: "large",
         shape: "pill",
         width: 320,
-        text: "continue_with",
+        text: "signin_with",
       });
     };
 
@@ -154,9 +154,10 @@ export default function Login() {
           </div>
         </div>
 
-        <div className="footer">� KINEDRIK Audio Inc. Todos los derechos reservados.</div>
+        <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
       </div>
     </div>
   );
 }
+
 

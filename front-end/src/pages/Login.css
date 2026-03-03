@@ -1,8 +1,8 @@
-:root {
+﻿:root {
   --navy: #040025;
   --blue: #0040a4;
   --off: #e7e7e7;
-  /* Colores para los íconos */
+  /* Colores para los Ã­conos */
   --c-blue: #2b6cff;
   --c-lilac: #b586ff;
   --c-orange: #ff7a00;
@@ -142,6 +142,26 @@ body {
   margin-top: 8px;
   color: #666;
   font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.2px;
+}
+
+.googleSection {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.googleButtonWrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.googleButtonWrap > div {
+  margin: 0 auto;
 }
 
 form {
@@ -206,7 +226,13 @@ form {
   color: var(--c-red);
   font-weight: 700;
   font-size: 13px;
-  text-align: left;
+  text-align: center;
+}
+
+.googleStatus {
+  font-size: 13px;
+  color: #4d5560;
+  text-align: center;
 }
 
 .btn {
@@ -237,3 +263,4 @@ form {
   font-size: 12px;
   text-align: center;
 }
+
