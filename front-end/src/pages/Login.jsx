@@ -39,37 +39,27 @@ export default function Login() {
     setError("");
     setLoading(true);
 
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+      });
 
-    // Superadmin
-    if (email.toLowerCase() === "adminkinedrik@eadic.com" && password === "123456") {
-      const superAdminUser = {
-        id: "superadmin-1",
-        email: email,
-        role: "superadmin",
-      };
-      localStorage.setItem("kinedrix_email", email);
-      localStorage.setItem("kinedrix_user", JSON.stringify(superAdminUser));
-      saveEmail(email);
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Credenciales incorrectas");
+      }
+
+      localStorage.setItem("kinedrix_email", data.user.email);
+      localStorage.setItem("kinedrix_user", JSON.stringify(data.user));
+      saveEmail(data.user.email);
       navigate("/upload");
+    } catch (err) {
+      setError(err.message || "Error al iniciar sesión");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Admin
-    if (email === "admin123@eadic.com" && password === "123456") {
-      const adminUser = {
-        id: "admin-1",
-        email: email,
-        role: "admin",
-      };
-      localStorage.setItem("kinedrix_email", email);
-      localStorage.setItem("kinedrix_user", JSON.stringify(adminUser));
-      saveEmail(email);
-      navigate("/upload");
-    } else {
-      setError("Credenciales de administrador incorrectas");
-    }
-    setLoading(false);
   };
 
   const handleGoogleCredential = useCallback(

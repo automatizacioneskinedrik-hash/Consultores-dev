@@ -10,11 +10,12 @@ function isLoggedIn() {
 function isAdmin() {
   try {
     const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
+    const userEmail = (user.email || "").toLowerCase();
     return (
       user.role === "admin" ||
       user.role === "superadmin" ||
-      user.email.toLowerCase() === "admin123@eadic.com" ||
-      user.email.toLowerCase() === "adminkinedrik@eadic.com"
+      userEmail === "adminkinedrik@eadic.com" ||
+      userEmail === "admin123@eadic.com"
     );
   } catch {
     return false;

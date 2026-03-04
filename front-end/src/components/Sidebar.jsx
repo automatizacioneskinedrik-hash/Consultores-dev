@@ -97,8 +97,8 @@ export default function Sidebar() {
   const isAuthorizedAdmin =
     role === "admin" ||
     role === "superadmin" ||
-    email.toLowerCase() === "admin123@eadic.com" ||
-    email.toLowerCase() === "adminkinedrik@eadic.com";
+    (email && email.toLowerCase() === "adminkinedrik@eadic.com") ||
+    (email && email.toLowerCase() === "admin123@eadic.com");
 
   const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
 

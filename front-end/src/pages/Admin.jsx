@@ -31,7 +31,12 @@ export default function Admin() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/api/admin/users`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        headers: {
+          "X-Admin-Role": currentUser.role || "user",
+          "X-Admin-Email": currentUser.email || ""
+        }
+      });
       const data = await res.json();
       if (data.ok) {
         setUsers(data.users);
@@ -123,7 +128,11 @@ export default function Admin() {
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Role": currentUser.role || "user",
+          "X-Admin-Email": currentUser.email || ""
+        },
         body: JSON.stringify({ name: cleanName, email: cleanEmail, role }),
       });
 
@@ -149,7 +158,8 @@ export default function Admin() {
       const res = await fetch(`${API_BASE_URL}/api/admin/users/${u.id}`, {
         method: "DELETE",
         headers: {
-          "X-Admin-Role": currentUser.role || "user"
+          "X-Admin-Role": currentUser.role || "user",
+          "X-Admin-Email": currentUser.email || ""
         }
       });
       const data = await res.json();
@@ -259,8 +269,8 @@ export default function Admin() {
                             >
                               <FaPencilAlt />
                             </button>
-                            {/* Restricted Deletion: Admin cannot delete other Admin */}
-                            {!(currentUser.role === 'admin' && u.role === 'admin') && (
+                            {/* Restricted Deletion: Admin cannot delete other Admins OR Super Admins */}
+                            {!(currentUser.role === 'admin' && (u.role === 'admin' || u.role === 'superadmin')) && (
                               <button
                                 className="iconBtn deleteBtn"
                                 title="Eliminar"
@@ -385,6 +395,9 @@ export default function Admin() {
                   >
                     <option value="user">Usuario normal</option>
                     <option value="admin">Administrador</option>
+                    {(currentUser.role === 'superadmin' || currentUser.email === 'adminkinedrik@eadic.com') && (
+                      <option value="superadmin">Super Admin</option>
+                    )}
                   </select>
                 </label>
                 {formError && <div className="formError">{formError}</div>}

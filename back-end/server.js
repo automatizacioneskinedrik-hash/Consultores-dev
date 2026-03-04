@@ -96,6 +96,7 @@ function slugify(s = "") {
 app.post("/api/auth/login", async (req, res) => {
   try {
     const email = (req.body.email || "").trim().toLowerCase();
+    const password = req.body.password; // Receive password from request
     if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
 
     // Query Firestore for authorized users
@@ -109,8 +110,12 @@ app.post("/api/auth/login", async (req, res) => {
     const userDoc = snapshot.docs[0];
     const user = userDoc.data();
 
-    // In a real app, you might check for an 'active' status or similar
-    // For now, if they are in the 'users' collection, they are authorized.
+    // If password is provided (Admin form), check it
+    if (password) {
+      if (user.password !== password) {
+        return res.status(401).json({ ok: false, error: "Contraseña incorrecta" });
+      }
+    }
 
     return res.json({
       ok: true,
@@ -118,6 +123,7 @@ app.post("/api/auth/login", async (req, res) => {
         id: userDoc.id,
         email: user.email,
         name: user.name || "",
+        role: user.role || "user",
       },
     });
   } catch (err) {
@@ -320,11 +326,22 @@ ${transcription.text}`;
 // Obtener todos los usuarios
 app.get("/api/admin/users", async (req, res) => {
   try {
+    const requesterRole = req.headers["x-admin-role"];
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+
+    const isAuthorized = requesterRole === "admin" || requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+    if (!isAuthorized) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para ver la lista de usuarios" });
+    }
+
     const snapshot = await db.collection("users").orderBy("createdAt", "desc").get();
-    const users = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const users = snapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter(u => u.role !== "superadmin" && u.email !== "adminkinedrik@eadic.com");
+
     return res.json({ ok: true, users });
   } catch (err) {
     console.error(err);
@@ -336,7 +353,18 @@ app.get("/api/admin/users", async (req, res) => {
 app.post("/api/admin/users", async (req, res) => {
   try {
     const { name, email, role } = req.body;
+    const requesterRole = req.headers["x-admin-role"];
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+
+    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+
     if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
+
+    // Permiso: Solo superadmin puede crear administradores (MODIFICADO: AHORA ADMIN PUEDE)
+    // Pero el admin no puede crear un superadmin
+    if (role === "superadmin" && !isSuperAdmin) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para crear un Super Admin" });
+    }
 
     const newUser = {
       name: name || "",
@@ -358,8 +386,28 @@ app.put("/api/admin/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, role } = req.body;
+    const requesterRole = req.headers["x-admin-role"];
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
 
-    await db.collection("users").doc(id).update({
+    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+
+    const userRef = db.collection("users").doc(id);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) return res.status(404).json({ ok: false, error: "Usuario no encontrado" });
+
+    const existingUser = userDoc.data();
+
+    // Permiso: Admin no puede editar a otros Admins ni al Superadmin
+    if ((existingUser.role === "admin" || existingUser.role === "superadmin") && !isSuperAdmin) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para editar a este usuario" });
+    }
+
+    // Permiso: Solo superadmin puede asignar el rol de superadmin
+    if (role === "superadmin" && existingUser.role !== "superadmin" && !isSuperAdmin) {
+      return res.status(403).json({ ok: false, error: "Solo el Super Admin puede nombrar Super Admins" });
+    }
+
+    await userRef.update({
       name: name || "",
       email: email.trim().toLowerCase(),
       role: role || "user"
@@ -376,7 +424,10 @@ app.put("/api/admin/users/:id", async (req, res) => {
 app.delete("/api/admin/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const requesterRole = req.headers["x-admin-role"]; // Role of the person performing the deletion
+    const requesterRole = req.headers["x-admin-role"];
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+
+    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
 
     const userDoc = await db.collection("users").doc(id).get();
     if (!userDoc.exists) return res.status(404).json({ ok: false, error: "Usuario no encontrado" });
@@ -384,8 +435,8 @@ app.delete("/api/admin/users/:id", async (req, res) => {
     const userData = userDoc.data();
 
     // Restriction: Admins cannot delete other Admins, only Superadmins can.
-    if (userData.role === "admin" && requesterRole !== "superadmin") {
-      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar a otro Administrador" });
+    if ((userData.role === "admin" || userData.role === "superadmin") && !isSuperAdmin) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar a este Administrador" });
     }
 
     await db.collection("users").doc(id).delete();
