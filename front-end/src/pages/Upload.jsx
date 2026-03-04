@@ -135,7 +135,7 @@ export default function Upload() {
       const completeRes = await fetch(`${API_BASE_URL}/api/uploads/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectPath }),
+        body: JSON.stringify({ objectPath, userEmail: user?.email || "anonymous" }),
       });
 
       const completeData = await completeRes.json();

@@ -327,9 +327,7 @@ export default function Admin() {
           </div>
         </main>
 
-        {loading && (
-          <div className="loadingOverlay">Cargando usuarios...</div>
-        )}
+        {/* Loading overlay removed per user request */}
 
         {isModalOpen && (
           <div className="modalOverlay" onMouseDown={closeModal}>

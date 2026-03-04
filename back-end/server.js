@@ -6,6 +6,10 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { Storage } from "@google-cloud/storage";
 import admin from "firebase-admin";
+import OpenAI from "openai";
+import nodemailer from "nodemailer";
+import fs from "fs-extra";
+import os from "os";
 
 // Initialize Firebase Admin
 import { createRequire } from "module";
@@ -24,6 +28,20 @@ const BUCKET_NAME = process.env.GCS_BUCKET_NAME;
 if (!BUCKET_NAME) {
   console.warn("ADVERTENCIA: GCS_BUCKET_NAME no detectado. Las funciones de subida de archivos estarán deshabilitadas.");
 }
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT || "587"),
+  secure: process.env.EMAIL_PORT === "465",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000")
   .split(",")
@@ -59,7 +77,10 @@ app.use((err, req, res, next) => {
 let storage;
 let bucket;
 if (BUCKET_NAME) {
-  storage = new Storage();
+  storage = new Storage({
+    projectId: process.env.GCP_PROJECT_ID,
+    credentials: serviceAccount,
+  });
   bucket = storage.bucket(BUCKET_NAME);
 }
 
@@ -154,7 +175,7 @@ app.post("/api/uploads/signed-url", async (req, res) => {
 
 app.post("/api/uploads/complete", async (req, res) => {
   try {
-    const { objectPath } = req.body;
+    const { objectPath, userEmail } = req.body;
     if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
 
     if (!bucket) {
@@ -164,12 +185,135 @@ app.post("/api/uploads/complete", async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    return res.json({ ok: true, message: "Subida confirmada", objectPath });
+    // Respond immediately to the client
+    res.json({ ok: true, message: "Subida confirmada, procesando transcripción y análisis..." });
+
+    // Background process: Transcription, Analysis, Save to Firestore, Send Email
+    processAudioAnalysis(objectPath, userEmail).catch(err => {
+      console.error("Error in background analysis process:", err);
+    });
+
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ ok: false, error: err.message });
+    if (!res.headersSent) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
   }
 });
+
+async function processAudioAnalysis(objectPath, userEmail) {
+  console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
+  const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
+
+  try {
+    // 1. Download file from GCS
+    await bucket.file(objectPath).download({ destination: tempFilePath });
+    console.log("File downloaded to temp path:", tempFilePath);
+
+    // 2. Transcribe with Whisper
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(tempFilePath),
+      model: "whisper-1",
+    });
+    console.log("Transcription completed");
+
+    // 3. Analyze with GPT-4o
+    const prompt = `Analiza la siguiente transcripción de una reunión de ventas y devuelve un JSON estructurado con los siguientes campos:
+{
+  "nombre_cliente": "Nombre del cliente identificado en la reunión",
+  "temperatura": "FRÍO / TIBIO / CALIENTE (determinado por el tono y palabras)",
+  "resumen": "Resumen ejecutivo de 3-4 líneas",
+  "participacion": {
+    "consultor_pct": "porcentaje %",
+    "cliente_pct": "porcentaje %",
+    "duracion_total": "duración en minutos/segundos"
+  },
+  "necesidades": ["lista de necesidades detectadas"],
+  "objeciones": ["lista de objeciones o dudas"],
+  "proximos_pasos": {
+    "consultor": ["qué debe hacer el consultor"],
+    "cliente": ["qué debe hacer el cliente"],
+    "fechas_mencionadas": ["fechas si se dijeron"]
+  },
+  "alertas": ["cosas críticas: competidores, presupuestos fuertes, etc."]
+}
+
+Transcripción:
+${transcription.text}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+    });
+
+    const analysis = JSON.parse(completion.choices[0].message.content);
+    console.log("GPT-4o Analysis completed");
+
+    // 4. Save to Firestore
+    const analysisData = {
+      userEmail,
+      objectPath,
+      transcription: transcription.text,
+      analysis,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    await db.collection("meetings_analysis").add(analysisData);
+    console.log("Analysis saved to Firestore");
+
+    // 5. Send Email
+    if (userEmail && userEmail !== "anonymous") {
+      const clienteNome = analysis.nombre_cliente || userEmail.split('@')[0];
+      const mailOptions = {
+        from: process.env.EMAIL_FROM || "Kinedrik <no-reply@kinedrik.com>",
+        to: userEmail,
+        subject: `📋 Resumen reunión — ${clienteNome} — ${new Date().toLocaleDateString()}`,
+        html: `
+          <h1>Resumen de la Reunión</h1>
+          <p><strong>🌡️ Temperatura del cliente:</strong> ${analysis.temperatura}</p>
+          <hr/>
+          <h3>📋 Resumen ejecutivo</h3>
+          <p>${analysis.resumen}</p>
+          
+          <h3>⏱️ Participación</h3>
+          <ul>
+            <li>Consultor: ${analysis.participacion.consultor_pct}</li>
+            <li>Cliente: ${analysis.participacion.cliente_pct}</li>
+            <li>Duración total: ${analysis.participacion.duracion_total}</li>
+          </ul>
+
+          <h3>🎯 Necesidades detectadas</h3>
+          <ul>${analysis.necesidades.map(n => `<li>${n}</li>`).join('')}</ul>
+
+          <h3>🚨 Objeciones del cliente</h3>
+          <ul>${analysis.objeciones.map(o => `<li>${o}</li>`).join('')}</ul>
+
+          <h3>✅ Próximos pasos acordados</h3>
+          <p><strong>Consultor:</strong></p>
+          <ul>${analysis.proximos_pasos.consultor.map(p => `<li>${p}</li>`).join('')}</ul>
+          <p><strong>Cliente:</strong></p>
+          <ul>${analysis.proximos_pasos.cliente.map(p => `<li>${p}</li>`).join('')}</ul>
+          ${analysis.proximos_pasos.fechas_mencionadas.length > 0 ? `<p><strong>Fechas:</strong> ${analysis.proximos_pasos.fechas_mencionadas.join(', ')}</p>` : ''}
+
+          <h3>⚠️ Alertas importantes</h3>
+          <ul>${analysis.alertas.map(a => `<li>${a}</li>`).join('')}</ul>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log("Email sent to", userEmail);
+    }
+
+  } catch (err) {
+    console.error("Error processing analysis:", err);
+    throw err;
+  } finally {
+    // Clean up temp file
+    if (await fs.pathExists(tempFilePath)) {
+      await fs.remove(tempFilePath);
+    }
+  }
+}
 
 // --- ENDPOINTS PARA ADMIN (Gestión de Usuarios) ---
 
