@@ -14,11 +14,23 @@ import os from "os";
 // Inicializar Firebase Admin
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const serviceAccount = require("./serviceAccountKey.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+let adminConfig = {};
+try {
+  const serviceAccount = require("./serviceAccountKey.json");
+  adminConfig = {
+    credential: admin.credential.cert(serviceAccount),
+  };
+  console.log("Firebase: Usando serviceAccountKey.json local");
+} catch (err) {
+  console.log("Firebase: No se encontró serviceAccountKey.json, usando Application Default Credentials");
+  adminConfig = {
+    credential: admin.credential.applicationDefault(),
+    projectId: process.env.GCP_PROJECT_ID,
+  };
+}
+
+admin.initializeApp(adminConfig);
 
 const db = admin.firestore();
 const app = express();
@@ -77,10 +89,19 @@ app.use((err, req, res, next) => {
 let storage;
 let bucket;
 if (BUCKET_NAME) {
-  storage = new Storage({
+  const storageOptions = {
     projectId: process.env.GCP_PROJECT_ID,
-    credentials: serviceAccount,
-  });
+  };
+
+  try {
+    const serviceAccount = require("./serviceAccountKey.json");
+    storageOptions.credentials = serviceAccount;
+    console.log("Storage: Usando serviceAccountKey.json local");
+  } catch (err) {
+    console.log("Storage: Usando Application Default Credentials del entorno");
+  }
+
+  storage = new Storage(storageOptions);
   bucket = storage.bucket(BUCKET_NAME);
 }
 
