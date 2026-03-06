@@ -11,7 +11,7 @@ import nodemailer from "nodemailer";
 import fs from "fs-extra";
 import os from "os";
 
-// Initialize Firebase Admin
+// Inicializar Firebase Admin
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json");
@@ -65,7 +65,7 @@ app.use(
 app.use(morgan("dev"));
 app.use(express.json());
 
-// Global error handler for middleware errors (like CORS)
+// Manejador de errores global para errores de middleware (como CORS)
 app.use((err, req, res, next) => {
   if (err.message === "No permitido por CORS") {
     return res.status(403).json({ ok: false, error: err.message });
@@ -96,10 +96,10 @@ function slugify(s = "") {
 app.post("/api/auth/login", async (req, res) => {
   try {
     const email = (req.body.email || "").trim().toLowerCase();
-    const password = req.body.password; // Receive password from request
+    const password = req.body.password; // Recibir la contraseña desde la solicitud
     if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
 
-    // Query Firestore for authorized users
+    // Consultar Firestore para usuarios autorizados
     const usersRef = db.collection("users");
     const snapshot = await usersRef.where("email", "==", email).limit(1).get();
 
@@ -110,7 +110,7 @@ app.post("/api/auth/login", async (req, res) => {
     const userDoc = snapshot.docs[0];
     const user = userDoc.data();
 
-    // If password is provided (Admin form), check it
+    // Si se proporciona la contraseña (formulario de Admin), verificarla
     if (password) {
       if (user.password !== password) {
         return res.status(401).json({ ok: false, error: "Contraseña incorrecta" });
@@ -191,10 +191,10 @@ app.post("/api/uploads/complete", async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    // Respond immediately to the client
+    // Responder de inmediato al cliente
     res.json({ ok: true, message: "Subida confirmada, procesando transcripción y análisis..." });
 
-    // Background process: Transcription, Analysis, Save to Firestore, Send Email
+    // Proceso en segundo plano: transcripción, análisis, guardado en Firestore y envío de correo
     processAudioAnalysis(objectPath, userEmail).catch(err => {
       console.error("Error in background analysis process:", err);
     });
@@ -212,11 +212,11 @@ async function processAudioAnalysis(objectPath, userEmail) {
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
 
   try {
-    // 1. Download file from GCS
+    // 1. Descargar el archivo desde GCS
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("File downloaded to temp path:", tempFilePath);
 
-    // 2. Transcribe with Whisper (Verbose JSON to get exact duration)
+    // 2. Transcribir con Whisper (JSON detallado para obtener la duración exacta)
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(tempFilePath),
       model: "whisper-1",
@@ -224,53 +224,60 @@ async function processAudioAnalysis(objectPath, userEmail) {
     });
     console.log("Transcription completed");
 
-    // Get exact duration
+    // Obtener la duración exacta
     const totalSeconds = transcription.duration || 0;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
-    const durationStr = `${minutes} min ${seconds} seg`;
+    const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-    // 3. GPT-4o Analysis with improved prompt
-    const prompt = `Analiza la siguiente transcripción de una reunión de ventas y devuelve un JSON estructurado siguiendo este esquema exacto:
+    // 3. Análisis con GPT-4o con un prompt centrado en el consultor
+    const prompt = `Actúa como un Coach de Ventas experto. Analiza la siguiente transcripción de una reunión de ventas y devuelve un JSON estructurado. 
+IMPORTANTE: El destinatario del reporte es el CONSULTOR. Todo el feedback (aspectos positivos, puntos de mejora y fortalezas) debe ir dirigido a EVALUAR Y ELOGIAR EL DESEMPEÑO DEL CONSULTOR en su interacción con el cliente. No analices solo al cliente, analiza cómo el consultor manejó la sesión.
+
+Esquema exacto:
 {
   "nombre_cliente": "Nombre del cliente",
-  "temperatura": "FRÍO / TIBIO / CALIENTE",
-  "resumen": "Resumen ejecutivo de 3-4 líneas enfatizando acuerdos",
+  "temperatura": "CALIENTE / TIBIO / FRÍO",
+  "resumen": "Resumen ejecutivo de 3-4 líneas sobre lo ocurrido, acuerdos y el tono de la reunión.",
   "participacion": {
     "consultor_pct": "X%",
     "cliente_pct": "Y%",
     "duracion_total": "${durationStr}"
   },
   "feedback": {
-    "aspectos_positivos": ["Logro 1", "Logro 2"],
-    "puntos_mejora": ["Punto 1", "Punto 2"],
-    "conclusion_motivadora": "Frase breve y motivadora para el consultor dedicada al éxito de la cuenta"
+    "aspectos_positivos": [
+      { "titulo": "Habilidad demostrada", "descripcion": "Explica qué hizo bien el consultor para guiar al cliente." }
+    ],
+    "puntos_mejora": [
+      { "titulo": "Área de oportunidad", "descripcion": "Indica qué podría haber hecho mejor el consultor para cerrar o avanzar la venta." }
+    ],
+    "fortaleza_destacada": { "titulo": "Tu mayor fortaleza hoy", "descripcion": "Un elogio directo al consultor sobre su mejor cualidad en esta sesión." }
   },
-  "consejos_mejora": [
-    { "titulo": "Escucha Activa", "descripcion": "Dedicación a...", "tipo": "escucha" },
-    { "titulo": "Asignación Directa", "descripcion": "Nombra un...", "tipo": "asignacion" }
-  ],
-  "necesidades": ["necesidad 1", "necesidad 2"],
-  "objeciones": ["objeción 1", "objeción 2"],
+  "recomendacion_estrategica": {
+    "titulo": "Próximo movimiento maestro",
+    "descripcion": "Consejo táctico para que el consultor concrete la venta basado en la psicología del cliente."
+  },
+  "necesidades": ["necesidad detectada del cliente"],
+  "objeciones": ["objeción planteada por el cliente"],
   "proximos_pasos": {
-    "consultor": ["paso 1"],
-    "cliente": ["paso 1"],
-    "fechas_mencionadas": ["fecha 1"]
+    "consultor": ["acción inmediata del consultor"],
+    "cliente": ["qué debe hacer el cliente ahora"],
+    "fechas_mencionadas": ["fechas clave acordadas"]
   },
-  "alerta_comportamiento": "Nota breve sobre el comportamiento si se detectó algo crítico (ej: poco tiempo de escucha), si no hay nada, dejar vacío"
+  "alerta_comportamiento": "Solo si el consultor cometió un error crítico de comunicación o escucha, de lo contrario dejar vacío."
 }
 
 Transcripción:
 ${transcription.text}`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
 
     const analysis = JSON.parse(completion.choices[0].message.content);
-    // Force the exact duration from Whisper
+    // Forzar la duración exacta proveniente de Whisper
     analysis.participacion.duracion_total = durationStr;
     console.log("GPT-4o Analysis completed with exact duration:", durationStr);
 
@@ -284,9 +291,16 @@ ${transcription.text}`;
     await db.collection("meetings_analysis").add(analysisData);
     console.log("Analysis saved to Firestore");
 
-    // 5. Send Email with Premium Design
+    // 5. Enviar correo electrónico con diseño premium
     if (userEmail && userEmail !== "anonymous") {
-      const clienteNome = analysis.nombre_cliente || userEmail.split('@')[0];
+      // Obtener nombre del consultor desde Firestore
+      const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
+      let consultantName = userEmail.split('@')[0];
+      if (!userSnapshot.empty) {
+        consultantName = userSnapshot.docs[0].data().name || consultantName;
+      }
+
+      const clienteNome = analysis.nombre_cliente || "Cliente";
       const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
       const mailOptions = {
@@ -295,234 +309,154 @@ ${transcription.text}`;
         subject: `📋 Reporte: Reunión con ${clienteNome} — ${dateStr}`,
         html: `
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #ffffff; color: #333; }
-    .container { max-width: 600px; margin: 20px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.12); border: 1px solid #eee; }
-    
-    /* Header */
-    .header { background-color: #040025; padding: 24px; border-bottom: 3px solid #BB8AFF; }
-    .logo { font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; }
-    .logo-k { color: #BB8AFF; display: inline-block; transform: scaleX(-1); }
-    .badge-confidential { float: right; border: 1.5px solid #BB8AFF; color: #BB8AFF; font-size: 9px; padding: 4px 8px; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-    
-    /* Title Section */
-    .title-section { padding: 24px; border-bottom: 1px solid #eee; }
-    .title-section h1 { font-size: 28px; font-weight: 800; color: #040025; margin: 0 0 8px 0; }
-    .client-info { font-size: 14px; color: #0040A4; font-weight: 600; }
-    .client-info span { color: #2885FF; font-weight: 400; margin-left: 5px; }
-    
-    /* Metrics */
-    .metrics { padding: 0 24px 24px 24px; display: flex; gap: 12px; }
-    .card-metric { border-radius: 12px; padding: 16px; position: relative; }
-    .duration { flex: 1; background: #040025; color: #E7E7E7; text-align: center; }
-    .duration-label { font-size: 10px; font-weight: 800; color: #E7E7E7; letter-spacing: 1px; margin-bottom: 8px; }
-    .duration-val { font-size: 32px; font-weight: 800; color: #ffffff; }
-    .duration-unit { font-size: 10px; color: #FBB42A; margin-top: 4px; }
-
-    .participation { flex: 1.8; border: 1.5px solid #0040A4; }
-    .participation-label { font-size: 10px; font-weight: 800; color: #0040A4; letter-spacing: 2px; margin-bottom: 12px; }
-    .metric-table { width: 100%; }
-    .metric-col { text-align: center; }
-    .metric-col-label { font-size: 8px; color: #777; font-weight: 800; margin-bottom: 4px; }
-    .metric-col-val { font-size: 18px; font-weight: 800; }
-    .progress-bar { height: 6px; border-radius: 3px; background: #eee; margin: 12px 0 8px 0; overflow: hidden; position: relative; }
-    .progress-fill-consultor { height: 100%; background: #BB8AFF; float: left; }
-    .progress-fill-cliente { height: 100%; background: #FF5900; float: left; }
-    .legend { font-size: 9px; font-weight: 700; color: #666; margin-top: 5px; }
-    
-    /* Common Section Label */
-    .section-label { font-size: 10px; font-weight: 800; color: #0040A4; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; padding: 0 24px; }
-    
-    /* Feedback cards */
-    .feedback-container { padding: 0 24px 24px 24px; }
-    .card-feedback { background: #fafafa; padding: 16px; border-radius: 12px; margin-bottom: 12px; border-left: 5px solid transparent; }
-    .card-positive { border-left-color: #8ABC43; }
-    .card-improvement { border-left-color: #FF5900; }
-    .card-motivation { border-left-color: #FBB42A; }
-    .card-feedback h3 { font-size: 14px; font-weight: 800; color: #040025; margin: 0 0 8px 0; }
-    .card-feedback p, .card-feedback li { font-size: 12px; color: #333; line-height: 1.5; margin: 0; }
-    .card-feedback ul { margin: 0; padding-left: 18px; }
-    
-    /* Tips */
-    .tips-container { padding: 0 24px 24px 24px; }
-    .card-tip { background: #040025; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    .card-tip-table { width: 100%; }
-    .tip-icon { font-size: 20px; width: 35px; vertical-align: middle; }
-    .tip-content {}
-    .tip-title { font-size: 14px; font-weight: 800; color: #FBB42A; margin-bottom: 4px; }
-    .tip-text { font-size: 12px; color: #E7E7E7; opacity: 0.9; line-height: 1.4; }
-    
-    /* Temperature */
-    .temp-section { padding: 0 24px 24px 24px; }
-    .temp-badge { display: inline-block; background: #FF5900; color: #ffffff; font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; margin-bottom: 12px; }
-    .temp-card { background: #fafafa; border: 1px solid rgba(187, 138, 255, 0.2); border-radius: 12px; padding: 16px; }
-    .temp-card p { font-size: 12px; line-height: 1.6; margin: 0; color: #333; }
-    .temp-card strong { color: #0040A4; font-weight: 800; }
-    
-    /* Columns Needs/Steps */
-    .columns-section { padding: 0 24px 24px 24px; }
-    .col-table { width: 100%; border-collapse: separate; border-spacing: 12px 0; margin: 0 -12px; }
-    .col-item { vertical-align: top; width: 50%; background: #fafafa; border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
-    .col-header-green { border-top: 4px solid #8ABC43; padding: 12px; }
-    .col-header-purple { border-top: 4px solid #BB8AFF; padding: 12px; }
-    .col-title { font-size: 12px; font-weight: 800; margin-bottom: 8px; }
-    .col-title-green { color: #8ABC43; }
-    .col-title-purple { color: #BB8AFF; }
-    .col-list { margin: 0; padding: 0 12px 12px 25px; font-size: 11px; color: #444; line-height: 1.5; }
-    
-    /* Footer */
-    .footer { background: #040025; padding: 40px 24px; text-align: center; border-top: 3px solid #BB8AFF; }
-    .tagline { color: #E7E7E7; font-size: 12px; font-style: italic; opacity: 0.75; margin-top: 20px; display: block; }
-    
-    /* Behavior Alert */
-    .behavior-alert { background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; padding: 16px; margin: 0 24px 24px 24px; }
-    .alert-label { font-size: 9px; font-weight: 800; color: #c53030; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-    .alert-text { font-size: 12px; color: #9b2c2c; font-weight: 600; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+    body { font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .header { background: #040025; padding: 25px 40px; border-bottom: 4px solid #BB8AFF; }
+    .logo { color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
+    .badge { border: 1px solid #BB8AFF; color: #BB8AFF; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .hero { padding: 40px 40px 20px 40px; }
+    .hero h1 { color: #040025; font-size: 32px; font-weight: 900; margin: 0; letter-spacing: -1px; }
+    .greeting { margin-top: 15px; color: #64748b; font-size: 14px; font-weight: 500; }
+    .greeting strong { color: #2885FF; }
+    .metrics-table { width: 100%; padding: 20px 40px; border-spacing: 15px 0; border-collapse: separate; }
+    .metric-card { border-radius: 24px; padding: 25px; text-align: center; vertical-align: middle; }
+    .metric-left { background: linear-gradient(135deg, #0040A4 0%, #2885FF 100%); color: #ffffff; width: 50%; }
+    .metric-right { background: #ffffff; border: 1px solid #e2e8f0; color: #040025; width: 50%; }
+    .label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 15px; display: block; }
+    .val-large { font-size: 42px; font-weight: 900; margin: 5px 0; letter-spacing: -1px; }
+    .part-stats { margin-bottom: 12px; overflow: hidden; }
+    .part-val { font-size: 24px; font-weight: 900; }
+    .part-lbl { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+    .bar { height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; display: block; margin-top: 5px; }
+    .fill-purple { background: #BB8AFF; height: 100%; float: left; }
+    .fill-orange { background: #FF5900; height: 100%; float: left; }
+    .sec-title { padding: 40px 40px 15px 40px; color: #2885FF; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; }
+    .box { margin: 0 40px 15px 40px; padding: 20px; border-radius: 18px; border: 1px solid #f1f5f9; overflow: hidden; }
+    .box-pos { background: #f0fdf4; border-color: #dcfce7; }
+    .box-imp { background: #fefce8; border-color: #fef08a; }
+    .box-str { background: #f5f3ff; border-color: #ddd6fe; }
+    .icon { width: 32px; height: 32px; border-radius: 10px; float: left; margin-right: 15px; color: #ffffff; text-align: center; line-height: 32px; font-weight: 900; }
+    .txt-cont { float: left; width: 80%; }
+    .txt-cont h4 { margin: 0; color: #0f172a; font-size: 15px; }
+    .txt-cont p { margin: 3px 0 0 0; color: #64748b; font-size: 13px; font-weight: 400; line-height: 1.4; }
+    .quote-sec { padding: 30px 40px; }
+    .tag { display: inline-block; background: #FF5900; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: 900; margin-bottom: 15px; }
+    .quote-card { background: #f8fafc; border: 1px solid #f1f5f9; padding: 25px; border-radius: 20px; font-style: italic; color: #475569; font-size: 14px; }
+    .grid-footer { margin: 20px 40px 40px 40px; border-radius: 20px; border: 1px solid #f1f5f9; overflow: hidden; }
+    .cell { padding: 20px; vertical-align: top; }
+    .footer-note { background: #040025; padding: 20px 40px; color: #ffffff; font-size: 10px; opacity: 0.8; }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- HEADER -->
     <div class="header">
-      <div class="badge-confidential">Reporte Confidencial</div>
-      <div class="logo">
-        KINEDRI<span class="logo-k">K</span>
-      </div>
-    </div>
-
-    <!-- TITLE -->
-    <div class="title-section">
-      <h1>Análisis de Reunión</h1>
-      <div class="client-info">👤 Cliente: <span>${clienteNome}</span></div>
-    </div>
-
-    <!-- METRICS -->
-    <div class="metrics">
-      <!-- Duración a la izquierda -->
-      <div class="card-metric duration">
-        <div class="duration-label">DURACIÓN TOTAL</div>
-        <div class="duration-val">${minutes}:${seconds.toString().padStart(2, '0')}</div>
-        <div class="duration-unit">min &middot; seg</div>
-      </div>
-
-      <div class="card-metric participation">
-        <div class="participation-label">PARTICIPACIÓN</div>
-        <table class="metric-table">
-          <tr>
-            <td class="metric-col">
-              <div class="metric-col-label">CONSULTOR</div>
-              <div class="metric-col-val" style="color: #BB8AFF;">${analysis.participacion.consultor_pct}</div>
-            </td>
-            <td width="1" style="background: #eee;"></td>
-            <td class="metric-col">
-              <div class="metric-col-label">CLIENTE</div>
-              <div class="metric-col-val" style="color: #FF5900;">${analysis.participacion.cliente_pct}</div>
-            </td>
-          </tr>
-        </table>
-        <div class="progress-bar">
-          <div class="progress-fill-consultor" style="width: ${analysis.participacion.consultor_pct}"></div>
-          <div class="progress-fill-cliente" style="width: ${analysis.participacion.cliente_pct}"></div>
-        </div>
-        <div class="legend">🟣 Consultor ${analysis.participacion.consultor_pct} &nbsp; 🟠 Cliente ${analysis.participacion.cliente_pct}</div>
-      </div>
-    </div>
-
-    <!-- FEEDBACK -->
-    <div class="section-label">FEEDBACK DE LA SESIÓN</div>
-    <div class="feedback-container">
-      <div class="card-feedback card-positive">
-        <h3>✅ Aspectos Positivos</h3>
-        <ul>
-          ${analysis.feedback.aspectos_positivos.map(p => `<li>${p}</li>`).join('')}
-        </ul>
-      </div>
-      <div class="card-feedback card-improvement">
-        <h3>⚡ Puntos de Mejora</h3>
-        <ul>
-          ${analysis.feedback.puntos_mejora.map(m => `<li>${m}</li>`).join('')}
-        </ul>
-      </div>
-      <div class="card-feedback card-motivation">
-        <h3>⭐ Conclusión Motivadora</h3>
-        <p><em>"${analysis.feedback.conclusion_motivadora}"</em></p>
-      </div>
-    </div>
-
-    <!-- TIPS -->
-    <div class="section-label">CONSEJOS DE MEJORA</div>
-    <div class="tips-container">
-      ${analysis.consejos_mejora.map(tip => `
-        <div class="card-tip">
-          <table class="card-tip-table">
-            <tr>
-              <td class="tip-icon">${tip.tipo === 'escucha' ? '🎧' : '✅'}</td>
-              <td class="tip-content">
-                <div class="tip-title">${tip.titulo}</div>
-                <div class="tip-text">${tip.descripcion}</div>
-              </td>
-            </tr>
-          </table>
-        </div>
-      `).join('')}
-    </div>
-
-    <!-- TEMPERATURE -->
-    <div class="section-label">TEMPERATURA DEL CLIENTE</div>
-    <div class="temp-section">
-      <div class="temp-badge">${analysis.temperatura === 'CALIENTE' ? '🔥 CALIENTE' : analysis.temperatura === 'TIBIO' ? '⚖️ TIBIO' : '❄️ FRÍO'}</div>
-      <div class="temp-card">
-        <p>${analysis.resumen}</p>
-      </div>
-    </div>
-
-    <!-- NEEDS & STEPS -->
-    <div class="columns-section">
-      <table class="col-table">
+      <table width="100%">
         <tr>
-          <td class="col-item">
-            <div class="col-header-green">
-              <div class="col-title col-title-green">🎯 Necesidades</div>
-            </div>
-            <ul class="col-list">
-              ${analysis.necesidades.map(n => `<li>${n}</li>`).join('')}
-            </ul>
-          </td>
-          <td class="col-item">
-            <div class="col-header-purple">
-              <div class="col-title col-title-purple">🚀 Próximos Pasos</div>
-            </div>
-            <ul class="col-list">
-              <li style="list-style: none; font-weight: 700; margin-bottom: 4px; margin-left: -10px;">Consultor:</li>
-              ${analysis.proximos_pasos.consultor.map(p => `<li>${p}</li>`).join('')}
-              <li style="list-style: none; font-weight: 700; margin-top: 8px; margin-bottom: 4px; margin-left: -10px;">Cliente:</li>
-              ${analysis.proximos_pasos.cliente.map(p => `<li>${p}</li>`).join('')}
-            </ul>
-          </td>
+          <td class="logo">KINEDRI<span style="transform: scaleX(-1); display: inline-block; color: #BB8AFF;">K</span></td>
+          <td align="right"><span class="badge">Reporte Confidencial</span></td>
         </tr>
       </table>
     </div>
+    
+    <div class="hero">
+      <h1>Tu Gran Sesión de Hoy</h1>
+      <div class="greeting">Un gusto saludarte, <strong>${consultantName}</strong></div>
+    </div>
 
-    ${analysis.alerta_comportamiento ? `
-      <!-- BEHAVIOR ALERT -->
-      <div class="behavior-alert">
-        <div class="alert-label">⚠️ Alerta de Comportamiento</div>
-        <div class="alert-text">${analysis.alerta_comportamiento}</div>
-      </div>
-    ` : ''}
+    <table class="metrics-table">
+      <tr>
+        <td class="metric-card metric-left">
+          <span class="label">Tiempo de Conexión</span>
+          <div class="val-large">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+          <span style="font-size:10px; font-weight:600; opacity:0.7;">¡Minutos de puro valor!</span>
+        </td>
+        <td class="metric-card metric-right">
+          <span class="label" style="color:#0040A4;">Diálogo Compartido</span>
+          <table width="100%" class="part-stats">
+            <tr>
+              <td align="left">
+                <div class="part-val" style="color:#BB8AFF;">${analysis.participacion.consultor_pct.replace('%', '')}%</div>
+                <div class="part-lbl">Tú</div>
+              </td>
+              <td align="right">
+                <div class="part-val" style="color:#FF5900;">${analysis.participacion.cliente_pct.replace('%', '')}%</div>
+                <div class="part-lbl">${clienteNome}</div>
+              </td>
+            </tr>
+          </table>
+          <div class="bar">
+            <div class="fill-purple" style="width:${analysis.participacion.consultor_pct}"></div>
+            <div class="fill-orange" style="width:${analysis.participacion.cliente_pct}"></div>
+          </div>
+        </td>
+      </tr>
+    </table>
 
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="logo" style="margin-bottom: 5px;">
-        KINEDRI<span class="logo-k">K</span>
+    <div class="sec-title">Aspectos Positivos</div>
+    ${analysis.feedback.aspectos_positivos.map(item => `
+    <div class="box box-pos">
+      <div class="icon" style="background:#8ABC43;">✓</div>
+      <div class="txt-cont">
+        <h4>${item.titulo}</h4>
+        <p>${item.descripcion}</p>
       </div>
-      <span class="tagline">"Elevating skills, boosting real knowledge"</span>
-      <p style="font-size: 10px; color: #E7E7E7; opacity: 0.5; margin-top: 25px;">
-        &copy; ${new Date().getFullYear()} KINEDRIK. Todos los derechos reservados.
-      </p>
+      <div style="clear:both;"></div>
+    </div>
+    `).join('')}
+
+    <div class="sec-title" style="color:#FF5900;">Puntos de Mejora</div>
+    ${analysis.feedback.puntos_mejora.map(item => `
+    <div class="box box-imp">
+      <div class="icon" style="background:#FBB42A;">!</div>
+      <div class="txt-cont">
+        <h4>${item.titulo}</h4>
+        <p>${item.descripcion}</p>
+      </div>
+      <div style="clear:both;"></div>
+    </div>
+    `).join('')}
+
+    <div class="sec-title" style="color:#BB8AFF;">Tus Fortalezas</div>
+    <div class="box box-str">
+      <div class="icon" style="background:#BB8AFF;">★</div>
+      <div class="txt-cont" style="width:85%;">
+        <h4>${analysis.feedback.fortaleza_destacada.titulo}</h4>
+        <p>${analysis.feedback.fortaleza_destacada.descripcion}</p>
+      </div>
+      <div style="clear:both;"></div>
+    </div>
+
+    <div class="quote-sec">
+      <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#475569; margin-bottom:12px;">Temperatura del Cliente</div>
+      <span class="tag">${analysis.temperatura}</span>
+      <div class="quote-card">
+        "${analysis.resumen}"
+      </div>
+    </div>
+
+    <table class="grid-footer" width="100%" cellspacing="0">
+      <tr>
+        <td class="cell" style="border-top:4px solid #8ABC43; background:#fafdfb; border-right:1px solid #f1f5f9; width:50%;">
+          <div style="font-size:11px; font-weight:900; color:#8ABC43; margin-bottom:12px;">🎯 Necesidades</div>
+          ${analysis.necesidades.map(n => `<div style="font-size:12px; color:#64748b; margin-bottom:5px;">• ${n}</div>`).join('')}
+        </td>
+        <td class="cell" style="border-top:4px solid #BB8AFF; background:#fbfaff; width:50%;">
+          <div style="font-size:11px; font-weight:900; color:#BB8AFF; margin-bottom:12px;">🚀 Próximos Pasos</div>
+          <div style="font-size:9px; font-weight:800; color:#040025; margin-bottom:5px; text-transform:uppercase;">Consultor:</div>
+          ${analysis.proximos_pasos.consultor.map(p => `<div style="font-size:12px; color:#64748b; margin-bottom:3px;">- ${p}</div>`).join('')}
+          <div style="font-size:9px; font-weight:800; color:#040025; margin:10px 0 5px 0; text-transform:uppercase;">Cliente:</div>
+          ${analysis.proximos_pasos.cliente.map(p => `<div style="font-size:12px; color:#64748b; margin-bottom:3px;">- ${p}</div>`).join('')}
+        </td>
+      </tr>
+    </table>
+
+    <div class="footer-note">
+      KINEDRIK — Elevating skills, boosting real knowledge
     </div>
   </div>
 </body>
@@ -538,7 +472,7 @@ ${transcription.text}`;
     console.error("Error processing analysis:", err);
     throw err;
   } finally {
-    // Clean up temp file
+    // Limpiar el archivo temporal
     if (await fs.pathExists(tempFilePath)) {
       await fs.remove(tempFilePath);
     }
@@ -658,7 +592,7 @@ app.delete("/api/admin/users/:id", async (req, res) => {
 
     const userData = userDoc.data();
 
-    // Restriction: Admins cannot delete other Admins, only Superadmins can.
+    // Restricción: Los Administradores no pueden eliminar a otros Administradores, solo los Superadmins pueden hacerlo.
     if ((userData.role === "admin" || userData.role === "superadmin") && !isSuperAdmin) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar a este Administrador" });
     }
@@ -672,7 +606,7 @@ app.delete("/api/admin/users/:id", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Backend con Firebase Firestore corriendo en puerto ${PORT}`);
-  console.log(`Bucket: ${BUCKET_NAME}`);
-  console.log(`CORS_ORIGIN: ${allowedOrigins.join(", ")}`);
+  console.log(`Backend con Firebase Firestore corriendo en puerto ${PORT} `);
+  console.log(`Bucket: ${BUCKET_NAME} `);
+  console.log(`CORS_ORIGIN: ${allowedOrigins.join(", ")} `);
 });

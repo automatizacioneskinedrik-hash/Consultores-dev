@@ -13,14 +13,14 @@ async function createSuperAdmin() {
     const email = "adminkinedrik@eadic.com";
     const usersRef = db.collection("users");
 
-    // Check if user already exists
+    // Verificar si el usuario ya existe
     const snapshot = await usersRef.where("email", "==", email).get();
 
     const userData = {
         name: "Super Admin",
         email: email,
         role: "superadmin",
-        password: "123456", // Temporary for testing as requested
+        password: "123456", // Temporal para pruebas según lo solicitado
         createdAt: new Date().toISOString()
     };
 
