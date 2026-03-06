@@ -41,19 +41,33 @@ if (!BUCKET_NAME) {
   console.warn("ADVERTENCIA: GCS_BUCKET_NAME no detectado. Las funciones de subida de archivos estarán deshabilitadas.");
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
+const openai = OPENAI_API_KEY
+  ? new OpenAI({ apiKey: OPENAI_API_KEY })
+  : null;
+if (!openai) {
+  console.warn("ADVERTENCIA: OPENAI_API_KEY no configurada. El backend inicia, pero el analisis de audio estara deshabilitado.");
+}
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT || "587"),
-  secure: process.env.EMAIL_PORT === "465",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const emailEnabled = Boolean(
+  process.env.EMAIL_HOST &&
+  process.env.EMAIL_USER &&
+  process.env.EMAIL_PASS
+);
+const transporter = emailEnabled
+  ? nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: parseInt(process.env.EMAIL_PORT || "587"),
+      secure: process.env.EMAIL_PORT === "465",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    })
+  : null;
+if (!transporter) {
+  console.warn("ADVERTENCIA: configuracion SMTP incompleta. El envio de correos quedara deshabilitado.");
+}
 
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:3000")
   .split(",")
@@ -233,6 +247,10 @@ async function processAudioAnalysis(objectPath, userEmail) {
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
 
   try {
+    if (!openai) {
+      throw new Error("OPENAI_API_KEY no configurada en el entorno");
+    }
+
     // 1. Descargar el archivo desde GCS
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("File downloaded to temp path:", tempFilePath);
@@ -313,7 +331,7 @@ ${transcription.text}`;
     console.log("Analysis saved to Firestore");
 
     // 5. Enviar correo electrónico con diseño premium
-    if (userEmail && userEmail !== "anonymous") {
+    if (transporter && userEmail && userEmail !== "anonymous") {
       // Obtener nombre del consultor desde Firestore
       const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
       let consultantName = userEmail.split('@')[0];
