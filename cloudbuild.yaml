@@ -40,8 +40,7 @@ steps:
       - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID}
       - --set-env-vars=BQ_DATASET=${_BQ_DATASET}
       - --set-env-vars=BQ_TABLE=${_BQ_TABLE}
-      - --set-env-vars=EMAIL_FROM=${_EMAIL_FROM}
-      - --set-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}:latest,EMAIL_HOST=${_EMAIL_HOST_SECRET}:latest,EMAIL_PORT=${_EMAIL_PORT_SECRET}:latest,EMAIL_USER=${_EMAIL_USER_SECRET}:latest,EMAIL_PASS=${_EMAIL_PASS_SECRET}:latest
+      - --set-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}:latest,EMAIL_HOST=${_EMAIL_HOST_SECRET}:latest,EMAIL_PORT=${_EMAIL_PORT_SECRET}:latest,EMAIL_USER=${_EMAIL_USER_SECRET}:latest,EMAIL_PASS=${_EMAIL_PASS_SECRET}:latest,EMAIL_FROM=${_EMAIL_FROM_SECRET}:latest
 
   - id: build-frontend
     name: gcr.io/cloud-builders/docker
@@ -98,6 +97,7 @@ substitutions:
   _BQ_DATASET: consultores
   _BQ_TABLE: Consultor
   _EMAIL_FROM: Kinedrik <automatizaciones.kinedrik@gmail.com>
+  _EMAIL_FROM_SECRET: EMAIL_FROM
   _OPENAI_API_KEY_SECRET: OPENAI_API_KEY
   _EMAIL_HOST_SECRET: EMAIL_HOST
   _EMAIL_PORT_SECRET: EMAIL_PORT
