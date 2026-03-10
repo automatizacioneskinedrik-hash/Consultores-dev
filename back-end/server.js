@@ -56,14 +56,14 @@ const emailEnabled = Boolean(
 );
 const transporter = emailEnabled
   ? nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: parseInt(process.env.EMAIL_PORT || "587"),
-      secure: process.env.EMAIL_PORT === "465",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
+    host: process.env.EMAIL_HOST,
+    port: parseInt(process.env.EMAIL_PORT || "587"),
+    secure: process.env.EMAIL_PORT === "465",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  })
   : null;
 if (!transporter) {
   console.warn("ADVERTENCIA: configuracion SMTP incompleta. El envio de correos quedara deshabilitado.");
@@ -226,19 +226,14 @@ app.post("/api/uploads/complete", async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    // Responder de inmediato al cliente
-    res.json({ ok: true, message: "Subida confirmada, procesando transcripción y análisis..." });
+    // Proceso síncrono para que el front-end sepa cuándo termina
+    await processAudioAnalysis(objectPath, userEmail);
 
-    // Proceso en segundo plano: transcripción, análisis, guardado en Firestore y envío de correo
-    processAudioAnalysis(objectPath, userEmail).catch(err => {
-      console.error("Error in background analysis process:", err);
-    });
+    return res.json({ ok: true, message: "Análisis completado y correo enviado." });
 
   } catch (err) {
-    console.error(err);
-    if (!res.headersSent) {
-      return res.status(500).json({ ok: false, error: err.message });
-    }
+    console.error("Error en complete:", err);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
@@ -355,9 +350,14 @@ ${transcription.text}`;
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
     body { font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
     .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    .header { background: #040025; padding: 25px 40px; border-bottom: 4px solid #BB8AFF; }
-    .logo { color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: 2px; }
-    .badge { border: 1px solid #BB8AFF; color: #BB8AFF; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .header { 
+      background: #040025 url('https://storage.googleapis.com/kinedrik-imagenes/Banner%20consultores.png') no-repeat center; 
+      background-size: cover; 
+      padding: 60px 40px; 
+      border-bottom: 4px solid #FF6B00; 
+    }
+    .logo { color: #ffffff; font-size: 26px; font-weight: 900; letter-spacing: 2px; }
+    .badge { border: 1px solid #FF6B00; color: #FF6B00; padding: 5px 12px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
     .hero { padding: 40px 40px 20px 40px; }
     .hero h1 { color: #040025; font-size: 32px; font-weight: 900; margin: 0; letter-spacing: -1px; }
     .greeting { margin-top: 15px; color: #64748b; font-size: 14px; font-weight: 500; }
@@ -396,7 +396,7 @@ ${transcription.text}`;
     <div class="header">
       <table width="100%">
         <tr>
-          <td class="logo">KINEDRI<span style="transform: scaleX(-1); display: inline-block; color: #BB8AFF;">K</span></td>
+          <td class="logo">KINEDRI<span style="transform: scaleX(-1); display: inline-block; color: #FF6B00;">K</span></td>
           <td align="right"><span class="badge">Reporte Confidencial</span></td>
         </tr>
       </table>

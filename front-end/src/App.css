@@ -23,7 +23,8 @@ body {
     BlinkMacSystemFont,
     sans-serif;
   background: var(--off);
-  overflow-x: hidden; /* evitar scroll horizontal global */
+  overflow-x: hidden;
+  /* evitar scroll horizontal global */
 }
 
 /* APP SHELL */
@@ -44,8 +45,10 @@ body {
   background: var(--navy);
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 🔥 separa izquierda y derecha */
-  padding: 0 28px; /* 🔥 controla distancia a bordes */
+  justify-content: space-between;
+  /* 🔥 separa izquierda y derecha */
+  padding: 0 28px;
+  /* 🔥 controla distancia a bordes */
 }
 
 /* ELIMINAMOS headerInner visualmente */
@@ -82,9 +85,11 @@ body {
 .barOrange {
   background: #ff7a00;
 }
+
 .barBlue {
   background: #2b6cff;
 }
+
 .barLilac {
   background: #b586ff;
 }
@@ -245,7 +250,8 @@ body {
 /* PAGE-LEVEL USER (top-right) */
 .pageUser {
   position: fixed;
-  top: 28px; /* bajar un poco más */
+  top: 28px;
+  /* bajar un poco más */
   right: 28px;
   display: flex;
   align-items: center;
@@ -256,14 +262,17 @@ body {
 .userNameSmall {
   color: #0b0b22;
   font-weight: 700;
-  font-size: 13px; /* tamaño reducido */
+  font-size: 13px;
+  /* tamaño reducido */
   white-space: nowrap;
 }
 
 .avatarSmall {
-  width: 36px; /* avatar más pequeño */
+  width: 36px;
+  /* avatar más pequeño */
   height: 36px;
-  border-radius: 50%; /* circular */
+  border-radius: 50%;
+  /* circular */
   background: #0a0b2a;
   color: white;
   display: flex;
@@ -352,4 +361,70 @@ body {
   font-size: 18px;
   font-weight: 600;
   color: #0040a4;
+}
+
+/* TOAST NOTIFICATION */
+.toastNotice {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 50px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translate(-50%, 100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+/* ENHANCED SUCCESS MODAL */
+.successModalContent {
+  border-top: 5px solid #2b6cff;
+  padding-top: 45px;
+}
+
+.closeX {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: #999;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.2s;
+}
+
+.closeX:hover {
+  color: #040025;
+}
+
+.successIcon {
+  margin-bottom: 20px;
+}
+
+.successText {
+  font-size: 17px !important;
+  font-weight: 600;
+  color: #040025 !important;
+  margin-bottom: 25px !important;
 }

@@ -93,7 +93,7 @@ substitutions:
   _API_BASE_URL: https://backend-dev-683216209357.europe-southwest1.run.app
   _GOOGLE_CLIENT_ID: 683216209357-dgurnrj3gvd2sbpoam4kthdona499l6r.apps.googleusercontent.com
   _CORS_ORIGIN: https://frontend-dev-683216209357.europe-southwest1.run.app
-  _GCS_BUCKET_NAME: c0nsult0re3_pru3b4
+  _GCS_BUCKET_NAME: audios_consultores
   _GCP_PROJECT_ID: consultores-dev
   _BQ_DATASET: consultores
   _BQ_TABLE: Consultor

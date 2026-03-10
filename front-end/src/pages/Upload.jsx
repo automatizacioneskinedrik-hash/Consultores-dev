@@ -30,16 +30,23 @@ function Modal({ isOpen, message, onYes, onNo }) {
   );
 }
 
-function SuccessModal({ isOpen, onClose }) {
+function SuccessModal({ isOpen, message, onClose }) {
   if (!isOpen) return null;
 
   return (
     <div className="modalOverlay">
-      <div className="modalContent">
-        <p>El archivo se ha enviado correctamente</p>
+      <div className="modalContent successModalContent" style={{ position: "relative" }}>
+        <button className="closeX" onClick={onClose} title="Cerrar">×</button>
+        <div className="successIcon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2b6cff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <p className="successText">{message}</p>
         <div className="modalButtons">
           <button className="btnYes" onClick={onClose}>
-            OK
+            Entendido
           </button>
         </div>
       </div>
@@ -75,6 +82,9 @@ export default function Upload() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successStep, setSuccessStep] = useState(0); // 0: none, 1: upload success message, 2: pending email, 3: email sent message
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [currentObjectPath, setCurrentObjectPath] = useState("");
 
   const handleFile = (file) => {
     if (!file) return;
@@ -107,6 +117,7 @@ export default function Upload() {
       }
 
       const { uploadUrl, objectPath } = signData;
+      setCurrentObjectPath(objectPath); // Guardar para el paso de envío de correo
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -130,19 +141,8 @@ export default function Upload() {
         xhr.send(fileMeta);
       });
 
-      setStatus("COMPLETADO");
-
-      const completeRes = await fetch(`${API_BASE_URL}/api/uploads/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ objectPath, userEmail: user?.email || "anonymous" }),
-      });
-
-      const completeData = await completeRes.json();
-      if (!completeRes.ok || !completeData.ok) {
-        throw new Error(completeData?.error || "No se pudo confirmar la subida.");
-      }
-
+      setStatus("SUBIDA EXITOSA");
+      setSuccessStep(1); // Primer mensaje motivador
       setShowSuccessModal(true);
     } catch (err) {
       setErrorMsg(err.message || "Error desconocido.");
@@ -152,13 +152,52 @@ export default function Upload() {
     }
   };
 
+  const startEmailProcess = async () => {
+    try {
+      const completeRes = await fetch(`${API_BASE_URL}/api/uploads/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objectPath: currentObjectPath, userEmail: user?.email || "anonymous" }),
+      });
+
+      const completeData = await completeRes.json();
+      if (!completeRes.ok) {
+        throw new Error(completeData?.error || "No se pudo enviar el correo.");
+      }
+
+      setSuccessStep(3); // Mensaje final de correo enviado
+      setShowSuccessModal(true);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.message || "Error enviando correo.");
+      setSuccessStep(0);
+    }
+  };
+
   const handleSuccessClose = () => {
-    setShowSuccessModal(false);
-    setFileMeta(null);
-    setProgress(0);
-    setStatus("");
-    if (inputRef.current) {
-      inputRef.current.value = "";
+    if (successStep === 1) {
+      setShowSuccessModal(false);
+      setSuccessStep(2); // Iniciar proceso de envío de correo
+      setIsToastVisible(true);
+
+      // Iniciar el fetch al backend
+      startEmailProcess();
+
+      // Quitar el aviso "pendiente" en 3 segundos (mantenemos esto como feedback visual inmediato)
+      setTimeout(() => {
+        setIsToastVisible(false);
+      }, 3000);
+    } else if (successStep === 3) {
+      // Reiniciar todo
+      setShowSuccessModal(false);
+      setSuccessStep(0);
+      setFileMeta(null);
+      setProgress(0);
+      setStatus("");
+      setCurrentObjectPath("");
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     }
   };
 
@@ -181,6 +220,16 @@ export default function Upload() {
     e.preventDefault();
   };
 
+  const getSuccessMessage = () => {
+    if (successStep === 1) {
+      return "Gracias, por tu gran trabajo, pronto recibirás más información";
+    }
+    if (successStep === 3) {
+      return "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
+    }
+    return "";
+  };
+
   return (
     <>
       <Sidebar />
@@ -196,7 +245,7 @@ export default function Upload() {
             <p className="subtitle">
               <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
               <br />
-              Al finalizar cada sesion, carga tu audio y transforma tu experiencia en crecimiento para todos.
+              Al finalizar cada sessión, carga tu audio y transforma tu experiencia en crecimiento para todos.
             </p>
 
             <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
@@ -210,7 +259,7 @@ export default function Upload() {
               <input ref={inputRef} type="file" accept="audio/*" hidden onChange={(e) => handleFile(e.target.files[0])} />
             </div>
 
-            {fileMeta && (
+            {fileMeta && (progress > 0 || isUploading) && (
               <div className="progressSection">
                 <div className="progressTop">
                   <div className="fileInfo">
@@ -246,7 +295,18 @@ export default function Upload() {
           onNo={handleNo}
         />
 
-        <SuccessModal isOpen={showSuccessModal} onClose={handleSuccessClose} />
+        <SuccessModal isOpen={showSuccessModal} message={getSuccessMessage()} onClose={handleSuccessClose} />
+
+        {isToastVisible && (
+          <div className="toastNotice">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Pendiente envío del correo...</span>
+          </div>
+        )}
       </div>
     </>
   );
