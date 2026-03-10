@@ -1,4 +1,14 @@
 steps:
+  - id: configure-bucket-cors
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - storage
+      - buckets
+      - update
+      - gs://${_GCS_BUCKET_NAME}
+      - --cors-file=cors.json
+
   - id: build-backend
     name: gcr.io/cloud-builders/docker
     args:
