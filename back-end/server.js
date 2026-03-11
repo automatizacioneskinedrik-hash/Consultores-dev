@@ -338,7 +338,7 @@ ${transcription.text}`;
       const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 
       const mailOptions = {
-        from: process.env.EMAIL_FROM || "Kinedrik <no-reply@kinedrik.com>",
+        from: process.env.EMAIL_FROM || "Kinedriꓘ <no-reply@kinedrik.com>",
         to: userEmail,
         subject: `📋 Reporte: Reunión con ${clienteNome} — ${dateStr}`,
         html: `
@@ -348,7 +348,7 @@ ${transcription.text}`;
   <meta charset="utf-8">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-    body { font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', Arial, sans-serif; background-color: #EAF2FB; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
     .container { max-width: 600px; margin: 20px auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
     .header { 
       background: #040025 url('https://storage.googleapis.com/kinedrik-imagenes/Banner%20consultores.png') no-repeat center; 
@@ -396,7 +396,7 @@ ${transcription.text}`;
     <div class="header">
       <table width="100%">
         <tr>
-          <td class="logo">KINEDRI<span style="transform: scaleX(-1); display: inline-block; color: #FF6B00;">K</span></td>
+          <td class="logo">KINEDRI<span style="color: #FF6B00;">ꓘ</span></td>
           <td align="right"><span class="badge">Reporte Confidencial</span></td>
         </tr>
       </table>
@@ -495,7 +495,7 @@ ${transcription.text}`;
     </table>
 
     <div class="footer-note">
-      KINEDRIK — Elevating skills, boosting real knowledge
+      KINEDRIꓘ — Elevating skills, boosting real knowledge
     </div>
   </div>
 </body>

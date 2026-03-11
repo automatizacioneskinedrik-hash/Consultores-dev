@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import "../styles/Sidebar.css";
@@ -93,6 +93,7 @@ export default function Sidebar() {
   const location = useLocation();
   const user = getUser();
   const { fullName, email, role } = user;
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const isAuthorizedAdmin =
     role === "admin" ||
@@ -114,11 +115,18 @@ export default function Sidebar() {
     }
   };
 
-  const handleLogout = () => {
-    if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) {
-      clearUser();
-      navigate("/login");
-    }
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutModal(false);
+    clearUser();
+    navigate("/login");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const isUploadPage = location.pathname === "/upload";
@@ -155,11 +163,27 @@ export default function Sidebar() {
 
       {storedName && (
         <div className="sidebarBadge">
-          <button className="logoutBtn" onClick={handleLogout} title="Cerrar Sesión">
+          <button className="logoutBtn" onClick={handleLogoutClick} title="Cerrar Sesión">
             <LogoutIcon />
           </button>
           <span className="badgeName">{storedName}</span>
           <span className="statusDot" aria-hidden="true" />
+        </div>
+      )}
+
+      {showLogoutModal && (
+        <div className="logoutModalOverlay">
+          <div className="logoutModalCard">
+            <div className="logoutModalTitle">
+              Kinedri<span style={{ color: '#FF6B00' }}>ꓘ</span>
+            </div>
+            <div className="logoutModalText">¿Estás seguro de que quieres salir?</div>
+            <div className="logoutModalSubtext">Tu progreso está a salvo. Te esperamos pronto.</div>
+            <div className="logoutModalActions">
+              <button className="logoutModalBtn cancel" onClick={handleCancelLogout}>Cancelar</button>
+              <button className="logoutModalBtn confirm" onClick={handleConfirmLogout}>Cerrar sesión</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

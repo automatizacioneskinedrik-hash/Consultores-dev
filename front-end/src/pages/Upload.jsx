@@ -245,16 +245,25 @@ export default function Upload() {
             <p className="subtitle">
               <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
               <br />
-              Al finalizar cada sessión, carga tu audio y transforma tu experiencia en crecimiento para todos.
+              Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
             </p>
 
             <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
               <div className="micCircle">
+                <div className="pulseRing"></div>
+                <div className="pulseRing double"></div>
                 <MicIcon />
               </div>
 
               <h3>Arrastra tu archivo de audio aqui</h3>
               <p>o haz clic para buscar en tu computadora</p>
+              
+              <div className="formatTags">
+                <span className="formatTag">MP3</span>
+                <span className="formatTag">WAV</span>
+                <span className="formatTag">M4A</span>
+                <span className="formatTag">OGG</span>
+              </div>
 
               <input ref={inputRef} type="file" accept="audio/*" hidden onChange={(e) => handleFile(e.target.files[0])} />
             </div>
@@ -284,7 +293,7 @@ export default function Upload() {
             {isUploading && <p>Subiendo archivo...</p>}
             {errorMsg && <p className="errorMessage">{errorMsg}</p>}
 
-            <footer className="footer">© KINEDRIK TODOS LOS DERECHOS RESERVADOS.</footer>
+            <footer className="footer">© KINEDRIꓘ TODOS LOS DERECHOS RESERVADOS.</footer>
           </div>
         </main>
 
