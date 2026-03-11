@@ -10,6 +10,7 @@ import OpenAI from "openai";
 import nodemailer from "nodemailer";
 import fs from "fs-extra";
 import os from "os";
+import ffmpeg from "fluent-ffmpeg";
 
 // Inicializar Firebase Admin
 import { createRequire } from "module";
@@ -240,6 +241,7 @@ app.post("/api/uploads/complete", async (req, res) => {
 async function processAudioAnalysis(objectPath, userEmail) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
+  let filesToClean = [tempFilePath];
 
   try {
     if (!openai) {
@@ -250,9 +252,30 @@ async function processAudioAnalysis(objectPath, userEmail) {
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("File downloaded to temp path:", tempFilePath);
 
+    const stats = await fs.stat(tempFilePath);
+    let finalAudioPath = tempFilePath;
+    const WHISPER_LIMIT_BYTES = 25 * 1024 * 1024; // 25 MB
+
+    if (stats.size > WHISPER_LIMIT_BYTES) {
+      console.log(`Archivo excede los 25MB (${stats.size} bytes). Comprimiendo a MP3 (32kbps)...`);
+      const compressedPath = path.join(os.tmpdir(), `compressed_${uuidv4()}.mp3`);
+      
+      await new Promise((resolve, reject) => {
+        ffmpeg(tempFilePath)
+          .audioBitrate('32k')
+          .format('mp3')
+          .on('end', () => resolve())
+          .on('error', (err) => reject(err))
+          .save(compressedPath);
+      });
+      console.log("Compresión finalizada:", compressedPath);
+      finalAudioPath = compressedPath;
+      filesToClean.push(compressedPath);
+    }
+
     // 2. Transcribir con Whisper (JSON detallado para obtener la duración exacta)
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(tempFilePath),
+      file: fs.createReadStream(finalAudioPath),
       model: "whisper-1",
       response_format: "verbose_json",
     });
@@ -511,9 +534,11 @@ ${transcription.text}`;
     console.error("Error processing analysis:", err);
     throw err;
   } finally {
-    // Limpiar el archivo temporal
-    if (await fs.pathExists(tempFilePath)) {
-      await fs.remove(tempFilePath);
+    // Limpiar archivos temporales
+    for (const f of filesToClean) {
+      if (await fs.pathExists(f)) {
+        await fs.remove(f);
+      }
     }
   }
 }
