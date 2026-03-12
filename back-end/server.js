@@ -288,10 +288,12 @@ async function processAudioAnalysis(objectPath, userEmail) {
     const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
     // 3. Análisis con GPT-4o con un prompt centrado en el consultor
-    const prompt = `Actúa como un Coach de Ventas experto. Analiza la siguiente transcripción de una reunión de ventas y devuelve un JSON estructurado. 
+    const prompt = `Analiza la siguiente transcripción de una reunión de ventas, con especial énfasis en los tiempos y porcentaje de habla de cada participante, y devuelve un JSON estructurado. El objetivo es calcular de manera precisa cuánto habla el cliente y cuánto habla el consultor, basándote en el tiempo total y la transcripción. Asegúrate de que el porcentaje de habla sea lo más preciso posible.
+
 IMPORTANTE: El destinatario del reporte es el CONSULTOR. Todo el feedback (aspectos positivos, puntos de mejora y fortalezas) debe ir dirigido a EVALUAR Y ELOGIAR EL DESEMPEÑO DEL CONSULTOR en su interacción con el cliente. No analices solo al cliente, analiza cómo el consultor manejó la sesión.
 
 Esquema exacto:
+
 {
   "nombre_cliente": "Nombre del cliente",
   "temperatura": "CALIENTE / TIBIO / FRÍO",
@@ -303,12 +305,21 @@ Esquema exacto:
   },
   "feedback": {
     "aspectos_positivos": [
-      { "titulo": "Habilidad demostrada", "descripcion": "Explica qué hizo bien el consultor para guiar al cliente." }
+      { 
+        "titulo": "Habilidad demostrada", 
+        "descripcion": "Explica qué hizo bien el consultor para guiar al cliente." 
+      }
     ],
     "puntos_mejora": [
-      { "titulo": "Área de oportunidad", "descripcion": "Indica qué podría haber hecho mejor el consultor para cerrar o avanzar la venta." }
+      { 
+        "titulo": "Área de oportunidad", 
+        "descripcion": "Indica qué podría haber hecho mejor el consultor para cerrar o avanzar la venta." 
+      }
     ],
-    "fortaleza_destacada": { "titulo": "Tu mayor fortaleza hoy", "descripcion": "Un elogio directo al consultor sobre su mejor cualidad en esta sesión." }
+    "fortaleza_destacada": { 
+      "titulo": "Tu mayor fortaleza hoy", 
+      "descripcion": "Un elogio directo al consultor sobre su mejor cualidad en esta sesión." 
+    }
   },
   "recomendacion_estrategica": {
     "titulo": "Próximo movimiento maestro",
