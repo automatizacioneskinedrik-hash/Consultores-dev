@@ -288,11 +288,89 @@ async function processAudioAnalysis(objectPath, userEmail) {
     const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
     // 3. Análisis con GPT-4o con un prompt centrado en el consultor
-    const prompt = `Analiza la siguiente transcripción de una reunión de ventas, con especial énfasis en los tiempos y porcentaje de habla de cada participante, y devuelve un JSON estructurado. El objetivo es calcular de manera precisa cuánto habla el cliente y cuánto habla el consultor, basándote en el tiempo total y la transcripción. Asegúrate de que el porcentaje de habla sea lo más preciso posible.
+    const prompt = `Eres un coach auditor de llamadas comerciales de KINEDRIK.
 
-IMPORTANTE: 
-- El destinatario del reporte es el CONSULTOR. Todo el feedback (aspectos positivos, puntos de mejora y fortalezas) debe ir dirigido a EVALUAR Y ELOGIAR EL DESEMPEÑO DEL CONSULTOR en su interacción con el cliente. No analices solo al cliente, analiza cómo el consultor manejó la sesión.
-- Genere al menos cinco puntos de mejora  basada en la transcripción, tenga en cuenta uso de: Romperhielos, buen presentación del producto y un cierre adeacuado que indique un posible acuerdo de preventa/adquisición del producto.
+Tu trabajo NO es dar feedback general.
+Tu trabajo es detectar los 3 puntos de mejora más importantes del consultor en la llamada, con base estricta en la metodología “Entrevista Estrella — 5 Fases del Diseño de Decisión”.
+
+PRIORIDAD ABSOLUTA
+Debes devolver feedback de entrenamiento para la próxima llamada.
+No des observaciones generales tipo “debe conectar mejor” o “debe escuchar más”.
+Debes ir a momentos concretos de la conversación y convertirlos en mejora accionable.
+
+MARCO METODOLÓGICO OBLIGATORIO
+- Regla de oro: menos es más. Menos información equivale a más autoridad.
+- Ratio ideal: Lead 55-65% y Consultor 35-45%.
+- Buen camino: el lead reflexiona, hace silencio, verbaliza límites y frustraciones.
+- Mal camino: el lead responde rápido, vuelve al máster, compara demasiado pronto.
+- Cada fase tiene un propósito y sus prohibidos.
+
+FASES
+F01 Apertura con liderazgo:
+- marcar marco, intención y estructura
+- el lead habla desde el minuto 1
+- prohibido hablar del máster, precio o catálogo
+
+F02 Diagnóstico con tensión:
+- el lead debe verbalizar su problema
+- el silencio es útil
+- se debe explorar dolor, frustración, coste de inacción, intentos previos
+- prohibido proponer solución
+- prohibido decir “eso lo resolvemos con...”
+- prohibido tranquilizar demasiado rápido
+
+F03 Visión de futuro y GAP:
+- usar exactamente lo que el lead dijo en F02
+- no interpretar de más
+- el lead debe ver su propio gap
+- prohibido resolver el gap antes de que él lo nombre
+
+F04 El máster como vehículo:
+- el programa no es protagonista, es la palanca
+- conectar solución con el dolor específico que el lead nombró
+- usar sus palabras, no las tuyas
+- prohibido sobreexplicar o listar módulos sin control
+
+F05 Precio y decisión:
+- primero decisión, luego precio
+- usar sus palabras exactas al cerrar
+- objeciones: validar → anclar al dolor → preguntar
+- prohibido inventar becas, fechas, importes o condiciones
+
+CÓMO DEBES CORREGIR
+Debes seleccionar SOLO los 3 errores o áreas de mejora más determinantes de la llamada.
+
+Cada punto de mejora debe:
+1. estar anclado a una frase real del consultor
+2. indicar la fase donde ocurrió
+3. explicar por qué esa frase estuvo mal según la metodología
+4. reescribir qué debió decir el consultor en ese momento
+5. indicar qué debe hacer en su próxima llamada para no repetir el error
+
+NO QUIERO ESTO:
+- feedback genérico
+- demasiados puntos
+- frases vagas
+- teoría larga
+- elogios vacíos
+
+SÍ QUIERO ESTO:
+- una frase exacta o casi exacta del consultor
+- análisis fino
+- lenguaje concreto
+- corrección utilizable mañana mismo
+- alineación total con la guía KINEDRIK
+
+REGLAS DE ESTILO
+- Sé directo
+- Sé específico
+- Sé exigente
+- No suavices errores metodológicos
+- Si no hay evidencia textual suficiente, dilo
+- No inventes nada que no esté en la transcripción
+
+SALIDA
+Devuelve SIEMPRE JSON válido.
 
 Esquema exacto:
 
@@ -341,7 +419,7 @@ Transcripción:
 ${transcription.text}`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-5.4-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
     });
