@@ -377,7 +377,7 @@ Esquema exacto (asegúrate de devolver un objeto JSON que siga exactamente esta 
 
 {
   "nombre_cliente": "Nombre del cliente",
-  "temperatura": "CALIENTE / TIBIO / FRÍO",
+  "temperatura": "CRÍTICA / ALTA / MEDIA / BAJA",
   "resumen": "Resumen ejecutivo de 3-4 líneas sobre lo ocurrido, acuerdos y el tono de la reunión.",
   "participacion": {
     "consultor_pct": "X%",
@@ -658,49 +658,64 @@ ${transcription.text}`;
           <!-- Sección 2: Scorecard de la sesión -->
           <tr>
             <td style="padding:28px 40px 10px 40px;" class="px-mobile">
-              <div style="color:#0F172A; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+              <div style="color:#0F172A; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">
                 Scorecard de la Sesión
               </div>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:16px;">
-                <tr>
-                  <td style="padding:20px;">
-                    ${(() => {
+
+              ${(() => {
             const scoreValues = Object.values(analysis.scorecard || {}).map(d => d.score || 0);
             const minScore = scoreValues.length > 0 ? Math.min(...scoreValues) : -1;
-            let hasBadgeGist = false; // to ensure only one badge
+            let hasBadgeGist = false;
 
             return Object.entries(analysis.scorecard || {}).map(([key, data]) => {
               const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
               const title = titles[key] || key;
               const score = data.score || 0;
               let color = score < 65 ? "#EF4444" : score <= 80 ? "#F97316" : "#22C55E";
+              
               let badgeHtml = '';
               if (score === minScore && !hasBadgeGist) {
-                badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:3px 8px; border-radius:12px; font-size:9px; margin-left:8px; text-transform:uppercase; letter-spacing:0.5px; vertical-align:middle;">A trabajar</span>';
+                badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">POR TRABAJAR</span>';
                 hasBadgeGist = true;
               }
+
               return `
-                      <div style="margin-bottom:20px;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px;">
-                          <div style="display:flex; flex-direction:column; padding-right:15px;">
-                            <span style="font-size:15px; font-weight:900; color:#0F172A; margin-bottom:4px;">${title}</span>
-                            <span style="font-size:11px; color:#64748B; font-style:italic; line-height:1.3;">${data.contexto || ''}</span>
-                          </div>
-                          <span style="font-size:24px; font-weight:900; color:${color}; letter-spacing:-0.5px;">${score}% ${badgeHtml}</span>
-                        </div>
-                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#E2E8F0; border-radius:8px; height:10px;">
-                          <tr>
-                            <td width="${score}%" style="height:10px; background-color:${color}; border-radius:8px;"></td>
-                            <td width="${100 - score}%" style="height:10px; border-radius:0 8px 8px 0;"></td>
-                          </tr>
-                        </table>
-                      </div>
-                      `;
-            }).join('');
-          })()}
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; margin-bottom:12px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <!-- Top Section -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
+                      <tr>
+                        <td align="left" style="font-size:15px; font-weight:900; color:#0F172A;">${title}</td>
+                        <td align="right" style="font-size:22px; font-weight:900; color:${color};">${score}%</td>
+                      </tr>
+                    </table>
+                    
+                    <!-- Middle Section: Context -->
+                    <div style="font-size:12px; color:#64748B; font-style:italic; line-height:1.4; margin-bottom:12px; min-height:30px;">
+                      ${data.contexto || ''}
+                    </div>
+
+                    <!-- Bottom Section: Progress Bar -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:4px; height:6px; margin-bottom:2px;">
+                      <tr>
+                        <td width="${score}%" style="height:6px; background-color:${color}; border-radius:4px;"></td>
+                        <td width="${100 - score}%" style="height:6px; border-radius:0 4px 4px 0;"></td>
+                      </tr>
+                    </table>
+
+                    <!-- Badge if any -->
+                    ${badgeHtml ? `
+                    <div style="margin-top:10px;">
+                      ${badgeHtml}
+                    </div>
+                    ` : ''}
                   </td>
                 </tr>
               </table>
+              `;
+            }).join('');
+          })()}
             </td>
           </tr>
 
