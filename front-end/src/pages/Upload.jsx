@@ -85,6 +85,65 @@ export default function Upload() {
   const [successStep, setSuccessStep] = useState(0); // 0: none, 1: upload success message, 2: pending email, 3: email sent message
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [currentObjectPath, setCurrentObjectPath] = useState("");
+  const [analysisText, setAnalysisText] = useState("Procesando información...");
+  const [recentSessions, setRecentSessions] = useState([]);
+
+  const fetchRecentSessions = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/recent?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+      if (data.ok) {
+        setRecentSessions(data.sessions || []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchRecentSessions(user.email);
+    }
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (successStep === 2) {
+      const texts = [
+        "Identificando patrones del cliente...",
+        "Analizando muletillas...",
+        "Extrayendo puntos de mejora y validación de fases...",
+        "Calculando score de la sesión...",
+        "Elaborando el reporte avanzado..."
+      ];
+      let i = 0;
+      setAnalysisText(texts[0]);
+      const interval = setInterval(() => {
+        i = (i + 1) % texts.length;
+        setAnalysisText(texts[i]);
+      }, 3500);
+      return () => clearInterval(interval);
+    }
+  }, [successStep]);
+
+  const handleResendEmail = async (sessionId) => {
+    alert("Procesando reenvío de reporte...");
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/resend`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, email: user.email })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        alert("Reporte reenviado con éxito a tu correo.");
+      } else {
+        alert("Error al enviar: " + (data.error || "Desconocido"));
+      }
+    } catch (err) {
+      alert("Error contactando al servidor.");
+    }
+  };
+
 
   const handleFile = (file) => {
     if (!file) return;
@@ -178,15 +237,11 @@ export default function Upload() {
     if (successStep === 1) {
       setShowSuccessModal(false);
       setSuccessStep(2); // Iniciar proceso de envío de correo
-      setIsToastVisible(true);
-
+      
       // Iniciar el fetch al backend
       startEmailProcess();
 
-      // Quitar el aviso "pendiente" en 3 segundos (mantenemos esto como feedback visual inmediato)
-      setTimeout(() => {
-        setIsToastVisible(false);
-      }, 3000);
+      // Removed setting toast timeout
     } else if (successStep === 3) {
       // Reiniciar todo
       setShowSuccessModal(false);
@@ -197,6 +252,9 @@ export default function Upload() {
       setCurrentObjectPath("");
       if (inputRef.current) {
         inputRef.current.value = "";
+      }
+      if (user?.email) {
+        fetchRecentSessions(user.email);
       }
     }
   };
@@ -248,7 +306,13 @@ export default function Upload() {
               Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
             </p>
 
-            <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
+            {successStep === 2 ? (
+              <div className="analyzingWidget">
+                <div className="spinnerGlow"></div>
+                <div className="analyzingText">{analysisText}</div>
+              </div>
+            ) : (
+              <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
               <div className="micCircle">
                 <div className="pulseRing"></div>
                 <div className="pulseRing double"></div>
@@ -267,6 +331,7 @@ export default function Upload() {
 
               <input ref={inputRef} type="file" accept="audio/*" hidden onChange={(e) => handleFile(e.target.files[0])} />
             </div>
+            )}
 
             {fileMeta && (progress > 0 || isUploading) && (
               <div className="progressSection">
@@ -292,6 +357,32 @@ export default function Upload() {
 
             {isUploading && <p>Subiendo archivo...</p>}
             {errorMsg && <p className="errorMessage">{errorMsg}</p>}
+
+            {recentSessions.length > 0 && (
+              <div className="recentSessionsContainer">
+                <h3 className="recentTitle">Últimas sesiones procesadas</h3>
+                <div className="recentList">
+                  {recentSessions.map((session) => (
+                    <div key={session.id} className="sessionCard">
+                      <div className="sessionIcon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </div>
+                      <div className="sessionInfo">
+                        <div className="sessionName">{session.filename}</div>
+                        <div className="sessionDate">
+                          {new Date(session.date).toLocaleDateString()} - {session.duration}
+                        </div>
+                      </div>
+                      <button className="resendBtn" onClick={() => handleResendEmail(session.id)}>
+                        Reenviar reporte
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <footer className="footer">© KINEDRIꓘ TODOS LOS DERECHOS RESERVADOS.</footer>
           </div>
