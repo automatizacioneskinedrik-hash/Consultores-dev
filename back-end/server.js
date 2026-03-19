@@ -672,7 +672,7 @@ ${transcription.text}`;
               const title = titles[key] || key;
               const score = data.score || 0;
               let color = score < 65 ? "#EF4444" : score <= 80 ? "#F97316" : "#22C55E";
-              
+
               let badgeHtml = '';
               if (score === minScore && !hasBadgeGist) {
                 badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">POR TRABAJAR</span>';
@@ -865,8 +865,8 @@ ${transcription.text}`;
                       Tus próximos pasos
                     </div>
                     ${(analysis.proximos_pasos?.consultor || []).map((p, i, arr) => {
-                      const pct = Math.round(((i + 1) / arr.length) * 100);
-                      return `
+            const pct = Math.round(((i + 1) / arr.length) * 100);
+            return `
                     <div style="background-color:#FFFFFF; border:1px solid #FFEDD5; border-radius:8px; padding:12px; margin-bottom:10px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
                         <tr>
@@ -889,7 +889,7 @@ ${transcription.text}`;
                       </table>
                     </div>
                       `;
-                    }).join('')}
+          }).join('')}
                   </td>
                 </tr>
               </table>
