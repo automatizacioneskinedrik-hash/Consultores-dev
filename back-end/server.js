@@ -259,7 +259,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
     if (stats.size > WHISPER_LIMIT_BYTES) {
       console.log(`Archivo excede los 25MB (${stats.size} bytes). Comprimiendo a MP3 (32kbps)...`);
       const compressedPath = path.join(os.tmpdir(), `compressed_${uuidv4()}.mp3`);
-      
+
       await new Promise((resolve, reject) => {
         ffmpeg(tempFilePath)
           .audioBitrate('32k')
@@ -355,10 +355,11 @@ NO QUIERO ESTO:
 - elogios vacíos
 
 SÍ QUIERO ESTO:
-- una frase exacta o casi exacta del consultor
+- habla en primera persona dirigiéndote al consultor (ej: "No mencionaste esto", "Asumiste que...")
+- una frase exacta o casi exacta del consultor (cita textual real)
 - análisis fino
 - lenguaje concreto
-- corrección utilizable mañana mismo
+- corrección utilizable mañana mismo (dile la frase exacta que debe usar)
 - alineación total con la guía KINEDRIK
 
 REGLAS DE ESTILO
@@ -372,7 +373,7 @@ REGLAS DE ESTILO
 SALIDA
 Devuelve SIEMPRE JSON válido.
 
-Esquema exacto:
+Esquema exacto (asegúrate de devolver un objeto JSON que siga exactamente esta estructura):
 
 {
   "nombre_cliente": "Nombre del cliente",
@@ -383,37 +384,45 @@ Esquema exacto:
     "cliente_pct": "Y%",
     "duracion_total": "${durationStr}"
   },
+  "probabilidades": {
+    "interes_cliente": 85,
+    "estado_interes": "ej. Potencial alto / Frío / Tibio",
+    "proximidad_cierre": 60,
+    "estado_cierre": "ej. Frío / Tibio / Cierre seguro"
+  },
+  "scorecard": {
+    "muletillas": { "score": 80, "contexto": "12 frases repetidas detectadas" },
+    "cierre_negociacion": { "score": 70, "contexto": "Faltó firmeza al dar el precio" },
+    "manejo_objeciones": { "score": 75, "contexto": "Buena respuesta al 'no tengo dinero'" },
+    "propuesta_valor": { "score": 90, "contexto": "Excelente presentación del máster" }
+  },
   "feedback": {
-    "aspectos_positivos": [
-      { 
-        "titulo": "Habilidad demostrada", 
-        "descripcion": "Explica qué hizo bien el consultor para guiar al cliente." 
-      }
-    ],
+    "aspecto_positivo": { 
+      "titulo": "Habilidad demostrada", 
+      "descripcion": "Máximo 2 líneas de texto sobre algo bien hecho." 
+    },
     "puntos_mejora": [
       { 
-        "titulo": "Área de oportunidad", 
-        "descripcion": "Indica qué podría haber hecho mejor el consultor para cerrar o avanzar la venta." 
+        "codigo_fase": "Ej: F03",
+        "titulo_error": "Descripción directa del error en 1 línea (ej. Metiste validación prematura antes de que el lead verbalizara el problema)",
+        "frase_detectada": "La cita textual de la llamada que pronunció el consultor",
+        "problema": "Por qué eso rompe la fase metodológicamente",
+        "impacto": "Qué causó exactamente en el lead esta frase o ausencia de la misma",
+        "correccion_sugerida": "La frase exacta que debió usar el consultor (ej. 'Con lo que me dijiste...')",
+        "proxima_llamada": "Instrucción directa y accionable para la siguiente sesión"
       }
     ],
     "fortaleza_destacada": { 
       "titulo": "Tu mayor fortaleza hoy", 
-      "descripcion": "Un elogio directo al consultor sobre su mejor cualidad en esta sesión." 
+      "cita": "Una cita corta en itálica — máximo 2 líneas — centrada en lo que hizo bien el consultor en esta sesión de forma motivadora. Ejemplo: 'Tu capacidad para guardar silencio después de hacer una pregunta incómoda permitió que el lead se sincerara...'" 
     }
   },
-  "recomendacion_estrategica": {
-    "titulo": "Próximo movimiento maestro",
-    "descripcion": "Consejo táctico para que el consultor concrete la venta basado en la psicología del cliente."
-  },
-  "necesidades": ["necesidad detectada del cliente"],
-  "objeciones": ["objeción planteada por el cliente"],
+  "necesidades": ["necesidad 1", "necesidad 2", "necesidad 3"], // OBLIGATORIO: Mínimo 3 y máximo 5 necesidades. Si hay menos de 3 claras, complétalas infiriendo del contexto de la conversación.
   "proximos_pasos": {
-    "consultor": ["acción inmediata del consultor"],
-    "cliente": ["qué debe hacer el cliente ahora"],
-    "fechas_mencionadas": ["fechas clave acordadas"]
-  },
-  "alerta_comportamiento": "Solo si el consultor cometió un error crítico de comunicación o escucha, de lo contrario dejar vacío."
+    "consultor": ["acción 1 solo para el consultor", "acción 2 solo para el consultor"]
+  }
 }
+
 
 Transcripción:
 ${transcription.text}`;
@@ -454,7 +463,7 @@ ${transcription.text}`;
       const mailOptions = {
         from: process.env.EMAIL_FROM || "Kinedriꓘ <no-reply@kinedrik.com>",
         to: userEmail,
-        subject: `📋 Reporte: Reunión con ${clienteNome} — ${dateStr}`,
+        subject: `Reporte: Reunión con ${clienteNome} — ${dateStr}`,
         html: `
 <!DOCTYPE html>
 <html lang="es">
@@ -542,7 +551,7 @@ ${transcription.text}`;
 
           <!-- Métricas -->
           <tr>
-            <td style="padding:20px 40px 10px 40px;" class="px-mobile">
+            <td style="padding:28px 40px 10px 40px;" class="px-mobile">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="metric-stack">
                 <tr>
                   <td width="50%" valign="top" style="padding-right:8px;">
@@ -607,29 +616,113 @@ ${transcription.text}`;
             </td>
           </tr>
 
-          <!-- Aspectos positivos -->
+          <!-- Sección 1: Barras de probabilidad -->
           <tr>
             <td style="padding:28px 40px 10px 40px;" class="px-mobile">
-              <div style="color:#2885FF; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF; border:1px solid #E2E8F0; border-radius:24px;">
+                <tr>
+                  <td style="padding:26px 20px;">
+                    <!-- Barra de Interés -->
+                    <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#0040A4; margin-bottom:8px;">
+                      Interés del Cliente <span style="float:right; background-color:#E0E7FF; color:#4338CA; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_interes || 'Indeterminado'}</span>
+                    </div>
+                    <div style="font-size:32px; font-weight:900; color:#1E293B; margin-bottom:8px;">
+                      ${analysis.probabilidades?.interes_cliente || 0}%
+                    </div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:10px; margin-bottom:24px;">
+                      <tr>
+                        <td width="${analysis.probabilidades?.interes_cliente || 0}%" style="height:12px; background:linear-gradient(90deg, #3B82F6 0%, #2563EB 100%); border-radius:10px;"></td>
+                        <td width="${100 - (analysis.probabilidades?.interes_cliente || 0)}%" style="height:12px; border-radius:0 10px 10px 0;"></td>
+                      </tr>
+                    </table>
+
+                    <!-- Barra de Proximidad al Cierre -->
+                    <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#EA580C; margin-bottom:8px;">
+                      Proximidad al Cierre <span style="float:right; background-color:#FFEDD5; color:#C2410C; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_cierre || 'Indeterminado'}</span>
+                    </div>
+                    <div style="font-size:32px; font-weight:900; color:#1E293B; margin-bottom:8px;">
+                      ${analysis.probabilidades?.proximidad_cierre || 0}%
+                    </div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:10px;">
+                      <tr>
+                        <td width="${analysis.probabilidades?.proximidad_cierre || 0}%" style="height:12px; background:linear-gradient(90deg, #F97316 0%, #EA580C 100%); border-radius:10px;"></td>
+                        <td width="${100 - (analysis.probabilidades?.proximidad_cierre || 0)}%" style="height:12px; border-radius:0 10px 10px 0;"></td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Sección 2: Scorecard de la sesión -->
+          <tr>
+            <td style="padding:28px 40px 10px 40px;" class="px-mobile">
+              <div style="color:#0F172A; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
+                Scorecard de la Sesión
+              </div>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:16px;">
+                <tr>
+                  <td style="padding:20px;">
+                    ${(() => {
+            const scoreValues = Object.values(analysis.scorecard || {}).map(d => d.score || 0);
+            const minScore = scoreValues.length > 0 ? Math.min(...scoreValues) : -1;
+            let hasBadgeGist = false; // to ensure only one badge
+
+            return Object.entries(analysis.scorecard || {}).map(([key, data]) => {
+              const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
+              const title = titles[key] || key;
+              const score = data.score || 0;
+              let color = score < 65 ? "#EF4444" : score <= 80 ? "#F97316" : "#22C55E";
+              let badgeHtml = '';
+              if (score === minScore && !hasBadgeGist) {
+                badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:3px 8px; border-radius:12px; font-size:9px; margin-right:8px; text-transform:uppercase; letter-spacing:0.5px;">A trabajar</span>';
+                hasBadgeGist = true;
+              }
+              return `
+                      <div style="margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                          <span style="font-size:13px; font-weight:900; color:#000000; display:inline-block; margin-right:10px;">${title}</span>
+                          <span style="font-size:13px; font-weight:900; color:${color};">${badgeHtml}${score}/100</span>
+                        </div>
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#E2E8F0; border-radius:6px; margin-bottom:6px;">
+                          <tr>
+                            <td width="${score}%" style="height:8px; background-color:${color}; border-radius:6px;"></td>
+                            <td width="${100 - score}%" style="height:8px; border-radius:0 6px 6px 0;"></td>
+                          </tr>
+                        </table>
+                        <div style="font-size:11px; color:#64748B; font-style:italic;">${data.contexto || ''}</div>
+                      </div>
+                      `;
+            }).join('');
+          })()}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Sección 3: Aspecto Positivo -->
+          <tr>
+            <td style="padding:28px 40px 10px 40px;" class="px-mobile">
+              <div style="color:#16A34A; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
                 Aspectos Positivos
               </div>
             </td>
           </tr>
-
-          ${analysis.feedback.aspectos_positivos.map(item => `
           <tr>
             <td style="padding:0 40px 15px 40px;" class="px-mobile">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0FDF4; border:1px solid #DCFCE7; border-radius:18px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F0FDF4; border:1px solid #DCFCE7; border-top:4px solid #22C55E; border-radius:12px; overflow:hidden;">
                 <tr>
                   <td style="padding:20px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td valign="top" width="47" style="width:47px;">
-                          <div style="width:32px; height:32px; line-height:32px; text-align:center; border-radius:10px; background-color:#8ABC43; color:#FFFFFF; font-weight:900;">✓</div>
+                        <td valign="top" width="40" style="width:40px;">
+                          <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#22C55E; color:#FFFFFF; font-weight:900;">✓</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:700; line-height:1.3;">${item.titulo}</div>
-                          <div style="margin-top:4px; color:#64748B; font-size:13px; line-height:1.45;">${item.descripcion}</div>
+                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">${analysis.feedback?.aspecto_positivo?.titulo || 'Buen Trabajo'}</div>
+                          <div style="margin-top:4px; color:#475569; font-size:13px; line-height:1.45;">${analysis.feedback?.aspecto_positivo?.descripcion || ''}</div>
                         </td>
                       </tr>
                     </table>
@@ -638,31 +731,52 @@ ${transcription.text}`;
               </table>
             </td>
           </tr>
-          `).join('')}
 
-          <!-- Puntos de mejora -->
+          <!-- Sección 4: Puntos de mejora -->
           <tr>
-            <td style="padding:20px 40px 10px 40px;" class="px-mobile">
-              <div style="color:#FF5900; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
+            <td style="padding:28px 40px 10px 40px;" class="px-mobile">
+              <div style="color:#EA580C; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
                 Puntos de Mejora
               </div>
             </td>
           </tr>
 
-          ${analysis.feedback.puntos_mejora.map(item => `
+          ${(analysis.feedback?.puntos_mejora || []).slice(0, 3).map(item => {
+            const fasesMap = {
+              'F01': 'F01 — Apertura con Liderazgo',
+              'F02': 'F02 — Diagnóstico con Tensión',
+              'F03': 'F03 — Visión de Futuro y GAP',
+              'F04': 'F04 — El Máster como Vehículo',
+              'F05': 'F05 — Precio y Decisión'
+            };
+            const codigoBase = (item.codigo_fase || '').substring(0, 3).toUpperCase();
+            const faseGris = fasesMap[codigoBase] || item.codigo_fase || '';
+
+            return `
           <tr>
             <td style="padding:0 40px 15px 40px;" class="px-mobile">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FEFCE8; border:1px solid #FEF08A; border-radius:18px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFF7ED; border:1px solid #FFEDD5; border-top:4px solid #F97316; border-radius:12px; overflow:hidden;">
                 <tr>
                   <td style="padding:20px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td valign="top" width="47" style="width:47px;">
-                          <div style="width:32px; height:32px; line-height:32px; text-align:center; border-radius:10px; background-color:#FBB42A; color:#FFFFFF; font-weight:900;">!</div>
+                        <td valign="top" width="40" style="width:40px;">
+                          <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#F97316; color:#FFFFFF; font-weight:900; font-size:16px;">!</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:700; line-height:1.3;">${item.titulo}</div>
-                          <div style="margin-top:4px; color:#64748B; font-size:13px; line-height:1.45;">${item.descripcion}</div>
+                          <div style="margin:0; font-size:15px; line-height:1.3;"><span style="color:#94A3B8; font-weight:700;">${faseGris}</span> <strong style="color:#000000; font-weight:900;">· ${item.titulo_error || item.titulo_fase || 'Oportunidad de Mejora'}</strong></div>
+                          <div style="margin-top:12px; color:#475569; font-size:13px; line-height:1.6;">
+                            <strong style="color:#000000;">Frase detectada:</strong> <em>"${item.frase_detectada}"</em><br><br>
+                            <strong style="color:#F97316;">Problema:</strong> ${item.problema}<br><br>
+                            <strong style="color:#EF4444;">Impacto:</strong> ${item.impacto}<br><br>
+                            
+                            <strong style="color:#166534;">Corrección Sugerida:</strong><br>
+                            <span style="display:inline-block; background-color:#DCFCE7; color:#166534; padding:6px 12px; border-radius:6px; font-weight:600; margin-top:4px; margin-bottom:8px;">"${item.correccion_sugerida}"</span><br>
+                            
+                            <div style="background-color:#FFEDD5; padding:10px; border-radius:6px; font-size:12px; border-left:4px solid #EA580C;">
+                              <strong>Próxima llamada:</strong> ${item.proxima_llamada}
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     </table>
@@ -671,33 +785,34 @@ ${transcription.text}`;
               </table>
             </td>
           </tr>
-          `).join('')}
+          `;
+          }).join('')}
 
-          <!-- Fortaleza -->
+          <!-- Sección 5: Tus Fortalezas -->
           <tr>
-            <td style="padding:20px 40px 10px 40px;" class="px-mobile">
-              <div style="color:#BB8AFF; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
+            <td style="padding:28px 40px 10px 40px;" class="px-mobile">
+              <div style="color:#8B5CF6; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">
                 Tus Fortalezas
               </div>
             </td>
           </tr>
 
           <tr>
-            <td style="padding:0 40px 15px 40px;" class="px-mobile">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3FF; border:1px solid #DDD6FE; border-radius:18px;">
+            <td style="padding:0 40px 25px 40px;" class="px-mobile">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F5F3FF; border:1px solid #EDE9FE; border-top:4px solid #8B5CF6; border-radius:12px; overflow:hidden;">
                 <tr>
                   <td style="padding:20px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td valign="top" width="47" style="width:47px;">
-                          <div style="width:32px; height:32px; line-height:32px; text-align:center; border-radius:10px; background-color:#BB8AFF; color:#FFFFFF; font-weight:900;">★</div>
+                        <td valign="top" width="40" style="width:40px;">
+                          <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#8B5CF6; color:#FFFFFF; font-weight:900;">★</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:700; line-height:1.3;">
-                            ${analysis.feedback.fortaleza_destacada.titulo}
+                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">
+                            ${analysis.feedback?.fortaleza_destacada?.titulo || 'Fortaleza'}
                           </div>
-                          <div style="margin-top:4px; color:#64748B; font-size:13px; line-height:1.45;">
-                            ${analysis.feedback.fortaleza_destacada.descripcion}
+                          <div style="margin-top:12px; padding:12px; background-color:#E0E7FF; color:#4338CA; border-radius:8px; font-size:14px; font-style:italic; line-height:1.5; font-weight:500;">
+                            "${analysis.feedback?.fortaleza_destacada?.cita || ''}"
                           </div>
                         </td>
                       </tr>
@@ -708,53 +823,40 @@ ${transcription.text}`;
             </td>
           </tr>
 
-          <!-- Temperatura -->
+          <!-- Sección 6: Dos Columnas -->
           <tr>
-            <td style="padding:20px 40px 10px 40px;" class="px-mobile">
-              <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#475569; margin-bottom:12px;">
-                Temperatura del Cliente
-              </div>
-              <span style="display:inline-block; background-color:#FF5900; color:#FFFFFF; padding:4px 12px; border-radius:20px; font-size:10px; font-weight:900; margin-bottom:15px;">
-                ${analysis.temperatura}
-              </span>
-            </td>
-          </tr>
-
-          <tr>
-            <td style="padding:0 40px 25px 40px;" class="px-mobile">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F8FAFC; border:1px solid #F1F5F9; border-radius:20px;">
-                <tr>
-                  <td style="padding:25px; color:#475569; font-size:14px; line-height:1.6; font-style:italic;">
-                    "${analysis.resumen}"
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-
-          <!-- Footer grid -->
-          <tr>
-            <td style="padding:0 40px 35px 40px;" class="px-mobile">
+            <td style="padding:28px 40px 35px 40px;" class="px-mobile">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #F1F5F9; border-radius:20px; overflow:hidden;" class="footer-col">
                 <tr>
-                  <td valign="top" width="50%" style="padding:20px; border-top:4px solid #8ABC43; background-color:#FAFDFB; border-right:1px solid #F1F5F9;">
-                    <div style="font-size:11px; font-weight:900; color:#8ABC43; margin-bottom:12px;">
-                      🎯 Necesidades
+                  <!-- Izquierda -->
+                  <td valign="top" width="50%" style="padding:20px; border-top:4px solid #22C55E; background-color:#F8FAFC; border-right:1px solid #F1F5F9;">
+                    <div style="font-size:13px; font-weight:900; color:#166534; margin-bottom:12px;">
+                      Lo que el lead necesita
                     </div>
-                    ${analysis.necesidades.map(n => `<div style="font-size:12px; color:#64748B; margin-bottom:5px; line-height:1.45;">• ${n}</div>`).join('')}
+                    ${(analysis.necesidades || []).map(n => `
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:6px;">
+                      <tr>
+                        <td width="15" valign="top" style="color:#22C55E; font-size:14px;">●</td>
+                        <td valign="top" style="font-size:13px; color:#475569; line-height:1.4;">${n}</td>
+                      </tr>
+                    </table>
+                    `).join('')}
                   </td>
-                  <td valign="top" width="50%" style="padding:20px; border-top:4px solid #BB8AFF; background-color:#FBFAFF;">
-                    <div style="font-size:11px; font-weight:900; color:#BB8AFF; margin-bottom:12px;">
-                      🚀 Próximos Pasos
+                  <!-- Derecha -->
+                  <td valign="top" width="50%" style="padding:20px; border-top:4px solid #F97316; background-color:#F8FAFC;">
+                    <div style="font-size:13px; font-weight:900; color:#C2410C; margin-bottom:12px;">
+                      Tus próximos pasos
                     </div>
-                    <div style="font-size:9px; font-weight:800; color:#040025; margin-bottom:5px; text-transform:uppercase;">
-                      Consultor:
-                    </div>
-                    ${analysis.proximos_pasos.consultor.map(p => `<div style="font-size:12px; color:#64748B; margin-bottom:3px; line-height:1.45;">- ${p}</div>`).join('')}
-                    <div style="font-size:9px; font-weight:800; color:#040025; margin:10px 0 5px 0; text-transform:uppercase;">
-                      Cliente:
-                    </div>
-                    ${analysis.proximos_pasos.cliente.map(p => `<div style="font-size:12px; color:#64748B; margin-bottom:3px; line-height:1.45;">- ${p}</div>`).join('')}
+                    ${(analysis.proximos_pasos?.consultor || []).map((p, i) => `
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
+                      <tr>
+                        <td width="20" valign="top">
+                          <div style="width:16px; height:16px; line-height:16px; text-align:center; background-color:#F97316; color:white; border-radius:50%; font-size:10px; font-weight:bold;">${i + 1}</div>
+                        </td>
+                        <td valign="top" style="font-size:13px; color:#475569; line-height:1.4; padding-left:4px;">${p}</td>
+                      </tr>
+                    </table>
+                    `).join('')}
                   </td>
                 </tr>
               </table>
@@ -763,8 +865,9 @@ ${transcription.text}`;
 
           <!-- Footer -->
           <tr>
-            <td style="background-color:#040025; padding:20px 40px; color:#FFFFFF; font-size:10px; line-height:1.5; opacity:0.85;" class="px-mobile">
-              KINEDRIꓘ — Elevating skills, boosting real knowledge
+            <td style="background-color:#111827; padding:32px 40px; text-align:center;" class="px-mobile">
+              <div style="color:#FFFFFF; font-size:16px; font-weight:800; margin-bottom:6px; letter-spacing:0.5px;">KINEDRIꓘ — Elevating skills, boosting real knowledge</div>
+              <div style="color:#94A3B8; font-size:12px; font-weight:500;">Desarrolladores Internos</div>
             </td>
           </tr>
 
