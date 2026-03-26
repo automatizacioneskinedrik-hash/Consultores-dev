@@ -663,15 +663,22 @@ ${transcription.text}`;
               </div>
 
               ${(() => {
-            const scoreValues = Object.values(analysis.scorecard || {}).map(d => d.score || 0);
+            const sc = analysis.scorecard || {};
+            const scoreValues = Object.values(sc).map(d => d.score || 0);
             const minScore = scoreValues.length > 0 ? Math.min(...scoreValues) : -1;
             let hasBadgeGist = false;
 
-            return Object.entries(analysis.scorecard || {}).map(([key, data]) => {
+            return Object.entries(sc).map(([key, data]) => {
               const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
               const title = titles[key] || key;
               const score = data.score || 0;
-              let color = score < 65 ? "#EF4444" : score <= 80 ? "#F97316" : "#22C55E";
+              
+              let color = "#EF4444";
+              if (key === 'muletillas') {
+                color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
+              } else {
+                color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
+              }
 
               let badgeHtml = '';
               if (score === minScore && !hasBadgeGist) {
@@ -692,21 +699,30 @@ ${transcription.text}`;
                     </table>
                     
                     <!-- Middle Section: Context -->
-                    <div style="font-size:12px; color:#64748B; font-style:italic; line-height:1.4; margin-bottom:12px; min-height:30px;">
+                    <div style="font-size:12px; color:#64748B; font-style:italic; line-height:1.4; margin-bottom:12px; min-height:40px;">
                       ${data.contexto || ''}
                     </div>
 
-                    <!-- Bottom Section: Progress Bar -->
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:4px; height:6px; margin-bottom:2px;">
-                      <tr>
-                        <td width="${score}%" style="height:6px; background-color:${color}; border-radius:4px;"></td>
-                        <td width="${100 - score}%" style="height:6px; border-radius:0 4px 4px 0;"></td>
-                      </tr>
-                    </table>
+                    <!-- Bottom Section: Progress Bar with Needle -->
+                    <div style="padding-top:4px;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:2px;">
+                        <tr>
+                          ${score > 0 ? `<td width="${score}%" align="right" style="padding-right:2px; font-size:13px; line-height:1; color:${color}; font-weight:900;">▼</td>` : `<td width="1%"></td>`}
+                          ${score < 100 && score > 0 ? `<td width="${100 - score}%"></td>` : score === 0 ? `<td width="99%" align="left" style="font-size:13px; line-height:1; color:${color}; font-weight:900;">▼</td>` : ''}
+                        </tr>
+                      </table>
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:4px; height:8px; margin-bottom:2px;">
+                        <tr>
+                          <td width="30%" style="height:8px; background-color:${key === 'muletillas' ? '#22C55E' : '#EF4444'}; border-radius:4px 0 0 4px;"></td>
+                          <td width="40%" style="height:8px; background-color:#EAB308;"></td>
+                          <td width="30%" style="height:8px; background-color:${key === 'muletillas' ? '#EF4444' : '#22C55E'}; border-radius:0 4px 4px 0;"></td>
+                        </tr>
+                      </table>
+                    </div>
 
                     <!-- Badge if any -->
                     ${badgeHtml ? `
-                    <div style="margin-top:10px;">
+                    <div style="margin-top:14px;">
                       ${badgeHtml}
                     </div>
                     ` : ''}
@@ -854,7 +870,7 @@ ${transcription.text}`;
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:6px;">
                       <tr>
                         <td width="15" valign="top" style="color:#22C55E; font-size:14px;">●</td>
-                        <td valign="top" style="font-size:13px; color:#475569; line-height:1.4;">${n}</td>
+                        <td valign="top" style="font-size:13px; color:#475569; line-height:1.4;">${n.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</td>
                       </tr>
                     </table>
                     `).join('')}
@@ -864,8 +880,7 @@ ${transcription.text}`;
                     <div style="font-size:13px; font-weight:900; color:#C2410C; margin-bottom:12px;">
                       Tus próximos pasos
                     </div>
-                    ${(analysis.proximos_pasos?.consultor || []).map((p, i, arr) => {
-            const pct = Math.round(((i + 1) / arr.length) * 100);
+                    ${(analysis.proximos_pasos?.consultor || []).map((p, i) => {
             return `
                     <div style="background-color:#FFFFFF; border:1px solid #FFEDD5; border-radius:8px; padding:12px; margin-bottom:10px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
@@ -873,20 +888,11 @@ ${transcription.text}`;
                           <td align="left">
                             <span style="font-size:10px; font-weight:900; color:#EA580C; background-color:#FFF7ED; padding:3px 8px; border-radius:12px; text-transform:uppercase;">Paso ${i + 1}</span>
                           </td>
-                          <td align="right">
-                            <span style="font-size:10px; font-weight:800; color:#94A3B8;">Progreso ${pct}%</span>
-                          </td>
                         </tr>
                       </table>
-                      <div style="font-size:13px; color:#334155; line-height:1.4; font-weight:600; margin-bottom:10px;">
+                      <div style="font-size:13px; color:#334155; line-height:1.4; font-weight:600; margin-bottom:0;">
                         ${p}
                       </div>
-                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:4px; height:4px;">
-                        <tr>
-                          <td width="${pct}%" style="height:4px; background-color:#F97316; border-radius:4px;"></td>
-                          <td width="${100 - pct}%" style="height:4px; border-radius:0 4px 4px 0;"></td>
-                        </tr>
-                      </table>
                     </div>
                       `;
           }).join('')}
@@ -895,6 +901,52 @@ ${transcription.text}`;
               </table>
             </td>
           </tr>
+
+          <!-- Sección 7: Cierre - Puntuación General -->
+          ${(() => {
+            const sc = analysis.scorecard || {};
+            const muletillasScore = sc.muletillas?.score || 0;
+            const cierreScore = sc.cierre_negociacion?.score || 0;
+            const objecionesScore = sc.manejo_objeciones?.score || 0;
+            const valorScore = sc.propuesta_valor?.score || 0;
+            const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
+            const generalColor = generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
+            
+            return `
+          <tr>
+            <td style="padding:10px 40px 40px 40px;" class="px-mobile">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#040025; border-radius:24px; overflow:hidden; border:2px solid ${generalColor};">
+                <tr>
+                  <td style="padding:40px 20px; text-align:center;">
+                    <div style="font-size:12px; font-weight:900; color:#94A3B8; text-transform:uppercase; letter-spacing:2px; margin-bottom:12px;">
+                      Puntuación General de tu Sesión
+                    </div>
+                    <div style="font-size:64px; font-weight:900; color:#FFFFFF; line-height:1; margin-bottom:24px;">
+                      ${generalScore}<span style="font-size:32px; color:${generalColor};">%</span>
+                    </div>
+                    
+                    <div style="margin:0 auto; max-width:80%;">
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">
+                        <tr>
+                          ${generalScore > 0 ? `<td width="${generalScore}%" align="right" style="padding-right:2px; font-size:14px; line-height:1; color:${generalColor}; font-weight:900;">▼</td>` : `<td width="1%"></td>`}
+                          ${generalScore < 100 && generalScore > 0 ? `<td width="${100 - generalScore}%"></td>` : generalScore === 0 ? `<td width="99%" align="left" style="font-size:14px; line-height:1; color:${generalColor}; font-weight:900;">▼</td>` : ''}
+                        </tr>
+                      </table>
+                      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:6px; height:12px;">
+                        <tr>
+                          <td width="30%" style="height:12px; background-color:#EF4444; border-radius:6px 0 0 6px;"></td>
+                          <td width="40%" style="height:12px; background-color:#EAB308;"></td>
+                          <td width="30%" style="height:12px; background-color:#22C55E; border-radius:0 6px 6px 0;"></td>
+                        </tr>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+            `;
+          })()}
 
           <!-- Footer -->
           <tr>
