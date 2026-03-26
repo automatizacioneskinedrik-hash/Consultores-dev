@@ -287,8 +287,19 @@ async function processAudioAnalysis(objectPath, userEmail) {
     const seconds = Math.floor(totalSeconds % 60);
     const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
+    // Recuperar el prompt activo desde la DB si existe
+    let additionalInstructions = "";
+    try {
+      const promptSnapshot = await db.collection("prompts").where("isActive", "==", true).limit(1).get();
+      if (!promptSnapshot.empty) {
+        additionalInstructions = promptSnapshot.docs[0].data().content || "";
+      }
+    } catch (err) {
+      console.log("Error al recuperar el prompt activo:", err);
+    }
+
     // 3. Análisis con GPT-4o con un prompt centrado en el consultor
-    const prompt = `Eres un coach auditor de llamadas comerciales de KINEDRIK.
+    let prompt = `Eres un coach auditor de llamadas comerciales de KINEDRIK.
 
 Tu trabajo NO es dar feedback general.
 Tu trabajo es detectar los 3 puntos de mejora más importantes del consultor en la llamada, con base estricta en la metodología “Entrevista Estrella — 5 Fases del Diseño de Decisión”.
@@ -344,7 +355,7 @@ Cada punto de mejora debe:
 1. estar anclado a una frase real del consultor
 2. indicar la fase donde ocurrió
 3. explicar por qué esa frase estuvo mal según la metodología
-4. reescribir qué debió decir el consultor en ese momento
+4. reescribir qué debió decir el consultor en ese momento (dando 2 o 3 opciones diferentes)
 5. indicar qué debe hacer en su próxima llamada para no repetir el error
 
 NO QUIERO ESTO:
@@ -359,7 +370,7 @@ SÍ QUIERO ESTO:
 - una frase exacta o casi exacta del consultor (cita textual real)
 - análisis fino
 - lenguaje concreto
-- corrección utilizable mañana mismo (dile la frase exacta que debe usar)
+- corrección utilizable mañana mismo (dile 2 o 3 opciones de frases exactas que debe usar)
 - alineación total con la guía KINEDRIK
 
 REGLAS DE ESTILO
@@ -408,7 +419,7 @@ Esquema exacto (asegúrate de devolver un objeto JSON que siga exactamente esta 
         "frase_detectada": "La cita textual de la llamada que pronunció el consultor",
         "problema": "Por qué eso rompe la fase metodológicamente",
         "impacto": "Qué causó exactamente en el lead esta frase o ausencia de la misma",
-        "correccion_sugerida": "La frase exacta que debió usar el consultor (ej. 'Con lo que me dijiste...')",
+        "correcciones_sugeridas": ["1era opción de frase exacta que debió usar el consultor", "2da opción de frase exacta", "3era opción (opcional)"],
         "proxima_llamada": "Instrucción directa y accionable para la siguiente sesión"
       }
     ],
@@ -423,15 +434,43 @@ Esquema exacto (asegúrate de devolver un objeto JSON que siga exactamente esta 
   }
 }
 
+${additionalInstructions ? `\nINSTRUCCIONES ADICIONALES DEL SUPERADMIN (RESPETA ESTAS INSTRUCCIONES MODIFICANDO TU ENFOQUE, PERO SIN CAMBIAR JAMÁS LA ESTRUCTURA JSON REQUERIDA):\n${additionalInstructions}\n` : ""}
 
 Transcripción:
 ${transcription.text}`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-    });
+    let completion;
+    try {
+      completion = await openai.chat.completions.create({
+        model: "gpt-5.4-mini",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+      });
+    } catch (openAiErr) {
+      // Si falla y había un prompt personalizado, revertir al predeterminado y registrar el error.
+      if (additionalInstructions) {
+        console.log("Error en OpenAI con prompt personalizado. Revirtiendo al predeterminado...", openAiErr.message);
+
+        try {
+          // Revertir a predeterminado
+          const batch = db.batch();
+          const actSnapshot = await db.collection("prompts").where("isActive", "==", true).get();
+          actSnapshot.forEach(doc => batch.update(doc.ref, { isActive: false }));
+
+          const sysSnapshot = await db.collection("prompts").where("isSystem", "==", true).limit(1).get();
+          if (!sysSnapshot.empty) {
+            batch.update(sysSnapshot.docs[0].ref, { isActive: true });
+          }
+          await batch.commit();
+        } catch (dbErr) {
+          console.log("Error revirtiendo el prompt:", dbErr);
+        }
+
+        throw new Error("El Custom Prompt generó un error de OpenAI. Se ha restaurado el prompt por defecto automáticamente. " + openAiErr.message);
+      } else {
+        throw openAiErr;
+      }
+    }
 
     const analysis = JSON.parse(completion.choices[0].message.content);
     // Forzar la duración exacta proveniente de Whisper
@@ -672,7 +711,7 @@ ${transcription.text}`;
               const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
               const title = titles[key] || key;
               const score = data.score || 0;
-              
+
               let color = "#EF4444";
               if (key === 'muletillas') {
                 color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
@@ -803,8 +842,10 @@ ${transcription.text}`;
                             <strong style="color:#F97316;">Problema:</strong> ${item.problema}<br><br>
                             <strong style="color:#EF4444;">Impacto:</strong> ${item.impacto}<br><br>
                             
-                            <strong style="color:#166534;">Corrección Sugerida:</strong><br>
-                            <span style="display:inline-block; background-color:#DCFCE7; color:#166534; padding:6px 12px; border-radius:6px; font-weight:600; margin-top:4px; margin-bottom:8px;">"${item.correccion_sugerida}"</span><br>
+                            <strong style="color:#166534;">Correcciones Sugeridas:</strong><br>
+                            ${(item.correcciones_sugeridas || (item.correccion_sugerida ? [item.correccion_sugerida] : [])).map(corr =>
+              `<span style="display:inline-block; background-color:#DCFCE7; color:#166534; padding:6px 12px; border-radius:6px; font-weight:600; margin-top:4px; margin-bottom:8px;">"${corr}"</span><br>`
+            ).join('')}
                             
                             <div style="background-color:#FFEDD5; padding:10px; border-radius:6px; font-size:12px; border-left:4px solid #EA580C;">
                               <strong>Próxima llamada:</strong> ${item.proxima_llamada}
@@ -911,7 +952,7 @@ ${transcription.text}`;
             const valorScore = sc.propuesta_valor?.score || 0;
             const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
             const generalColor = generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
-            
+
             return `
           <tr>
             <td style="padding:10px 40px 40px 40px;" class="px-mobile">
@@ -1105,6 +1146,104 @@ app.delete("/api/admin/users/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ ok: false, error: "Error al eliminar usuario" });
+  }
+});
+
+// --- ENDPOINTS PARA GESTOR DE PROMPTS ---
+app.get("/api/prompts", async (req, res) => {
+  try {
+    const snapshot = await db.collection("prompts").orderBy("createdAt", "desc").get();
+    const prompts = [];
+    snapshot.forEach(doc => prompts.push({ id: doc.id, ...doc.data() }));
+    return res.json({ ok: true, prompts });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/prompts", async (req, res) => {
+  try {
+    const { name, content, isActive = false, isFavorite = false, isSystem = false } = req.body;
+    const newPrompt = {
+      name,
+      content,
+      isActive,
+      isFavorite,
+      isSystem,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (isActive) {
+      const activePrompts = await db.collection("prompts").where("isActive", "==", true).get();
+      const batch = db.batch();
+      activePrompts.forEach(doc => batch.update(doc.ref, { isActive: false }));
+      await batch.commit();
+    }
+
+    const docRef = await db.collection("prompts").add(newPrompt);
+    return res.json({ ok: true, prompt: { id: docRef.id, ...newPrompt } });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put("/api/prompts/:id/active", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const batch = db.batch();
+
+    const actSnapshot = await db.collection("prompts").where("isActive", "==", true).get();
+    actSnapshot.forEach(doc => batch.update(doc.ref, { isActive: false }));
+
+    const selectedRef = db.collection("prompts").doc(id);
+    batch.update(selectedRef, { isActive: true });
+
+    await batch.commit();
+    return res.json({ ok: true, message: "Prompt activado correctamente" });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put("/api/prompts/:id/favorite", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isFavorite } = req.body;
+    await db.collection("prompts").doc(id).update({ isFavorite });
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/prompts/restore-default", async (req, res) => {
+  try {
+    const batch = db.batch();
+    const actSnapshot = await db.collection("prompts").where("isActive", "==", true).get();
+    actSnapshot.forEach(doc => batch.update(doc.ref, { isActive: false }));
+
+    let defaultActivated = false;
+    const sysSnapshot = await db.collection("prompts").where("isSystem", "==", true).limit(1).get();
+    if (!sysSnapshot.empty) {
+      batch.update(sysSnapshot.docs[0].ref, { isActive: true });
+      defaultActivated = true;
+    } else {
+      const newRef = db.collection("prompts").doc();
+      batch.set(newRef, {
+        name: "Prompt Base (Sistema)",
+        content: "Actúa según la metodología oficial de KINEDRIK.",
+        isActive: true,
+        isFavorite: true,
+        isSystem: true,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      defaultActivated = true;
+    }
+
+    await batch.commit();
+    return res.json({ ok: true, message: "Prompt por defecto restaurado" });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 

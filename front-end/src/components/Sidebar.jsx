@@ -61,6 +61,14 @@ function UsersIcon() {
   );
 }
 
+function SparklesIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.25 6.75L22 12l-6.75 2.25L13 21l-2.25-6.75L4 12l6.75-2.25z" />
+    </svg>
+  );
+}
+
 function BrandLogo() {
   return (
     <svg
@@ -101,6 +109,8 @@ export default function Sidebar() {
     (email && email.toLowerCase() === "adminkinedrik@eadic.com") ||
     (email && email.toLowerCase() === "admin123@eadic.com");
 
+  const isAuthorizedSuperAdmin = role === "superadmin" || (email && email.toLowerCase() === "adminkinedrik@eadic.com");
+
   const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
 
   const handleUploadClick = () => {
@@ -110,6 +120,14 @@ export default function Sidebar() {
   const handleAdminClick = () => {
     if (isAuthorizedAdmin) {
       navigate("/admin");
+    } else {
+      alert("No tienes permiso para acceder a esta sección");
+    }
+  };
+
+  const handlePromptsClick = () => {
+    if (isAuthorizedSuperAdmin) {
+      navigate("/prompts");
     } else {
       alert("No tienes permiso para acceder a esta sección");
     }
@@ -131,6 +149,7 @@ export default function Sidebar() {
 
   const isUploadPage = location.pathname === "/upload";
   const isAdminPage = location.pathname === "/admin";
+  const isPromptsPage = location.pathname === "/prompts";
 
   return (
     <div className="sidebar">
@@ -159,6 +178,17 @@ export default function Sidebar() {
           <UsersIcon />
           <span>Gestionar Usuarios</span>
         </button>
+
+        {isAuthorizedSuperAdmin && (
+          <button
+            className={`sidebarItem ${isPromptsPage ? "active" : ""}`}
+            onClick={handlePromptsClick}
+            title="Gestor de Prompts"
+          >
+            <SparklesIcon />
+            <span>Gestor de Prompts</span>
+          </button>
+        )}
       </nav>
 
       {storedName && (

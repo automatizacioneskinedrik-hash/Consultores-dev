@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Admin from "./pages/Admin";
+import Prompts from "./pages/Prompts";
 
 function isLoggedIn() {
   return Boolean(localStorage.getItem("kinedrix_email"));
@@ -25,6 +26,25 @@ function isAdmin() {
 function AdminRoute({ children }) {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
   if (!isAdmin()) return <Navigate to="/upload" replace />;
+  return children;
+}
+
+function isSuperAdmin() {
+  try {
+    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
+    const userEmail = (user.email || "").toLowerCase();
+    return (
+      user.role === "superadmin" ||
+      userEmail === "adminkinedrik@eadic.com"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function SuperAdminRoute({ children }) {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />;
+  if (!isSuperAdmin()) return <Navigate to="/upload" replace />;
   return children;
 }
 
@@ -55,6 +75,16 @@ export default function App() {
             <AdminRoute>
               <Admin />
             </AdminRoute>
+          }
+        />
+
+        {/* RUTA PROMPTS */}
+        <Route
+          path="/prompts"
+          element={
+            <SuperAdminRoute>
+              <Prompts />
+            </SuperAdminRoute>
           }
         />
 
