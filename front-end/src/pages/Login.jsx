@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Login.css";
 
@@ -177,7 +177,7 @@ export default function Login() {
           </div>
 
           <div className="logoText">
-            KINEDRI<span className="mirroredK">K</span>
+            KINEDRIꓘ
           </div>
         </div>
 
@@ -231,7 +231,7 @@ export default function Login() {
           </form>
         </div>
 
-        <div className="footer">© KINEDRIK Audio Inc. Todos los derechos reservados.</div>
+        <div className="footer">© KINEDRIꓘ Audio Inc. Todos los derechos reservados.</div>
       </div>
     </div>
   );

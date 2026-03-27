@@ -640,3 +640,47 @@ body {
   background: var(--blue);
   color: white;
 }
+
+@media (max-width: 768px) {
+  .appShell {
+    width: 100%;
+    margin-left: 0;
+  }
+  .mainContent {
+    padding-top: 60px; /* space for hamburger */
+  }
+  .title {
+    font-size: 28px;
+  }
+  .dropZone {
+    padding: 24px 16px;
+  }
+  .pageUser {
+    top: 15px;
+    right: 15px;
+  }
+  .userNameSmall {
+    display: none;
+  }
+}
+
+.offlineWarning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

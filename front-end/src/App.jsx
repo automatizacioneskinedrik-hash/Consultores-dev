@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Admin from "./pages/Admin";
 import Prompts from "./pages/Prompts";
+import AdvancedConfig from "./pages/AdvancedConfig";
 
 function isLoggedIn() {
   return Boolean(localStorage.getItem("kinedrix_email"));
@@ -79,11 +80,21 @@ export default function App() {
         />
 
         {/* RUTA PROMPTS */}
-        <Route
+        {/* <Route
           path="/prompts"
           element={
             <SuperAdminRoute>
               <Prompts />
+            </SuperAdminRoute>
+          }
+        /> */}
+
+        {/* RUTA ADVANCED CONFIG */}
+        <Route
+          path="/configuracion-avanzada"
+          element={
+            <SuperAdminRoute>
+              <AdvancedConfig />
             </SuperAdminRoute>
           }
         />

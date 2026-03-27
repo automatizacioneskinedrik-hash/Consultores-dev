@@ -34,25 +34,33 @@ export default function Admin() {
       const res = await fetch(`${API_BASE_URL}/api/admin/users`, {
         headers: {
           "X-Admin-Role": currentUser.role || "user",
-          "X-Admin-Email": currentUser.email || ""
+          "X-Admin-Email": currentUser.email || "",
+          "X-Auth-Token": currentUser.authToken || ""
         }
       });
       const data = await res.json();
       if (data.ok) {
         setUsers(data.users);
-      } else {
-        console.error("Error from API:", data.error);
+      } else if (res.status !== 403 && res.status !== 401) {
+        // Only log serious non-auth errors
+        console.warn("API Note:", data.error);
       }
     } catch (error) {
-      console.error("Error fetching users:", error);
+      // Don't log network errors to console.error
+      console.debug("Fetch inhibited:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    const isAuthorized = currentUser?.role === "admin" || currentUser?.role === "superadmin" || currentUser?.email === "adminkinedrik@eadic.com";
+    if (isAuthorized) {
+      fetchUsers();
+    } else {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
   const filteredUsers = useMemo(() => {
     const q = queryStr.trim().toLowerCase();
@@ -131,7 +139,8 @@ export default function Admin() {
         headers: {
           "Content-Type": "application/json",
           "X-Admin-Role": currentUser.role || "user",
-          "X-Admin-Email": currentUser.email || ""
+          "X-Admin-Email": currentUser.email || "",
+          "X-Auth-Token": currentUser.authToken || ""
         },
         body: JSON.stringify({ name: cleanName, email: cleanEmail, role }),
       });
@@ -159,7 +168,8 @@ export default function Admin() {
         method: "DELETE",
         headers: {
           "X-Admin-Role": currentUser.role || "user",
-          "X-Admin-Email": currentUser.email || ""
+          "X-Admin-Email": currentUser.email || "",
+          "X-Auth-Token": currentUser.authToken || ""
         }
       });
       const data = await res.json();
@@ -230,10 +240,8 @@ export default function Admin() {
               <>
                 <div className="tableHeaders">
                   <div className="headerCell nameHeader">NOMBRE</div>
-                  <div className="headerCell emailHeader">
-                    CORREO ELECTRÓNICO
-                  </div>
-                  <div className="headerCell roleHeader" style={{ flex: '1' }}>ROL</div>
+                  <div className="headerCell emailHeader">CORREO ELECTRÓNICO</div>
+                  <div className="headerCell roleHeader">ROL</div>
                   <div className="headerCell actionsHeader">ACCIONES</div>
                 </div>
                 <div className="userCards">
@@ -248,24 +256,26 @@ export default function Admin() {
                     return (
                       <div key={u.id} className="userCard">
                         <div className="cardTop">
-                          <div className="userInfo">
+                          <div className="userNameCol">
                             <div className={`initial ${pillClass}`}>
                               {initials}
                             </div>
-                            <div className="userDetails">
-                              <div className="userName">{u.name}</div>
-                              <div className="userEmail">{u.email}</div>
-                            </div>
+                            <span className="userName">{u.name}</span>
                           </div>
-                          <div className="userRole" style={{ flex: '1', fontSize: '12px', fontWeight: '600', color: u.role === 'admin' ? '#f49b1a' : '#6c3af6' }}>
+                          
+                          <div className="userEmailCol">
+                            {u.email}
+                          </div>
+
+                          <div className="userRoleCol" style={{ color: u.role === 'admin' ? '#f49b1a' : (u.role === 'superadmin' ? '#FF6B00' : '#6c3af6') }}>
                             {u.role === 'admin' ? 'ADMIN' : (u.role === 'superadmin' ? 'SUPERADMIN' : 'USUARIO')}
                           </div>
-                          <div className="actions">
+
+                          <div className="actionsCol">
                             <button
                               className="iconBtn"
                               title="Editar"
                               onClick={() => openEdit(u)}
-                              aria-label="Editar"
                             >
                               <FaPencilAlt />
                             </button>
@@ -275,7 +285,6 @@ export default function Admin() {
                                 className="iconBtn deleteBtn"
                                 title="Eliminar"
                                 onClick={() => onDelete(u)}
-                                aria-label="Eliminar"
                               >
                                 <FaTrashAlt />
                               </button>
@@ -332,9 +341,7 @@ export default function Admin() {
             )}
           </div>
 
-          <div className="footerNote">
-            ● TODOS LOS CAMBIOS EN ESTA SECCIÓN SON SINCRONIZADOS CON FIREBASE FIRESTORE.
-          </div>
+
         </main>
 
         {/* Loading overlay removed per user request */}
@@ -387,18 +394,54 @@ export default function Admin() {
                 </label>
                 <label className="field">
                   <span className="labelText">Rol del usuario</span>
-                  <select
-                    className="input"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    style={{ background: '#1a1a1a', border: '1px solid #333', color: 'white', padding: '10px', borderRadius: '4px' }}
-                  >
-                    <option value="user">Usuario normal</option>
-                    <option value="admin">Administrador</option>
+                  <div className="roleSelector">
+                    <label className={`roleOption ${role === 'user' ? 'active' : ''}`}>
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="user" 
+                        checked={role === 'user'} 
+                        onChange={(e) => setRole(e.target.value)} 
+                        className="roleRadio"
+                      />
+                      <div className="roleInfo">
+                        <span className="roleText">Usuario normal</span>
+                        <span className="roleDescription">Acceso a carga y análisis básico</span>
+                      </div>
+                    </label>
+
+                    <label className={`roleOption ${role === 'admin' ? 'active' : ''}`}>
+                      <input 
+                        type="radio" 
+                        name="role" 
+                        value="admin" 
+                        checked={role === 'admin'} 
+                        onChange={(e) => setRole(e.target.value)}
+                        className="roleRadio"
+                      />
+                      <div className="roleInfo">
+                        <span className="roleText">Administrador</span>
+                        <span className="roleDescription">Gestión del equipo y configuraciones</span>
+                      </div>
+                    </label>
+
                     {(currentUser.role === 'superadmin' || currentUser.email === 'adminkinedrik@eadic.com') && (
-                      <option value="superadmin">Super Admin</option>
+                      <label className={`roleOption ${role === 'superadmin' ? 'active' : ''}`}>
+                        <input 
+                          type="radio" 
+                          name="role" 
+                          value="superadmin" 
+                          checked={role === 'superadmin'} 
+                          onChange={(e) => setRole(e.target.value)}
+                          className="roleRadio"
+                        />
+                        <div className="roleInfo">
+                          <span className="roleText">Super Admin</span>
+                          <span className="roleDescription">Control total del sistema</span>
+                        </div>
+                      </label>
                     )}
-                  </select>
+                  </div>
                 </label>
                 {formError && <div className="formError">{formError}</div>}
                 <div className="modalActions">

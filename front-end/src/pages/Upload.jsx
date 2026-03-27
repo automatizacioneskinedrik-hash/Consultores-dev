@@ -87,24 +87,41 @@ export default function Upload() {
   const [currentObjectPath, setCurrentObjectPath] = useState("");
   const [analysisText, setAnalysisText] = useState("Procesando información...");
   const [recentSessions, setRecentSessions] = useState([]);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const fetchRecentSessions = async (email) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/sessions/recent?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_BASE_URL}/api/sessions/recent?email=${encodeURIComponent(email)}`, {
+        headers: {
+          "X-Admin-Email": user.email,
+          "X-Auth-Token": user.authToken
+        }
+      });
       const data = await res.json();
       if (data.ok) {
         setRecentSessions(data.sessions || []);
       }
     } catch (err) {
-      console.error(err);
+      // Quietly ignore failed session fetches
     }
   };
 
   useEffect(() => {
-    if (user?.email) {
+    if (user?.email && user?.authToken) {
       fetchRecentSessions(user.email);
     }
-  }, [user?.email]);
+  }, [user?.email, user?.authToken]);
 
   useEffect(() => {
     if (successStep === 2) {
@@ -130,7 +147,11 @@ export default function Upload() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/sessions/resend`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Admin-Email": user.email,
+          "X-Auth-Token": user.authToken
+        },
         body: JSON.stringify({ sessionId, email: user.email })
       });
       const data = await res.json();
@@ -140,7 +161,7 @@ export default function Upload() {
         alert("Error al enviar: " + (data.error || "Desconocido"));
       }
     } catch (err) {
-      alert("Error contactando al servidor.");
+      alert("No se pudo conectar con el servidor. Verifica tu conexión a internet.");
     }
   };
 
@@ -154,6 +175,11 @@ export default function Upload() {
   };
 
   const handleYes = async () => {
+    if (!navigator.onLine) {
+      setErrorMsg("No tienes conexión a internet. Por favor, conéctate e intenta de nuevo.");
+      setShowModal(false);
+      return;
+    }
     setShowModal(false);
     setErrorMsg("");
     setIsUploading(true);
@@ -161,7 +187,11 @@ export default function Upload() {
     try {
       const signRes = await fetch(`${API_BASE_URL}/api/uploads/signed-url`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Admin-Email": user?.email || "",
+          "X-Auth-Token": user?.authToken || ""
+        },
         body: JSON.stringify({
           originalName: fileMeta.name,
           contentType: fileMeta.type,
@@ -176,7 +206,7 @@ export default function Upload() {
       }
 
       const { uploadUrl, objectPath } = signData;
-      setCurrentObjectPath(objectPath); // Guardar para el paso de envío de correo
+      setCurrentObjectPath(objectPath); 
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -201,10 +231,15 @@ export default function Upload() {
       });
 
       setStatus("SUBIDA EXITOSA");
-      setSuccessStep(1); // Primer mensaje motivador
+      setSuccessStep(1); 
       setShowSuccessModal(true);
     } catch (err) {
-      setErrorMsg(err.message || "Error desconocido.");
+      const msg = err.message || "Error desconocido.";
+      if (msg.includes("Failed to fetch")) {
+        setErrorMsg("Error de red: No se pudo contactar al servidor. Revisa tu conexión.");
+      } else {
+        setErrorMsg(msg);
+      }
       setStatus("ERROR");
     } finally {
       setIsUploading(false);
@@ -215,7 +250,11 @@ export default function Upload() {
     try {
       const completeRes = await fetch(`${API_BASE_URL}/api/uploads/complete`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Admin-Email": user?.email || "",
+          "X-Auth-Token": user?.authToken || ""
+        },
         body: JSON.stringify({ objectPath: currentObjectPath, userEmail: user?.email || "anonymous" }),
       });
 
@@ -224,7 +263,7 @@ export default function Upload() {
         throw new Error(completeData?.error || "No se pudo enviar el correo.");
       }
 
-      setSuccessStep(3); // Mensaje final de correo enviado
+      setSuccessStep(3); 
       setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
@@ -305,6 +344,15 @@ export default function Upload() {
               <br />
               Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
             </p>
+
+            {isOffline && (
+              <div className="offlineWarning">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0119 12.55M5 12.55a10.94 10.94 0 015.17-2.39M10.71 5.05A16 16 0 0122.58 9M1.42 9a15.91 15.91 0 014.7-2.88M8.53 16.11a6 6 0 016.95 0M12 20h.01" />
+                </svg>
+                <span>Sin conexión a internet. Algunas funciones pueden no estar disponibles.</span>
+              </div>
+            )}
 
             {successStep === 2 ? (
               <div className="analyzingWidget">

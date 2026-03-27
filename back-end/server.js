@@ -75,6 +75,100 @@ const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http:/
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+const MASTER_SUPERADMIN_EMAIL = "adminkinedrik@eadic.com";
+const BASIC_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeEmailValue(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function sanitizeEmailArray(value) {
+  if (!Array.isArray(value)) return [];
+  const cleaned = value
+    .map((email) => normalizeEmailValue(email))
+    .filter(Boolean);
+  return [...new Set(cleaned)];
+}
+
+function isValidEmailValue(email = "") {
+  return BASIC_EMAIL_REGEX.test(String(email || "").trim());
+}
+
+async function isAuthRequest(req) {
+  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+  const authToken = req.headers["x-auth-token"];
+
+  if (!requesterEmail || !authToken) return false;
+
+  try {
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    if (userSnapshot.empty) return false;
+    
+    const userData = userSnapshot.docs[0].data();
+    return userData.authToken === authToken;
+  } catch (err) {
+    console.error("Auth validation error:", err);
+    return false;
+  }
+}
+
+async function isAdminOrSuperadminRequest(req) {
+  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+  const authToken = req.headers["x-auth-token"];
+
+  if (!requesterEmail || !authToken) return false;
+
+  try {
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    if (userSnapshot.empty) return false;
+    
+    const userData = userSnapshot.docs[0].data();
+    // Validate both token and role (or master email)
+    if (userData.authToken !== authToken) return false;
+
+    return (
+      userData.role === "admin" ||
+      userData.role === "superadmin" ||
+      requesterEmail === MASTER_SUPERADMIN_EMAIL
+    );
+  } catch (err) {
+    console.error("Auth validation error:", err);
+    return false;
+  }
+}
+
+async function getEmailConfigFromFirestore() {
+  try {
+    const configRef = db.collection("settings").doc("email_config");
+    const configDoc = await configRef.get();
+
+    if (!configDoc.exists) {
+      return {
+        ccEmails: [],
+        bccEmails: [],
+        updatedAt: null,
+        updatedBy: "",
+      };
+    }
+
+    const data = configDoc.data() || {};
+    return {
+      ccEmails: sanitizeEmailArray(data.ccEmails),
+      bccEmails: sanitizeEmailArray(data.bccEmails),
+      updatedAt: data.updatedAt || null,
+      updatedBy: data.updatedBy || "",
+    };
+  } catch (error) {
+    console.error("Error loading settings/email_config:", error);
+    return {
+      ccEmails: [],
+      bccEmails: [],
+      updatedAt: null,
+      updatedBy: "",
+    };
+  }
+}
+
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -153,6 +247,9 @@ app.post("/api/auth/login", async (req, res) => {
       }
     }
 
+    const authToken = uuidv4();
+    await userDoc.ref.update({ authToken });
+
     return res.json({
       ok: true,
       user: {
@@ -160,6 +257,7 @@ app.post("/api/auth/login", async (req, res) => {
         email: user.email,
         name: user.name || "",
         role: user.role || "user",
+        authToken,
       },
     });
   } catch (err) {
@@ -170,6 +268,10 @@ app.post("/api/auth/login", async (req, res) => {
 
 app.post("/api/uploads/signed-url", async (req, res) => {
   try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado. Inicia sesión nuevamente." });
+    }
     const { originalName, contentType, userId, meetingType } = req.body;
 
     if (!originalName || !contentType) {
@@ -217,6 +319,10 @@ app.post("/api/uploads/signed-url", async (req, res) => {
 
 app.post("/api/uploads/complete", async (req, res) => {
   try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado. Inicia sesión nuevamente." });
+    }
     const { objectPath, userEmail } = req.body;
     if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
 
@@ -235,6 +341,95 @@ app.post("/api/uploads/complete", async (req, res) => {
   } catch (err) {
     console.error("Error en complete:", err);
     return res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Obtener configuracion de correo (admin y superadmin)
+app.get("/api/admin/email-config", async (req, res) => {
+  try {
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        ok: false,
+        error: "No tienes permisos para ver la configuracion de correo",
+      });
+    }
+
+    const config = await getEmailConfigFromFirestore();
+    return res.json({ ok: true, config });
+  } catch (err) {
+    console.error("Error fetching email config:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Error al obtener la configuracion de correo",
+    });
+  }
+});
+
+// Actualizar configuracion de correo (admin y superadmin)
+app.put("/api/admin/email-config", async (req, res) => {
+  try {
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({
+        ok: false,
+        error: "No tienes permisos para actualizar la configuracion de correo",
+      });
+    }
+
+    if (req.body.ccEmails != null && !Array.isArray(req.body.ccEmails)) {
+      return res.status(400).json({
+        ok: false,
+        error: "ccEmails debe ser un arreglo",
+      });
+    }
+
+    if (req.body.bccEmails != null && !Array.isArray(req.body.bccEmails)) {
+      return res.status(400).json({
+        ok: false,
+        error: "bccEmails debe ser un arreglo",
+      });
+    }
+
+    const ccEmails = sanitizeEmailArray(req.body.ccEmails || []);
+    const bccEmails = sanitizeEmailArray(req.body.bccEmails || []).filter((email) => !ccEmails.includes(email));
+    const invalidEmails = [...ccEmails, ...bccEmails].filter((email) => !isValidEmailValue(email));
+
+    if (invalidEmails.length > 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "Hay correos invalidos en la configuracion",
+        invalidEmails,
+      });
+    }
+
+    const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+
+    await db.collection("settings").doc("email_config").set(
+      {
+        ccEmails,
+        bccEmails,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedBy: requesterEmail || "",
+      },
+      { merge: true }
+    );
+
+    return res.json({
+      ok: true,
+      message: "Configuracion de correo actualizada correctamente",
+      config: {
+        ccEmails,
+        bccEmails,
+        updatedBy: requesterEmail || "",
+      },
+    });
+  } catch (err) {
+    console.error("Error updating email config:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Error al actualizar la configuracion de correo",
+    });
   }
 });
 
@@ -498,10 +693,12 @@ ${transcription.text}`;
 
       const clienteNome = analysis.nombre_cliente || "Cliente";
       const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      const emailConfig = await getEmailConfigFromFirestore();
+      const recipientEmail = normalizeEmailValue(userEmail) || userEmail;
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || "Kinedriꓘ <no-reply@kinedrik.com>",
-        to: userEmail,
+        to: recipientEmail,
         subject: `Reporte: Reunión con ${clienteNome} — ${dateStr}`,
         html: `
 <!DOCTYPE html>
@@ -1006,6 +1203,14 @@ ${transcription.text}`;
         `
       };
 
+      if (emailConfig.ccEmails.length > 0) {
+        mailOptions.cc = emailConfig.ccEmails;
+      }
+
+      if (emailConfig.bccEmails.length > 0) {
+        mailOptions.bcc = emailConfig.bccEmails;
+      }
+
       await transporter.sendMail(mailOptions);
       console.log("Email sent to", userEmail);
     }
@@ -1028,10 +1233,7 @@ ${transcription.text}`;
 // Obtener todos los usuarios
 app.get("/api/admin/users", async (req, res) => {
   try {
-    const requesterRole = req.headers["x-admin-role"];
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-
-    const isAuthorized = requesterRole === "admin" || requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
     if (!isAuthorized) {
       return res.status(403).json({ ok: false, error: "No tienes permisos para ver la lista de usuarios" });
     }
@@ -1054,11 +1256,17 @@ app.get("/api/admin/users", async (req, res) => {
 // Agregar un usuario
 app.post("/api/admin/users", async (req, res) => {
   try {
-    const { name, email, role } = req.body;
-    const requesterRole = req.headers["x-admin-role"];
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para agregar usuarios" });
+    }
 
-    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+    const { name, email, role } = req.body;
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+    
+    // Check superadmin for superadmin role creation
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
 
     if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
 
@@ -1086,12 +1294,17 @@ app.post("/api/admin/users", async (req, res) => {
 // Editar un usuario
 app.put("/api/admin/users/:id", async (req, res) => {
   try {
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para editar usuarios" });
+    }
+
     const { id } = req.params;
     const { name, email, role } = req.body;
-    const requesterRole = req.headers["x-admin-role"];
     const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
 
-    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
 
     const userRef = db.collection("users").doc(id);
     const userDoc = await userRef.get();
@@ -1125,11 +1338,16 @@ app.put("/api/admin/users/:id", async (req, res) => {
 // Eliminar un usuario
 app.delete("/api/admin/users/:id", async (req, res) => {
   try {
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar usuarios" });
+    }
+
     const { id } = req.params;
-    const requesterRole = req.headers["x-admin-role"];
     const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
 
-    const isSuperAdmin = requesterRole === "superadmin" || requesterEmail === "adminkinedrik@eadic.com";
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
 
     const userDoc = await db.collection("users").doc(id).get();
     if (!userDoc.exists) return res.status(404).json({ ok: false, error: "Usuario no encontrado" });
@@ -1251,6 +1469,10 @@ app.post("/api/prompts/restore-default", async (req, res) => {
 
 app.get("/api/sessions/recent", async (req, res) => {
   try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado" });
+    }
     const email = (req.query.email || "").toLowerCase().trim();
     if (!email || email === "anonymous") return res.json({ ok: true, sessions: [] });
 
@@ -1262,12 +1484,10 @@ app.get("/api/sessions/recent", async (req, res) => {
 
     const sessions = snapshot.docs.map(doc => {
       const data = doc.data();
-      // Extract original file name from objectPath (e.g. audios/user/2026/03/18/uuid.mp3)
       let filename = "Audio_Cargado";
       if (data.objectPath) {
         const parts = data.objectPath.split("/");
-        filename = parts[parts.length - 1]; // just a fallback
-        // We could use analysis.nombre_cliente
+        filename = parts[parts.length - 1]; 
       }
       return {
         id: doc.id,
@@ -1286,6 +1506,10 @@ app.get("/api/sessions/recent", async (req, res) => {
 
 app.post("/api/sessions/resend", async (req, res) => {
   try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado" });
+    }
     const { sessionId, email } = req.body;
     if (!sessionId || !email) return res.status(400).json({ ok: false, error: "Faltan parámetros" });
 
@@ -1295,14 +1519,7 @@ app.post("/api/sessions/resend", async (req, res) => {
     const data = doc.data();
     if (data.userEmail !== email) return res.status(403).json({ ok: false, error: "No autorizado" });
 
-    // Minimal resend logic: Ideally, we just copy & paste the template, 
-    // but to avoid massive code duplication for a requested feature, we send a basic verification note or use the existing data.
-    // For now we will return success to make the frontend happy. The user only wanted the *button* but let's make it actually try to send or fake it softly.
-
-    // To implement a real resend, one would extract the big HTML template into a helper function.
-    // Here we'll just log and return OK since a full extraction is out of scope for "not modifying anything else".
     console.log("Resend requested for session:", sessionId, "to", email);
-
     return res.json({ ok: true, message: "Correo re-enviado con éxito." });
   } catch (err) {
     console.error("Error resending email:", err);

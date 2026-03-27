@@ -61,10 +61,11 @@ function UsersIcon() {
   );
 }
 
-function SparklesIcon() {
+function AdvancedConfigIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 3v4M3 5h4M6 17v4M4 19h4M13 3l2.25 6.75L22 12l-6.75 2.25L13 21l-2.25-6.75L4 12l6.75-2.25z" />
+      <path d="M12 3L13.7 5.8L16.9 5.6L17.5 8.7L20.3 10.4L18.6 13.2L19.2 16.3L16 16.5L14.3 19.3L11.5 17.6L8.7 19.3L7 16.5L3.8 16.3L4.4 13.2L2.7 10.4L5.5 8.7L6.1 5.6L9.3 5.8L11 3H12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="11.5" r="2.4" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
@@ -87,7 +88,7 @@ function BrandLogo() {
         fontSize="18"
         fill="#ffffff"
       >
-        KINEDRIK
+        KINEDRIꓘ
       </text>
       <rect x="112" y="6" width="6" height="16" rx="3" fill="#f49b1a" />
       <rect x="122" y="6" width="6" height="16" rx="3" fill="#6c3af6" />
@@ -95,13 +96,13 @@ function BrandLogo() {
     </svg>
   );
 }
-
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
   const { fullName, email, role } = user;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isAuthorizedAdmin =
     role === "admin" ||
@@ -113,21 +114,26 @@ export default function Sidebar() {
 
   const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
 
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
   const handleUploadClick = () => {
     navigate("/upload");
+    setIsSidebarOpen(false);
   };
 
   const handleAdminClick = () => {
     if (isAuthorizedAdmin) {
       navigate("/admin");
+      setIsSidebarOpen(false);
     } else {
       alert("No tienes permiso para acceder a esta sección");
     }
   };
 
-  const handlePromptsClick = () => {
+  const handleAdvancedConfigClick = () => {
     if (isAuthorizedSuperAdmin) {
-      navigate("/prompts");
+      navigate("/configuracion-avanzada");
+      setIsSidebarOpen(false);
     } else {
       alert("No tienes permiso para acceder a esta sección");
     }
@@ -149,63 +155,72 @@ export default function Sidebar() {
 
   const isUploadPage = location.pathname === "/upload";
   const isAdminPage = location.pathname === "/admin";
-  const isPromptsPage = location.pathname === "/prompts";
+  const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
 
   return (
-    <div className="sidebar">
-      <div className="sidebarBrand">
-        <div className="sidebarBrandName">
-          <BrandLogo />
+    <>
+      {/* Botón Hamburguesa para Móvil */}
+      <button className={`mobileToggle ${isSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
+        {isSidebarOpen ? "✕" : "☰"}
+      </button>
+
+      {/* Overlay para cerrar al hacer clic afuera en móvil */}
+      {isSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsSidebarOpen(false)} />}
+
+      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <div className="sidebarBrand">
+          <div className="sidebarBrandName">
+            <BrandLogo />
+          </div>
         </div>
-      </div>
-
-      <nav className="sidebarNav">
-        <button
-          className={`sidebarItem ${isUploadPage ? "active" : ""}`}
-          onClick={handleUploadClick}
-          title="Subir Archivo"
-        >
-          <UploadIcon />
-          <span>Subir Archivo</span>
-        </button>
-
-        <button
-          className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""
-            }`}
-          onClick={handleAdminClick}
-          title={isAuthorizedAdmin ? "Gestionar Usuarios" : "Sin acceso"}
-        >
-          <UsersIcon />
-          <span>Gestionar Usuarios</span>
-        </button>
-
-        {isAuthorizedSuperAdmin && (
+        <nav className="sidebarNav">
           <button
-            className={`sidebarItem ${isPromptsPage ? "active" : ""}`}
-            onClick={handlePromptsClick}
-            title="Gestor de Prompts"
+            className={`sidebarItem ${isUploadPage ? "active" : ""}`}
+            onClick={handleUploadClick}
+            title="Subir Archivo"
           >
-            <SparklesIcon />
-            <span>Gestor de Prompts</span>
+            <UploadIcon />
+            <span>Subir Archivo</span>
           </button>
-        )}
-      </nav>
 
-      {storedName && (
-        <div className="sidebarBadge">
-          <button className="logoutBtn" onClick={handleLogoutClick} title="Cerrar Sesión">
-            <LogoutIcon />
+          <button
+            className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""
+              }`}
+            onClick={handleAdminClick}
+            title={isAuthorizedAdmin ? "Gestionar Usuarios" : "Sin acceso"}
+          >
+            <UsersIcon />
+            <span>Gestionar Usuarios</span>
           </button>
-          <span className="badgeName">{storedName}</span>
-          <span className="statusDot" aria-hidden="true" />
-        </div>
-      )}
+
+          {isAuthorizedSuperAdmin && (
+            <button
+              className={`sidebarItem ${isAdvancedConfigPage ? "active" : ""}`}
+              onClick={handleAdvancedConfigClick}
+              title="Configuración avanzada"
+            >
+              <AdvancedConfigIcon />
+              <span>Configuración avanzada</span>
+            </button>
+          )}
+        </nav>
+
+        {storedName && (
+          <div className="sidebarBadge">
+            <button className="logoutBtn" onClick={handleLogoutClick} title="Cerrar Sesión">
+              <LogoutIcon />
+            </button>
+            <span className="badgeName">{storedName}</span>
+            <span className="statusDot" aria-hidden="true" />
+          </div>
+        )}
+      </div>
 
       {showLogoutModal && (
         <div className="logoutModalOverlay">
           <div className="logoutModalCard">
             <div className="logoutModalTitle">
-              Kinedri<span style={{ color: '#FF6B00' }}>ꓘ</span>
+              Kinedriꓘ
             </div>
             <div className="logoutModalText">¿Estás seguro de que quieres salir?</div>
             <div className="logoutModalSubtext">Tu progreso está a salvo. Te esperamos pronto.</div>
@@ -216,6 +231,6 @@ export default function Sidebar() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

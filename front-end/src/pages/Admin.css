@@ -245,8 +245,24 @@ body {
 }
 
 .tableHeaders {
-  display: none;
+  display: flex;
+  padding: 0 16px 12px;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 8px;
 }
+
+.headerCell {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8c8c8c;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.nameHeader { flex: 2; }
+.emailHeader { flex: 2; }
+.roleHeader { flex: 1.5; }
+.actionsHeader { flex: 1; text-align: right; }
 
 .userCards {
   display: flex;
@@ -257,50 +273,60 @@ body {
 .userCard {
   background: #ffffff;
   border-radius: 12px;
-  padding: 12px 16px;
-  box-shadow: 0 8px 24px rgba(64, 0, 37, 0.12);
-  border: 1px solid #f5f5f5;
-  transition:
-    box-shadow 140ms ease,
-    transform 140ms ease,
-    border-color 140ms ease;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s ease;
 }
 
 .userCard:hover {
-  box-shadow: 0 12px 32px rgba(64, 0, 37, 0.16);
-  transform: translateY(-3px);
-  border-color: #efefef;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: #0040a4;
+  background: #f8faff;
 }
 
 .cardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 16px;
 }
 
-.userInfo {
+.userNameCol {
+  flex: 2;
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
+  gap: 12px;
 }
 
-.userDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.userCard .userName {
+.userNameCol .userName {
   font-size: 14px;
-  color: var(--text-primary);
   font-weight: 700;
+  color: #040025;
 }
 
-.userCard .userEmail {
+.userEmailCol {
+  flex: 2;
+  font-size: 13px;
+  color: #6c757d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userRoleCol {
+  flex: 1.5;
   font-size: 12px;
-  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.actionsCol {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .userCard .userId {
@@ -363,10 +389,12 @@ body {
 
 .iconBtn:hover {
   background: rgba(64, 0, 37, 0.06);
+  color: var(--brand-blue);
 }
 
 .iconBtn.deleteBtn:hover {
-  background: rgba(64, 0, 37, 0.06);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
 .emptyRow {
@@ -559,13 +587,15 @@ body {
 }
 
 .primaryBtn {
-  background: var(--navy);
+  background: #111822;
   color: #fff;
-  padding: 10px 16px;
+  padding: 10px 24px;
   border-radius: 10px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 16px 32px rgba(4, 3, 30, 0.18);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(17, 24, 34, 0.15);
+  transition: all 0.2s ease;
 }
 
 .ghostBtn:hover {
@@ -573,15 +603,71 @@ body {
 }
 
 .primaryBtn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(17, 24, 34, 0.25);
+  background: #000;
 }
 
-/* Footer note */
-.footerNote {
-  margin-top: 18px;
-  color: #9aa0a6;
+/* Role selector styles */
+.roleSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.roleOption {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.roleOption:hover {
+  background: #f8faff;
+  border-color: #d8e6ff;
+}
+
+.roleOption.active {
+  background: #f4f8ff;
+  border-color: #2b6cff;
+  box-shadow: 0 0 0 1px #2b6cff;
+}
+
+.roleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.roleText {
+  font-size: 15px;
+  font-weight: 600;
+  color: #071033;
+}
+
+.roleDescription {
   font-size: 12px;
-  text-align: center;
+  color: #64748b;
+  font-weight: 400;
+}
+
+.roleOption.active .roleText {
+  color: #0d1a49;
+}
+
+.roleRadio {
+  accent-color: #2b6cff;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .loadingOverlay {
@@ -612,5 +698,46 @@ body {
 
   .addBtn {
     padding: 10px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .adminPage {
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+    padding-top: 70px;
+  }
+  .topSection h1 {
+    font-size: 24px;
+  }
+  .actionsRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .searchBox {
+    width: 100%;
+  }
+  .addBtn {
+    width: 100%;
+  }
+  
+  /* Mobile table adjustments */
+  .tableHeaders {
+    display: none; /* Hide headers on mobile */
+  }
+  .userCard {
+    padding: 16px;
+  }
+  .cardTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .actionsCol {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
   }
 }
