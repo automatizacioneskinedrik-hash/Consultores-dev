@@ -1,5 +1,5 @@
 ﻿substitutions:
-  _AR_REPO: europe-southwest1-docker.pkg.dev/observatorio-dev/repo-observatorio-dev
+  _AR_REPO: us-central1-docker.pkg.dev/observatorio-dev/repo-observatorio-dev
   _BACKEND_IMAGE: backend
   _FRONTEND_IMAGE: frontend
 
