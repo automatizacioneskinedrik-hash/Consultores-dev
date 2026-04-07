@@ -209,9 +209,11 @@ export default function Sidebar() {
               />
             </button>
           )}
-          <div className="sidebarBrandName">
-            <BrandLogo />
-          </div>
+          {!isUploadPage && (
+            <div className="sidebarBrandName">
+              <BrandLogo />
+            </div>
+          )}
         </div>
         <nav className="sidebarNav">
           <button
