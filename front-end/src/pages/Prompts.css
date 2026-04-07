@@ -10,11 +10,17 @@
 }
 
 .promptsPage {
-  margin-left: max(220px, 15vw);
+  margin-left: 215px;
   background: var(--bg-primary);
   min-height: 100vh;
   color: var(--text-primary);
-  width: calc(100% - max(220px, 15vw));
+  width: calc(100% - 215px);
+  transition: margin-left 0.28s ease, width 0.28s ease;
+}
+
+body.sidebar-collapsed .promptsPage {
+  margin-left: 88px;
+  width: calc(100% - 88px);
 }
 
 .promptsContent {
@@ -454,6 +460,10 @@
 
 @media (max-width: 900px) {
   .promptsPage {
+    margin-left: 0;
+    width: 100%;
+  }
+  body.sidebar-collapsed .promptsPage {
     margin-left: 0;
     width: 100%;
   }

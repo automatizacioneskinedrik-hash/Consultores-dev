@@ -4,6 +4,12 @@
   min-height: 100vh;
   background: #e7e7e7;
   font-family: "Inter", "Arial", sans-serif;
+  transition: margin-left 0.28s ease, width 0.28s ease;
+}
+
+body.sidebar-collapsed .advancedPage {
+  margin-left: 88px;
+  width: calc(100% - 88px);
 }
 
 .advancedContent {
@@ -297,6 +303,10 @@
     margin-left: 0;
     width: 100%;
     padding-top: 60px;
+  }
+  body.sidebar-collapsed .advancedPage {
+    margin-left: 0;
+    width: 100%;
   }
 
   .advancedContent {
