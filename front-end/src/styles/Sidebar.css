@@ -106,7 +106,21 @@
 }
 
 .sidebar.uploadSidebar .sidebarItem {
-  transition: padding 0.22s ease, gap 0.22s ease, color 0.3s ease, background 0.3s ease;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  transition: padding 0.22s ease, column-gap 0.22s ease, grid-template-columns 0.22s ease, color 0.3s ease, background 0.3s ease;
+}
+
+.sidebar.uploadSidebar .sidebarItem > svg {
+  grid-column: 1;
+  justify-self: center;
+}
+
+.sidebar.uploadSidebar .sidebarItem > span {
+  grid-column: 2;
+  min-width: 0;
 }
 
 .sidebar.uploadSidebar .sidebarItem span {
@@ -118,12 +132,13 @@
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarNav {
-  padding: 0 8px;
+  padding: 0 12px;
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarItem {
-  padding: 12px 22px;
-  gap: 0;
+  padding: 12px 16px;
+  grid-template-columns: 24px 0fr;
+  column-gap: 0;
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarItem span {
@@ -148,9 +163,9 @@
 
 .sidebar.uploadSidebar.collapsed .sidebarBadge {
   max-width: 64px;
-  margin: 16px auto 0;
-  justify-content: center;
-  padding: 8px;
+  margin: 16px 12px 0;
+  justify-content: flex-start;
+  padding: 8px 12px;
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName,
@@ -438,9 +453,9 @@
   }
 
   .sidebar.uploadSidebar.collapsed .sidebarItem {
-    justify-content: flex-start;
     padding: 12px 16px;
-    gap: 12px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    column-gap: 12px;
   }
 
   .sidebar.uploadSidebar.collapsed .sidebarItem span {
@@ -451,7 +466,7 @@
   .sidebar.uploadSidebar.collapsed .sidebarBadge {
     max-width: 191px;
     margin: 16px 12px 0;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 8px 12px;
   }
 
