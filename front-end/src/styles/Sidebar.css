@@ -12,12 +12,60 @@
   height: 100vh;
   z-index: 999;
   overflow-y: auto;
+  transition: width 0.28s ease, padding 0.28s ease;
 }
 
 .sidebarBrand {
   padding: 0 16px 32px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 24px;
+}
+
+.sidebarTopLogoSwitch {
+  width: 100%;
+  height: 44px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0 auto 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sidebarTopLogoSwitch:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.sidebarTopLogoImage {
+  position: absolute;
+  object-fit: contain;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+.sidebarTopLogoImage.full {
+  width: 166px;
+  height: 28px;
+}
+
+.sidebarTopLogoImage.symbol {
+  width: 34px;
+  height: 34px;
+}
+
+.sidebarTopLogoImage.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sidebarTopLogoImage.hidden {
+  opacity: 0;
+  transform: scale(0.92);
 }
 
 .sidebarBrandName {
@@ -28,6 +76,62 @@
   font-weight: 700;
   color: white;
   letter-spacing: 0.5px;
+}
+
+.sidebar.uploadSidebar .sidebarBrandName {
+  max-height: 36px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
+}
+
+.sidebar.uploadSidebar.collapsed {
+  width: 88px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBrand {
+  padding: 0 10px 24px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBrandName {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebar.uploadSidebar .sidebarItem span {
+  transition: opacity 0.2s ease, width 0.2s ease;
+  white-space: nowrap;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarNav {
+  padding: 0 8px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarItem {
+  justify-content: center;
+  padding: 12px;
+  gap: 0;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarItem span {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge {
+  max-width: 64px;
+  margin: 16px auto 0;
+  justify-content: center;
+  padding: 8px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName,
+.sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
+  display: none;
 }
 
 .sidebarMirroredK {
@@ -277,5 +381,50 @@
 
   .sidebarOverlay {
     display: block;
+  }
+
+  .sidebar.uploadSidebar.collapsed {
+    width: 215px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBrand {
+    padding: 0 16px 32px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBrandName {
+    max-height: 36px;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarNav {
+    padding: 0 12px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarItem {
+    justify-content: flex-start;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarItem span {
+    width: auto;
+    opacity: 1;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge {
+    max-width: 191px;
+    margin: 16px 12px 0;
+    justify-content: space-between;
+    padding: 8px 12px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName {
+    display: inline-block;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
+    display: inline-block;
   }
 }

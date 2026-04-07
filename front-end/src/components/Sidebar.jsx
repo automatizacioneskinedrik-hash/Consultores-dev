@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import "../styles/Sidebar.css";
@@ -96,13 +96,33 @@ function BrandLogo() {
     </svg>
   );
 }
+
+const EXPANDED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Logotipo_negativo.svg";
+const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Simbolo_negativo.svg";
+
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
   const { fullName, email, role } = user;
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isUploadSidebarCollapsed, setIsUploadSidebarCollapsed] = useState(false);
+
+  const isUploadPage = location.pathname === "/upload";
+  const isAdminPage = location.pathname === "/admin";
+  const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
+
+  const sidebarClassName = `sidebar ${isMobileSidebarOpen ? "open" : ""} ${isUploadPage ? "uploadSidebar" : ""} ${isUploadPage && isUploadSidebarCollapsed ? "collapsed" : ""}`.trim();
+
+  useEffect(() => {
+    const collapsedClassName = "upload-sidebar-collapsed";
+    const shouldCollapseUploadShell = isUploadPage && isUploadSidebarCollapsed;
+    document.body.classList.toggle(collapsedClassName, shouldCollapseUploadShell);
+    return () => {
+      document.body.classList.remove(collapsedClassName);
+    };
+  }, [isUploadPage, isUploadSidebarCollapsed]);
 
   const isAuthorizedAdmin =
     role === "admin" ||
@@ -114,17 +134,22 @@ export default function Sidebar() {
 
   const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
+
+  const toggleUploadSidebar = () => {
+    if (!isUploadPage) return;
+    setIsUploadSidebarCollapsed((prev) => !prev);
+  };
 
   const handleUploadClick = () => {
     navigate("/upload");
-    setIsSidebarOpen(false);
+    setIsMobileSidebarOpen(false);
   };
 
   const handleAdminClick = () => {
     if (isAuthorizedAdmin) {
       navigate("/admin");
-      setIsSidebarOpen(false);
+      setIsMobileSidebarOpen(false);
     } else {
       alert("No tienes permiso para acceder a esta sección");
     }
@@ -133,7 +158,7 @@ export default function Sidebar() {
   const handleAdvancedConfigClick = () => {
     if (isAuthorizedSuperAdmin) {
       navigate("/configuracion-avanzada");
-      setIsSidebarOpen(false);
+      setIsMobileSidebarOpen(false);
     } else {
       alert("No tienes permiso para acceder a esta sección");
     }
@@ -153,22 +178,37 @@ export default function Sidebar() {
     setShowLogoutModal(false);
   };
 
-  const isUploadPage = location.pathname === "/upload";
-  const isAdminPage = location.pathname === "/admin";
-  const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
-
   return (
     <>
       {/* Botón Hamburguesa para Móvil */}
-      <button className={`mobileToggle ${isSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
-        {isSidebarOpen ? "✕" : "☰"}
+      <button className={`mobileToggle ${isMobileSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
+        {isMobileSidebarOpen ? "✕" : "☰"}
       </button>
 
       {/* Overlay para cerrar al hacer clic afuera en móvil */}
-      {isSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsSidebarOpen(false)} />}
+      {isMobileSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsMobileSidebarOpen(false)} />}
 
-      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+      <div className={sidebarClassName}>
         <div className="sidebarBrand">
+          {isUploadPage && (
+            <button
+              className="sidebarTopLogoSwitch"
+              onClick={toggleUploadSidebar}
+              title={isUploadSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
+              aria-label={isUploadSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
+            >
+              <img
+                src={EXPANDED_TOP_LOGO}
+                alt="Kinedrik"
+                className={`sidebarTopLogoImage full ${isUploadSidebarCollapsed ? "hidden" : "visible"}`}
+              />
+              <img
+                src={COLLAPSED_TOP_LOGO}
+                alt="Kinedrik símbolo"
+                className={`sidebarTopLogoImage symbol ${isUploadSidebarCollapsed ? "visible" : "hidden"}`}
+              />
+            </button>
+          )}
           <div className="sidebarBrandName">
             <BrandLogo />
           </div>

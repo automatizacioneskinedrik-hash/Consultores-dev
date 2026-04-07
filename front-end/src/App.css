@@ -36,6 +36,12 @@ body {
   flex-direction: column;
   margin-left: 215px;
   overflow-x: hidden;
+  transition: width 0.28s ease, margin-left 0.28s ease;
+}
+
+body.upload-sidebar-collapsed .appShell {
+  width: calc(100% - 88px);
+  margin-left: 88px;
 }
 
 /* HEADER FULL WIDTH CORRECTO */
@@ -643,6 +649,10 @@ body {
 
 @media (max-width: 768px) {
   .appShell {
+    width: 100%;
+    margin-left: 0;
+  }
+  body.upload-sidebar-collapsed .appShell {
     width: 100%;
     margin-left: 0;
   }
