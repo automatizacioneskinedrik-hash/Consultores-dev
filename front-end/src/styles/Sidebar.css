@@ -147,17 +147,35 @@
 }
 
 .sidebar.uploadSidebar .sidebarBadge {
-  transition: max-width 0.22s ease, margin 0.22s ease, padding 0.22s ease;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 8px;
+  align-items: center;
+  column-gap: 8px;
+  transition: max-width 0.22s ease, margin 0.22s ease, padding 0.22s ease, grid-template-columns 0.22s ease, column-gap 0.22s ease;
+}
+
+.sidebar.uploadSidebar .logoutBtn {
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  flex: none;
+}
+
+.sidebar.uploadSidebar .logoutBtn svg {
+  width: 18px;
+  height: 18px;
 }
 
 .sidebar.uploadSidebar .sidebarBadge .badgeName {
   max-width: 120px;
   opacity: 1;
+  margin-left: 0;
   transition: max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease;
 }
 
 .sidebar.uploadSidebar .sidebarBadge .statusDot {
   opacity: 1;
+  margin-left: 0;
   transition: opacity 0.2s ease, width 0.2s ease, margin-left 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -166,6 +184,8 @@
   margin: 16px 12px 0;
   justify-content: flex-start;
   padding: 8px 12px;
+  grid-template-columns: 26px 0fr 0px;
+  column-gap: 0;
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName,
@@ -466,20 +486,21 @@
   .sidebar.uploadSidebar.collapsed .sidebarBadge {
     max-width: 191px;
     margin: 16px 12px 0;
-    justify-content: flex-start;
     padding: 8px 12px;
+    grid-template-columns: 26px minmax(0, 1fr) 8px;
+    column-gap: 8px;
   }
 
   .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName {
     max-width: 120px;
     opacity: 1;
-    margin-left: 8px;
+    margin-left: 0;
   }
 
   .sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
     width: 8px;
     opacity: 1;
-    margin-left: 6px;
+    margin-left: 0;
     box-shadow: 0 0 0 2px rgba(40, 199, 111, 0.12);
   }
 }
