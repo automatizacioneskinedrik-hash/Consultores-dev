@@ -292,6 +292,10 @@
   font-weight: 700;
   margin: 16px 12px 0;
   max-width: 191px;
+  width: calc(100% - 24px);
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
 }
 
 .logoutBtn {
@@ -307,9 +311,15 @@
   border-radius: 4px;
 }
 
+.sidebarBadge:hover .logoutBtn,
 .logoutBtn:hover {
   color: #ff4d4d;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebarBadge:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 2px;
 }
 
 .sidebarBadge .badgeName {

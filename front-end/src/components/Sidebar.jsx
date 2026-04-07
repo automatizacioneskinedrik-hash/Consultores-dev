@@ -248,13 +248,13 @@ export default function Sidebar() {
         </nav>
 
         {storedName && (
-          <div className="sidebarBadge">
-            <button className="logoutBtn" onClick={handleLogoutClick} title="Cerrar Sesión">
+          <button className="sidebarBadge" type="button" onClick={handleLogoutClick} title="Cerrar Sesión">
+            <span className="logoutBtn" aria-hidden="true">
               <LogoutIcon />
-            </button>
+            </span>
             <span className="badgeName">{storedName}</span>
             <span className="statusDot" aria-hidden="true" />
-          </div>
+          </button>
         )}
       </div>
 
