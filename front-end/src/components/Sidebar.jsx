@@ -1,17 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import "../styles/Sidebar.css";
 
 function UploadIcon() {
   return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M20.39 18.39A5 5 0 0018 8h-1.26A7 7 0 105 16.6"
         stroke="currentColor"
@@ -19,20 +13,8 @@ function UploadIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M12 16V10"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9 13l3-3 3 3"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <path d="M12 16V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 13l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -70,39 +52,22 @@ function AdvancedConfigIcon() {
   );
 }
 
-function BrandLogo() {
-  return (
-    <svg
-      className="brandLogo"
-      width="140"
-      height="28"
-      viewBox="0 0 140 28"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <text
-        x="0"
-        y="20"
-        fontFamily="Inter, Arial, sans-serif"
-        fontWeight="800"
-        fontSize="18"
-        fill="#ffffff"
-      >
-        KINEDRIꓘ
-      </text>
-      <rect x="112" y="6" width="6" height="16" rx="3" fill="#f49b1a" />
-      <rect x="122" y="6" width="6" height="16" rx="3" fill="#6c3af6" />
-      <rect x="132" y="6" width="6" height="16" rx="3" fill="#9b6bff" />
-    </svg>
-  );
-}
+const EXPANDED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Logotipo_negativo.svg";
+const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Simbolo_negativo.svg";
+
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser();
   const { fullName, email, role } = user;
+
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  const isUploadPage = location.pathname === "/upload";
+  const isAdminPage = location.pathname === "/admin";
+  const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
 
   const isAuthorizedAdmin =
     role === "admin" ||
@@ -111,37 +76,46 @@ export default function Sidebar() {
     (email && email.toLowerCase() === "admin123@eadic.com");
 
   const isAuthorizedSuperAdmin = role === "superadmin" || (email && email.toLowerCase() === "adminkinedrik@eadic.com");
+  const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : role === "admin" ? "ADMIN" : "");
 
-  const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : (role === "admin" ? "ADMIN" : ""));
+  const sidebarClassName = `sidebar ${isMobileSidebarOpen ? "open" : ""} uploadSidebar ${isSidebarCollapsed ? "collapsed" : ""}`.trim();
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  useEffect(() => {
+    const collapsedClassName = "sidebar-collapsed";
+    document.body.classList.toggle(collapsedClassName, isSidebarCollapsed);
+
+    return () => {
+      document.body.classList.remove(collapsedClassName);
+    };
+  }, [isSidebarCollapsed]);
+
+  const toggleSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
+  const toggleCollapsedSidebar = () => setIsSidebarCollapsed((prev) => !prev);
 
   const handleUploadClick = () => {
     navigate("/upload");
-    setIsSidebarOpen(false);
+    setIsMobileSidebarOpen(false);
   };
 
   const handleAdminClick = () => {
-    if (isAuthorizedAdmin) {
-      navigate("/admin");
-      setIsSidebarOpen(false);
-    } else {
+    if (!isAuthorizedAdmin) {
       alert("No tienes permiso para acceder a esta sección");
+      return;
     }
+    navigate("/admin");
+    setIsMobileSidebarOpen(false);
   };
 
   const handleAdvancedConfigClick = () => {
-    if (isAuthorizedSuperAdmin) {
-      navigate("/configuracion-avanzada");
-      setIsSidebarOpen(false);
-    } else {
+    if (!isAuthorizedSuperAdmin) {
       alert("No tienes permiso para acceder a esta sección");
+      return;
     }
+    navigate("/configuracion-avanzada");
+    setIsMobileSidebarOpen(false);
   };
 
-  const handleLogoutClick = () => {
-    setShowLogoutModal(true);
-  };
+  const handleLogoutClick = () => setShowLogoutModal(true);
 
   const handleConfirmLogout = () => {
     setShowLogoutModal(false);
@@ -149,45 +123,47 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  const handleCancelLogout = () => {
-    setShowLogoutModal(false);
-  };
-
-  const isUploadPage = location.pathname === "/upload";
-  const isAdminPage = location.pathname === "/admin";
-  const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
+  const handleCancelLogout = () => setShowLogoutModal(false);
 
   return (
     <>
-      {/* Botón Hamburguesa para Móvil */}
-      <button className={`mobileToggle ${isSidebarOpen ? 'open' : ''}`} onClick={toggleSidebar}>
-        {isSidebarOpen ? "✕" : "☰"}
+      <button className={`mobileToggle ${isMobileSidebarOpen ? "open" : ""}`} onClick={toggleSidebar}>
+        {isMobileSidebarOpen ? "✕" : "☰"}
       </button>
 
-      {/* Overlay para cerrar al hacer clic afuera en móvil */}
-      {isSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsSidebarOpen(false)} />}
+      {isMobileSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsMobileSidebarOpen(false)} />}
 
-      <div className={`sidebar ${isSidebarOpen ? "open" : ""}`}>
+      <div className={sidebarClassName}>
         <div className="sidebarBrand">
-          <div className="sidebarBrandName">
-            <BrandLogo />
-          </div>
-        </div>
-        <nav className="sidebarNav">
           <button
-            className={`sidebarItem ${isUploadPage ? "active" : ""}`}
-            onClick={handleUploadClick}
-            title="Subir Archivo"
+            className="sidebarTopLogoSwitch"
+            onClick={toggleCollapsedSidebar}
+            title={isSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
+            aria-label={isSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
           >
+            <img
+              src={EXPANDED_TOP_LOGO}
+              alt="Kinedrik"
+              className={`sidebarTopLogoImage full ${isSidebarCollapsed ? "hidden" : "visible"}`}
+            />
+            <img
+              src={COLLAPSED_TOP_LOGO}
+              alt="Kinedrik símbolo"
+              className={`sidebarTopLogoImage symbol ${isSidebarCollapsed ? "visible" : "hidden"}`}
+            />
+          </button>
+        </div>
+
+        <nav className="sidebarNav">
+          <button className={`sidebarItem ${isUploadPage ? "active" : ""}`} onClick={handleUploadClick} title="Subir archivo">
             <UploadIcon />
             <span>Subir Archivo</span>
           </button>
 
           <button
-            className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""
-              }`}
+            className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""}`}
             onClick={handleAdminClick}
-            title={isAuthorizedAdmin ? "Gestionar Usuarios" : "Sin acceso"}
+            title={isAuthorizedAdmin ? "Gestionar usuarios" : "Sin acceso"}
           >
             <UsersIcon />
             <span>Gestionar Usuarios</span>
@@ -206,27 +182,29 @@ export default function Sidebar() {
         </nav>
 
         {storedName && (
-          <div className="sidebarBadge">
-            <button className="logoutBtn" onClick={handleLogoutClick} title="Cerrar Sesión">
+          <button className="sidebarBadge" type="button" onClick={handleLogoutClick} title="Cerrar sesión">
+            <span className="logoutBtn" aria-hidden="true">
               <LogoutIcon />
-            </button>
+            </span>
             <span className="badgeName">{storedName}</span>
             <span className="statusDot" aria-hidden="true" />
-          </div>
+          </button>
         )}
       </div>
 
       {showLogoutModal && (
         <div className="logoutModalOverlay">
           <div className="logoutModalCard">
-            <div className="logoutModalTitle">
-              Kinedriꓘ
-            </div>
+            <div className="logoutModalTitle">Kinedriꓘ</div>
             <div className="logoutModalText">¿Estás seguro de que quieres salir?</div>
             <div className="logoutModalSubtext">Tu progreso está a salvo. Te esperamos pronto.</div>
             <div className="logoutModalActions">
-              <button className="logoutModalBtn cancel" onClick={handleCancelLogout}>Cancelar</button>
-              <button className="logoutModalBtn confirm" onClick={handleConfirmLogout}>Cerrar sesión</button>
+              <button className="logoutModalBtn cancel" onClick={handleCancelLogout}>
+                Cancelar
+              </button>
+              <button className="logoutModalBtn confirm" onClick={handleConfirmLogout}>
+                Cerrar sesión
+              </button>
             </div>
           </div>
         </div>

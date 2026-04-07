@@ -93,15 +93,15 @@ steps:
       - --allow-unauthenticated
 
 substitutions:
-  _REGION: europe-southwest1
-  _AR_REPO: europe-southwest1-docker.pkg.dev/consultores-dev/repo-consultores-dev
+  _REGION: us-central1
+  _AR_REPO: us-central1-docker.pkg.dev/consultores-dev/repo-consultores-dev
   _BACKEND_IMAGE: backend
   _FRONTEND_IMAGE: frontend
-  _BACKEND_SERVICE: backend
-  _FRONTEND_SERVICE: frontend
-  _API_BASE_URL: https://backend-683216209357.europe-southwest1.run.app
+  _BACKEND_SERVICE: backend-dev
+  _FRONTEND_SERVICE: frontend-dev
+  _API_BASE_URL: https://backend-dev-683216209357.us-central1.run.app
   _GOOGLE_CLIENT_ID: 683216209357-dgurnrj3gvd2sbpoam4kthdona499l6r.apps.googleusercontent.com
-  _CORS_ORIGIN: https://frontend-683216209357.europe-southwest1.run.app
+  _CORS_ORIGIN: https://frontend-dev-683216209357.us-central1.run.app
   _GCS_BUCKET_NAME: audios_consultores
   _GCP_PROJECT_ID: consultores-dev
   _BQ_DATASET: consultores

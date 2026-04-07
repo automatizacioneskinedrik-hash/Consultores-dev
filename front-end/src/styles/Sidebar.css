@@ -12,12 +12,60 @@
   height: 100vh;
   z-index: 999;
   overflow-y: auto;
+  transition: width 0.28s ease, padding 0.28s ease;
 }
 
 .sidebarBrand {
   padding: 0 16px 32px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 24px;
+}
+
+.sidebarTopLogoSwitch {
+  width: 100%;
+  height: 44px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0 auto 14px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sidebarTopLogoSwitch:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.sidebarTopLogoImage {
+  position: absolute;
+  object-fit: contain;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+.sidebarTopLogoImage.full {
+  width: 166px;
+  height: 28px;
+}
+
+.sidebarTopLogoImage.symbol {
+  width: 34px;
+  height: 34px;
+}
+
+.sidebarTopLogoImage.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.sidebarTopLogoImage.hidden {
+  opacity: 0;
+  transform: scale(0.92);
 }
 
 .sidebarBrandName {
@@ -28,6 +76,132 @@
   font-weight: 700;
   color: white;
   letter-spacing: 0.5px;
+}
+
+.sidebar.uploadSidebar .sidebarBrandName {
+  max-height: 36px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
+}
+
+.sidebar.uploadSidebar.collapsed {
+  width: 88px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBrand {
+  padding: 0 10px 24px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBrandName {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebar.uploadSidebar .sidebarNav {
+  transition: padding 0.22s ease;
+}
+
+.sidebar.uploadSidebar .sidebarItem {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  transition: padding 0.22s ease, column-gap 0.22s ease, grid-template-columns 0.22s ease, color 0.3s ease, background 0.3s ease;
+}
+
+.sidebar.uploadSidebar .sidebarItem > svg {
+  grid-column: 1;
+  justify-self: center;
+}
+
+.sidebar.uploadSidebar .sidebarItem > span {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.sidebar.uploadSidebar .sidebarItem span {
+  max-width: 160px;
+  opacity: 1;
+  transition: opacity 0.2s ease, max-width 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarNav {
+  padding: 0 12px;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarItem {
+  padding: 12px 16px;
+  grid-template-columns: 24px 0fr;
+  column-gap: 0;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarItem span {
+  max-width: 0;
+  opacity: 0;
+}
+
+.sidebar.uploadSidebar .sidebarBadge {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) 8px;
+  align-items: center;
+  column-gap: 8px;
+  transition: max-width 0.22s ease, margin 0.22s ease, padding 0.22s ease, grid-template-columns 0.22s ease, column-gap 0.22s ease;
+}
+
+.sidebar.uploadSidebar .logoutBtn {
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  flex: none;
+}
+
+.sidebar.uploadSidebar .logoutBtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sidebar.uploadSidebar .sidebarBadge .badgeName {
+  max-width: 120px;
+  opacity: 1;
+  margin-left: 0;
+  transition: max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease;
+}
+
+.sidebar.uploadSidebar .sidebarBadge .statusDot {
+  opacity: 1;
+  margin-left: 0;
+  transition: opacity 0.2s ease, width 0.2s ease, margin-left 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge {
+  max-width: 64px;
+  margin: 16px 12px 0;
+  justify-content: flex-start;
+  padding: 8px 12px;
+  grid-template-columns: 26px 0fr 0px;
+  column-gap: 0;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName,
+.sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
+  opacity: 0;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName {
+  max-width: 0;
+  margin-left: 0;
+}
+
+.sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
+  width: 0;
+  margin-left: 0;
+  box-shadow: none;
 }
 
 .sidebarMirroredK {
@@ -118,6 +292,8 @@
   font-weight: 700;
   margin: 16px 12px 0;
   max-width: 191px;
+  cursor: pointer;
+  text-align: left;
 }
 
 .logoutBtn {
@@ -133,9 +309,15 @@
   border-radius: 4px;
 }
 
+.sidebarBadge:hover .logoutBtn,
 .logoutBtn:hover {
   color: #ff4d4d;
   background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebarBadge:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.65);
+  outline-offset: 2px;
 }
 
 .sidebarBadge .badgeName {
@@ -277,5 +459,56 @@
 
   .sidebarOverlay {
     display: block;
+  }
+
+  .sidebar.uploadSidebar.collapsed {
+    width: 215px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBrand {
+    padding: 0 16px 32px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBrandName {
+    max-height: 36px;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarNav {
+    padding: 0 12px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarItem {
+    padding: 12px 16px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarItem span {
+    max-width: 160px;
+    opacity: 1;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge {
+    max-width: 191px;
+    margin: 16px 12px 0;
+    padding: 8px 12px;
+    grid-template-columns: 26px minmax(0, 1fr) 8px;
+    column-gap: 8px;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeName {
+    max-width: 120px;
+    opacity: 1;
+    margin-left: 0;
+  }
+
+  .sidebar.uploadSidebar.collapsed .sidebarBadge .statusDot {
+    width: 8px;
+    opacity: 1;
+    margin-left: 0;
+    box-shadow: 0 0 0 2px rgba(40, 199, 111, 0.12);
   }
 }

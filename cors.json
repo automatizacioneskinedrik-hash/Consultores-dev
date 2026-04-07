@@ -1,8 +1,8 @@
 [
   {
     "origin": [
-      "https://frontend-683216209357.europe-southwest1.run.app",
-      "https://frontend-dev-683216209357.europe-southwest1.run.app",
+      "https://frontend-683216209357.us-central1.run.app",
+      "https://frontend-dev-683216209357.us-central1.run.app",
       "http://localhost:5173",
       "http://localhost:3000"
     ],
