@@ -63,7 +63,10 @@ export default function Sidebar() {
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const isUploadPage = location.pathname === "/upload";
   const isAdminPage = location.pathname === "/admin";
@@ -87,6 +90,10 @@ export default function Sidebar() {
     return () => {
       document.body.classList.remove(collapsedClassName);
     };
+  }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
 
   const toggleSidebar = () => setIsMobileSidebarOpen((prev) => !prev);
@@ -176,7 +183,7 @@ export default function Sidebar() {
               title="Configuración avanzada"
             >
               <AdvancedConfigIcon />
-              <span>Configuración avanzada</span>
+              <span>Configuración<br />Avanzada</span>
             </button>
           )}
         </nav>
