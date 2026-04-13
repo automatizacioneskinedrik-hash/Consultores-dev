@@ -1,0 +1,396 @@
+.reportOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 0, 37, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.reportContainer {
+  background: #f8fafc;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.reportHeader {
+  background: var(--navy);
+  color: white;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 4px solid var(--brand-orange);
+}
+
+.headerLeft h2 {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.headerLeft span {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.closeReport {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  transition: all 0.2s;
+}
+
+.closeReport:hover {
+  background: var(--brand-orange);
+  transform: rotate(90deg);
+}
+
+.reportContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--kinedrik-blue) #f1f5f9;
+}
+
+.reportHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.heroText h3 {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--navy);
+  margin: 0 0 8px 0;
+}
+
+.generalScoreCircle {
+  width: 120px;
+  height: 120px;
+  border: 8px solid;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.scoreValue {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--navy);
+}
+
+.scoreLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.metricCard {
+  padding: 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.metricCard.blue {
+  background: linear-gradient(135deg, #0040A4 0%, #2885FF 100%);
+  color: white;
+}
+
+.metricCard.white {
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.mLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.mValue {
+  font-size: 36px;
+  font-weight: 900;
+}
+
+.participationBar {
+  height: 40px;
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.pPart {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+}
+
+.pPart.user { background: #BB8AFF; }
+.pPart.client { background: #FF5900; justify-content: flex-end; }
+
+.statsSection {
+  margin-bottom: 32px;
+}
+
+.statsSection h4 {
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: 900;
+  color: var(--navy);
+  margin-bottom: 16px;
+  letter-spacing: 1px;
+}
+
+.probGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.probTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pBadge {
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+}
+
+.pBadge.orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.pBarBase {
+  height: 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pBarFill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.pBarFill.blue { background: linear-gradient(90deg, #3B82F6, #2563EB); }
+.pBarFill.orange { background: linear-gradient(90deg, #F97316, #EA580C); }
+
+.scorecardList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.scoreItem {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.scoreTop {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 900;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.scoreContext {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 12px;
+  min-height: 36px;
+}
+
+.scoreBarBase {
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scoreBarFill {
+  height: 100%;
+}
+
+.feedbackGrid {
+  margin-bottom: 32px;
+}
+
+.fSection {
+  padding: 24px;
+  border-radius: 20px;
+  border-left: 6px solid;
+}
+
+.fSection.positive {
+  background: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.fSection h5 {
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 900;
+  margin: 0 0 12px 0;
+}
+
+.fSection.positive h5 { color: #16a34a; }
+
+.fSection h6 {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  color: var(--navy);
+}
+
+.fSection p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
+}
+
+.improvementList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.improvementCard {
+  background: #fff7ed;
+  border: 1px solid #ffedd5;
+  border-top: 4px solid #f97316;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.impHeader {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.impFase {
+  background: #ffedd5;
+  color: #c2410c;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.impTitle {
+  font-weight: 900;
+  color: var(--navy);
+  font-size: 15px;
+}
+
+.impBody p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.impCorrections {
+  margin-bottom: 16px;
+}
+
+.impCorrections ul {
+  margin: 8px 0 0 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.impCorrections li {
+  background: #dcfce7;
+  color: #166534;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.impNext {
+  background: #ffedd5;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  border-left: 4px solid #ea580c;
+}
+
+@media (max-width: 768px) {
+  .metricsGrid, .probGrid, .scorecardList {
+    grid-template-columns: 1fr;
+  }
+  .reportHero {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+}

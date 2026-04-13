@@ -103,7 +103,7 @@ async function isAuthRequest(req) {
   try {
     const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
     if (userSnapshot.empty) return false;
-    
+
     const userData = userSnapshot.docs[0].data();
     return userData.authToken === authToken;
   } catch (err) {
@@ -121,7 +121,7 @@ async function isAdminOrSuperadminRequest(req) {
   try {
     const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
     if (userSnapshot.empty) return false;
-    
+
     const userData = userSnapshot.docs[0].data();
     // Validate both token and role (or master email)
     if (userData.authToken !== authToken) return false;
@@ -1263,7 +1263,7 @@ app.post("/api/admin/users", async (req, res) => {
 
     const { name, email, role } = req.body;
     const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-    
+
     // Check superadmin for superadmin role creation
     const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
     const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
@@ -1487,7 +1487,7 @@ app.get("/api/sessions/recent", async (req, res) => {
       let filename = "Audio_Cargado";
       if (data.objectPath) {
         const parts = data.objectPath.split("/");
-        filename = parts[parts.length - 1]; 
+        filename = parts[parts.length - 1];
       }
       return {
         id: doc.id,
@@ -1524,6 +1524,163 @@ app.post("/api/sessions/resend", async (req, res) => {
   } catch (err) {
     console.error("Error resending email:", err);
     return res.status(500).json({ ok: false, error: "Error resending" });
+  }
+});
+
+// --- NUEVOS ENDPOINTS PARA HISTORIAL Y DASHBOARD (SOLO LECTURA) ---
+
+// 1. Obtener Historial Completo (con filtros)
+app.get("/api/sessions", async (req, res) => {
+  try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado" });
+    }
+
+    const { email, role, filterEmail, startDate, endDate } = req.query;
+
+    let query = db.collection("meetings_analysis");
+
+    // Seguridad: Si no es admin, solo puede ver sus propios audios
+    if (role !== "admin" && role !== "superadmin") {
+      query = query.where("userEmail", "==", email.toLowerCase().trim());
+    } else if (filterEmail) {
+      // Si es admin y filtra por un consultor específico
+      query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
+    }
+
+    const snapshot = await query.orderBy("createdAt", "desc").get();
+
+    const sessions = snapshot.docs.map(doc => {
+      const data = doc.data();
+      const sc = data.analysis?.scorecard || {};
+
+      // Calcular score general (misma formula que el email)
+      const muletillasScore = sc.muletillas?.score || 0;
+      const cierreScore = sc.cierre_negociacion?.score || 0;
+      const objecionesScore = sc.manejo_objeciones?.score || 0;
+      const valorScore = sc.propuesta_valor?.score || 0;
+      const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
+
+      return {
+        id: doc.id,
+        userEmail: data.userEmail,
+        cliente: data.analysis?.nombre_cliente || "Desconocido",
+        date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
+        duration: data.analysis?.participacion?.duracion_total || "00:00",
+        score: generalScore,
+        status: "procesado" // Por ahora todo lo en DB está procesado
+      };
+    });
+
+    return res.json({ ok: true, sessions });
+  } catch (err) {
+    console.error("Error fetching all sessions:", err);
+    return res.status(500).json({ ok: false, error: "Error al obtener historial" });
+  }
+});
+
+// 2. Obtener Detalle de un Reporte Específico
+app.get("/api/sessions/:id", async (req, res) => {
+  try {
+    const isAuthorized = await isAuthRequest(req);
+    if (!isAuthorized) {
+      return res.status(401).json({ ok: false, error: "No autorizado" });
+    }
+
+    const { id } = req.params;
+    const { email, role } = req.query;
+
+    const doc = await db.collection("meetings_analysis").doc(id).get();
+    if (!doc.exists) return res.status(404).json({ ok: false, error: "Reporte no encontrado" });
+
+    const data = doc.data();
+
+    // Verificación de seguridad básica
+    if (role !== "admin" && role !== "superadmin" && data.userEmail !== email) {
+      return res.status(403).json({ ok: false, error: "No tienes permiso para ver este reporte" });
+    }
+
+    return res.json({ ok: true, report: data });
+  } catch (err) {
+    console.error("Error fetching report detail:", err);
+    return res.status(500).json({ ok: false, error: "Error al obtener detalle" });
+  }
+});
+
+// 3. Obtener Estadísticas para Dashboard (Admin/Superadmin)
+app.get("/api/admin/dashboard-stats", async (req, res) => {
+  try {
+    const isAuthorized = await isAdminOrSuperadminRequest(req);
+    if (!isAuthorized) {
+      return res.status(403).json({ ok: false, error: "No autorizado" });
+    }
+
+    const snapshot = await db.collection("meetings_analysis").orderBy("createdAt", "desc").get();
+
+    // Agregaciones en memoria (suficiente para la escala actual)
+    const stats = {
+      totalAudios: snapshot.size,
+      totalUsers: new Set(),
+      avgScore: 0,
+      monthlyHistory: {}, // { "2024-03": count }
+      topConsultants: {}, // { email: { count, totalScore, name } }
+    };
+
+    let totalScoreSum = 0;
+
+    // Obtener nombres de usuarios para el Top
+    const usersSnapshot = await db.collection("users").get();
+    const userNamesMap = {};
+    usersSnapshot.forEach(u => {
+      userNamesMap[u.data().email.toLowerCase()] = u.data().name || u.data().email;
+    });
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const email = (data.userEmail || "").toLowerCase();
+      if (!email) return;
+
+      stats.totalUsers.add(email);
+
+      // Calcular Score
+      const sc = data.analysis?.scorecard || {};
+      const score = Math.round(((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4);
+      totalScoreSum += score;
+
+      // Historial mensual
+      if (data.createdAt) {
+        const date = data.createdAt.toDate();
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        stats.monthlyHistory[monthKey] = (stats.monthlyHistory[monthKey] || 0) + 1;
+      }
+
+      // Top Consultantes
+      if (!stats.topConsultants[email]) {
+        stats.topConsultants[email] = { count: 0, totalScore: 0, name: userNamesMap[email] || email };
+      }
+      stats.topConsultants[email].count += 1;
+      stats.topConsultants[email].totalScore += score;
+    });
+
+    stats.totalUsersCount = stats.totalUsers.size;
+    stats.avgScore = stats.totalAudios > 0 ? Math.round(totalScoreSum / stats.totalAudios) : 0;
+
+    // Convertir topConsultants a array y ordenar
+    stats.topConsultants = Object.entries(stats.topConsultants)
+      .map(([email, data]) => ({
+        email,
+        name: data.name,
+        count: data.count,
+        avgScore: Math.round(data.totalScore / data.count)
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, 10);
+
+    return res.json({ ok: true, stats });
+  } catch (err) {
+    console.error("Error fetching dashboard stats:", err);
+    return res.status(500).json({ ok: false, error: "Error al obtener estadísticas" });
   }
 });
 

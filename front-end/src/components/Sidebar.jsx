@@ -52,6 +52,26 @@ function AdvancedConfigIcon() {
   );
 }
 
+function DashboardIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="9" />
+      <rect x="14" y="3" width="7" height="5" />
+      <rect x="14" y="11" width="7" height="10" />
+      <rect x="3" y="15" width="7" height="6" />
+    </svg>
+  );
+}
+
+function HistoryIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 8v4l3 3" />
+      <circle cx="12" cy="12" r="9" />
+    </svg>
+  );
+}
+
 const EXPANDED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Logotipo_negativo.svg";
 const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Simbolo_negativo.svg";
 
@@ -70,6 +90,8 @@ export default function Sidebar() {
 
   const isUploadPage = location.pathname === "/upload";
   const isAdminPage = location.pathname === "/admin";
+  const isHistoryPage = location.pathname === "/history";
+  const isDashboardPage = location.pathname === "/dashboard";
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
 
   const isAuthorizedAdmin =
@@ -166,6 +188,18 @@ export default function Sidebar() {
             <UploadIcon />
             <span>Subir Archivo</span>
           </button>
+
+          <button className={`sidebarItem ${isHistoryPage ? "active" : ""}`} onClick={() => { navigate("/history"); setIsMobileSidebarOpen(false); }} title="Historial de reportes">
+            <HistoryIcon />
+            <span>Historial</span>
+          </button>
+
+          {isAuthorizedAdmin && (
+            <button className={`sidebarItem ${isDashboardPage ? "active" : ""}`} onClick={() => { navigate("/dashboard"); setIsMobileSidebarOpen(false); }} title="Dashboard de métricas">
+              <DashboardIcon />
+              <span>Dashboard</span>
+            </button>
+          )}
 
           <button
             className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""}`}
