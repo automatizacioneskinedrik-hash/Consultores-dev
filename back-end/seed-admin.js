@@ -20,7 +20,7 @@ async function createSuperAdmin() {
         name: "Super Admin",
         email: email,
         role: "superadmin",
-        password: "123456", // Temporal para pruebas según lo solicitado
+        password: "KINEDRIK2027I+D**", // Nueva contraseña solicitada
         createdAt: new Date().toISOString()
     };
 

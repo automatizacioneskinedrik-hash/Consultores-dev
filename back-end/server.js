@@ -11,6 +11,8 @@ import nodemailer from "nodemailer";
 import fs from "fs-extra";
 import os from "os";
 import ffmpeg from "fluent-ffmpeg";
+import { getSystemPrompt } from "./prompts-master.js";
+
 
 // Inicializar Firebase Admin
 import { createRequire } from "module";
@@ -433,6 +435,8 @@ app.put("/api/admin/email-config", async (req, res) => {
   }
 });
 
+
+
 async function processAudioAnalysis(objectPath, userEmail) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
@@ -468,7 +472,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
       filesToClean.push(compressedPath);
     }
 
-    // 2. Transcribir con Whisper (JSON detallado para obtener la duración exacta)
+    // 2. Transcribir con Whisper
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(finalAudioPath),
       model: "whisper-1",
@@ -482,7 +486,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
     const seconds = Math.floor(totalSeconds % 60);
     const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-    // Recuperar el prompt activo desde la DB si existe
+    // 3. Recuperar el prompt activo desde la DB
     let additionalInstructions = "";
     try {
       const promptSnapshot = await db.collection("prompts").where("isActive", "==", true).limit(1).get();
@@ -493,184 +497,37 @@ async function processAudioAnalysis(objectPath, userEmail) {
       console.log("Error al recuperar el prompt activo:", err);
     }
 
-    // 3. Análisis con GPT-4o con un prompt centrado en el consultor
-    let prompt = `Eres un coach auditor de llamadas comerciales de KINEDRIK.
-
-Tu trabajo NO es dar feedback general.
-Tu trabajo es detectar los 3 puntos de mejora más importantes del consultor en la llamada, con base estricta en la metodología “Entrevista Estrella — 5 Fases del Diseño de Decisión”.
-
-PRIORIDAD ABSOLUTA
-Debes devolver feedback de entrenamiento para la próxima llamada.
-No des observaciones generales tipo “debe conectar mejor” o “debe escuchar más”.
-Debes ir a momentos concretos de la conversación y convertirlos en mejora accionable.
-
-MARCO METODOLÓGICO OBLIGATORIO
-- Regla de oro: menos es más. Menos información equivale a más autoridad.
-- Ratio ideal: Lead 55-65% y Consultor 35-45%.
-- Buen camino: el lead reflexiona, hace silencio, verbaliza límites y frustraciones.
-- Mal camino: el lead responde rápido, vuelve al máster, compara demasiado pronto.
-- Cada fase tiene un propósito y sus prohibidos.
-
-FASES
-F01 Apertura con liderazgo:
-- marcar marco, intención y estructura
-- el lead habla desde el minuto 1
-- prohibido hablar del máster, precio o catálogo
-
-F02 Diagnóstico con tensión:
-- el lead debe verbalizar su problema
-- el silencio es útil
-- se debe explorar dolor, frustración, coste de inacción, intentos previos
-- prohibido proponer solución
-- prohibido decir “eso lo resolvemos con...”
-- prohibido tranquilizar demasiado rápido
-
-F03 Visión de futuro y GAP:
-- usar exactamente lo que el lead dijo en F02
-- no interpretar de más
-- el lead debe ver su propio gap
-- prohibido resolver el gap antes de que él lo nombre
-
-F04 El máster como vehículo:
-- el programa no es protagonista, es la palanca
-- conectar solución con el dolor específico que el lead nombró
-- usar sus palabras, no las tuyas
-- prohibido sobreexplicar o listar módulos sin control
-
-F05 Precio y decisión:
-- primero decisión, luego precio
-- usar sus palabras exactas al cerrar
-- objeciones: validar → anclar al dolor → preguntar
-- prohibido inventar becas, fechas, importes o condiciones
-
-CÓMO DEBES CORREGIR
-Debes seleccionar SOLO los 3 errores o áreas de mejora más determinantes de la llamada.
-
-Cada punto de mejora debe:
-1. estar anclado a una frase real del consultor
-2. indicar la fase donde ocurrió
-3. explicar por qué esa frase estuvo mal según la metodología
-4. reescribir qué debió decir el consultor en ese momento (dando 2 o 3 opciones diferentes)
-5. indicar qué debe hacer en su próxima llamada para no repetir el error
-
-NO QUIERO ESTO:
-- feedback genérico
-- demasiados puntos
-- frases vagas
-- teoría larga
-- elogios vacíos
-
-SÍ QUIERO ESTO:
-- habla en primera persona dirigiéndote al consultor (ej: "No mencionaste esto", "Asumiste que...")
-- una frase exacta o casi exacta del consultor (cita textual real)
-- análisis fino
-- lenguaje concreto
-- corrección utilizable mañana mismo (dile 2 o 3 opciones de frases exactas que debe usar)
-- alineación total con la guía KINEDRIK
-
-REGLAS DE ESTILO
-- Sé directo
-- Sé específico
-- Sé exigente
-- No suavices errores metodológicos
-- Si no hay evidencia textual suficiente, dilo
-- No inventes nada que no esté en la transcripción
-
-SALIDA
-Devuelve SIEMPRE JSON válido.
-
-Esquema exacto (asegúrate de devolver un objeto JSON que siga exactamente esta estructura):
-
-{
-  "nombre_cliente": "Nombre del cliente",
-  "temperatura": "CRÍTICA / ALTA / MEDIA / BAJA",
-  "resumen": "Resumen ejecutivo de 3-4 líneas sobre lo ocurrido, acuerdos y el tono de la reunión.",
-  "participacion": {
-    "consultor_pct": "X%",
-    "cliente_pct": "Y%",
-    "duracion_total": "${durationStr}"
-  },
-  "probabilidades": {
-    "interes_cliente": 85,
-    "estado_interes": "Estrictamente: Exploratorio / Interés Moderado / Interés Alto / Altamente Comprometido",
-    "proximidad_cierre": 60,
-    "estado_cierre": "Estrictamente: Gestión a Largo Plazo / Seguimiento Activo / Fase de Negociación / Cierre Inminente"
-  },
-  "scorecard": {
-    "muletillas": { "score": 80, "contexto": "12 frases repetidas detectadas" },
-    "cierre_negociacion": { "score": 70, "contexto": "Faltó firmeza al dar el precio" },
-    "manejo_objeciones": { "score": 75, "contexto": "Buena respuesta al 'no tengo dinero'" },
-    "propuesta_valor": { "score": 90, "contexto": "Excelente presentación del máster" }
-  },
-  "feedback": {
-    "aspecto_positivo": { 
-      "titulo": "Habilidad demostrada", 
-      "descripcion": "Máximo 2 líneas de texto sobre algo bien hecho." 
-    },
-    "puntos_mejora": [
-      { 
-        "codigo_fase": "Ej: F03",
-        "titulo_error": "Descripción directa del error en 1 línea (ej. Metiste validación prematura antes de que el lead verbalizara el problema)",
-        "frase_detectada": "La cita textual de la llamada que pronunció el consultor",
-        "problema": "Por qué eso rompe la fase metodológicamente",
-        "impacto": "Qué causó exactamente en el lead esta frase o ausencia de la misma",
-        "correcciones_sugeridas": ["1era opción de frase exacta que debió usar el consultor", "2da opción de frase exacta", "3era opción (opcional)"],
-        "proxima_llamada": "Instrucción directa y accionable para la siguiente sesión"
-      }
-    ],
-    "fortaleza_destacada": { 
-      "titulo": "Tu mayor fortaleza hoy", 
-      "cita": "Una cita corta en itálica — máximo 2 líneas — centrada en lo que hizo bien el consultor en esta sesión de forma motivadora. Ejemplo: 'Tu capacidad para guardar silencio después de hacer una pregunta incómoda permitió que el lead se sincerara...'" 
-    }
-  },
-  "necesidades": ["necesidad 1", "necesidad 2", "necesidad 3"], // OBLIGATORIO: Mínimo 3 y máximo 5 necesidades. Si hay menos de 3 claras, complétalas infiriendo del contexto de la conversación.
-  "proximos_pasos": {
-    "consultor": ["acción 1 solo para el consultor", "acción 2 solo para el consultor"]
-  }
-}
-
-${additionalInstructions ? `\nINSTRUCCIONES ADICIONALES DEL SUPERADMIN (RESPETA ESTAS INSTRUCCIONES MODIFICANDO TU ENFOQUE, PERO SIN CAMBIAR JAMÁS LA ESTRUCTURA JSON REQUERIDA):\n${additionalInstructions}\n` : ""}
-
-Transcripción:
-${transcription.text}`;
+    // 4. Generar Prompt y Análisis con GPT-4o-mini
+    const systemPrompt = getSystemPrompt(durationStr, additionalInstructions, transcription.text);
 
     let completion;
     try {
       completion = await openai.chat.completions.create({
-        model: "gpt-5.4-mini",
-        messages: [{ role: "user", content: prompt }],
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: systemPrompt }],
         response_format: { type: "json_object" },
+        temperature: 0,
       });
     } catch (openAiErr) {
-      // Si falla y había un prompt personalizado, revertir al predeterminado y registrar el error.
+      console.error("OpenAI Error:", openAiErr.message);
+      // Fallback simple si falla el prompt personalizado
       if (additionalInstructions) {
-        console.log("Error en OpenAI con prompt personalizado. Revirtiendo al predeterminado...", openAiErr.message);
-
-        try {
-          // Revertir a predeterminado
-          const batch = db.batch();
-          const actSnapshot = await db.collection("prompts").where("isActive", "==", true).get();
-          actSnapshot.forEach(doc => batch.update(doc.ref, { isActive: false }));
-
-          const sysSnapshot = await db.collection("prompts").where("isSystem", "==", true).limit(1).get();
-          if (!sysSnapshot.empty) {
-            batch.update(sysSnapshot.docs[0].ref, { isActive: true });
-          }
-          await batch.commit();
-        } catch (dbErr) {
-          console.log("Error revirtiendo el prompt:", dbErr);
-        }
-
-        throw new Error("El Custom Prompt generó un error de OpenAI. Se ha restaurado el prompt por defecto automáticamente. " + openAiErr.message);
+        console.log("Reintentando sin instrucciones adicionales...");
+        completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: getSystemPrompt(durationStr, "", transcription.text) }],
+          response_format: { type: "json_object" },
+        });
       } else {
         throw openAiErr;
       }
     }
 
     const analysis = JSON.parse(completion.choices[0].message.content);
-    // Forzar la duración exacta proveniente de Whisper
+
+    // Forzar la duración exacta y metadatos
     analysis.participacion.duracion_total = durationStr;
-    console.log("GPT-4o Analysis completed with exact duration:", durationStr);
+    console.log("AI Analysis completed successfully");
 
     const analysisData = {
       userEmail,
@@ -679,6 +536,7 @@ ${transcription.text}`;
       analysis,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
+
     await db.collection("meetings_analysis").add(analysisData);
     console.log("Analysis saved to Firestore");
 
@@ -1238,13 +1096,22 @@ app.get("/api/admin/users", async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permisos para ver la lista de usuarios" });
     }
 
+    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
+    const userSnapReq = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    const isSuperAdmin = !userSnapReq.empty && (userSnapReq.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
+
     const snapshot = await db.collection("users").orderBy("createdAt", "desc").get();
     const users = snapshot.docs
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }))
-      .filter(u => u.role !== "superadmin" && u.email !== "adminkinedrik@eadic.com");
+      .filter(u => {
+        // El Superadmin puede verlo TODO
+        if (isSuperAdmin) return true;
+        // El Admin normal no puede ver a los Superadmins
+        return u.role !== "superadmin" && u.email !== MASTER_SUPERADMIN_EMAIL;
+      });
 
     return res.json({ ok: true, users });
   } catch (err) {
