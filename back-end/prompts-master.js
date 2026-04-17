@@ -24,9 +24,9 @@ PRIORIDAD ABSOLUTA EN LA EVALUACIÓN:
 
 LÓGICA DEL SCORECARD (PUNTUACIONES):
 - MULETILLAS: Funciona como "Índice de Presencia". 
-  * 0% es PERFECTO (sin repeticiones).
+  * 0% es PERFECTO (sin repeticiones). Felicita al consultor en el contexto si obtiene un score cercano a 0 (limpieza verbal).
   * 100% es CRÍTICO (muchas repeticiones).
-  * Si el porcentaje es alto (ej: 90%), el contexto DEBE indicar que hubo exceso de frases repetidas.
+  * REGLA DE DETALLE: En el "contexto" de muletillas, DEBES escribir primero una pequeña nota/observación sobre el vicio del lenguaje detectado y después LISTAR las palabras específicas encontradas (ej: "Nota: Repetición constante de conectores. Muletillas detectadas: eh..., o sea, vale").
 - RESTO DE MÉTRICAS (Cierre, Propuesta, etc.): Funcionan como "Nota de Desempeño".
   * 100% es PERFECTO.
   * 0% es NULO.

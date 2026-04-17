@@ -1,9 +1,9 @@
 [
   {
     "origin": [
+      "https://frontend-dev-683216209357.us-central1.run.app",
       "https://speech.kinedrik.com",
       "https://frontend-683216289357.us-central1.run.app",
-      "https://frontend-dev-683216289357.us-central1.run.app",
       "http://localhost:5173",
       "http://localhost:3000"
     ],

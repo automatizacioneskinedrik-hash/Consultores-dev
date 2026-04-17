@@ -92,23 +92,57 @@ export default function ReportDetail({ report, onClose }) {
           <div className="statsSection">
             <h4>Scorecard Detallado</h4>
             <div className="scorecardList">
-              {Object.entries(sc).map(([key, data]) => {
-                const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
-                const score = data.score || 0;
-                let color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
-                if (key === 'muletillas') color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
+              {(() => {
+                // Encontrar la categoría con peor desempeño
+                const entries = Object.entries(sc);
+                let lowestPerfKey = null;
+                let lowestPerfScore = 999;
 
-                return (
-                  <div key={key} className="scoreItem">
-                    <div className="scoreTop">
-                      <span>{titles[key] || key}</span>
-                      <span style={{ color }}>{score}%</span>
+                entries.forEach(([key, data]) => {
+                  const score = data.score || 0;
+                  // En muletillas, score alto es malo (hacemos 100 - score para comparar)
+                  const perf = key === 'muletillas' ? (100 - score) : score;
+                  if (perf < lowestPerfScore) {
+                    lowestPerfScore = perf;
+                    lowestPerfKey = key;
+                  }
+                });
+
+                return entries.map(([key, data]) => {
+                  const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
+                  const score = data.score || 0;
+                  let color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
+                  
+                  // Lógica especial de colores para muletillas (0 es bueno)
+                  if (key === 'muletillas') {
+                    color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
+                  }
+
+                  return (
+                    <div key={key} className="scoreItem">
+                      <div className="scoreTop">
+                        <span>{titles[key] || key}</span>
+                        <div className="scoreRightLabel">
+                          {key === lowestPerfKey && score !== 0 && (
+                            <span className="improveBadge">⚠️ Por Trabajar</span>
+                          )}
+                          <span style={{ color }}>{score}%</span>
+                        </div>
+                      </div>
+                      <p className="scoreContext">{data.contexto}</p>
+                      
+                      <div className={`trafficLightBar ${key === 'muletillas' ? 'inverted' : ''}`}>
+                        <div className="tlSegment s1"></div>
+                        <div className="tlSegment s2"></div>
+                        <div className="tlSegment s3"></div>
+                        <div className="tlMarker" style={{ left: `${score}%` }}>
+                          <div className="tlTriangle" style={{ borderBottomColor: color }}></div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="scoreContext">{data.contexto}</p>
-                    <div className="scoreBarBase"><div className="scoreBarFill" style={{ width: `${score}%`, backgroundColor: color }}></div></div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
           </div>
 
