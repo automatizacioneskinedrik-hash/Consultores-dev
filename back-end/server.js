@@ -499,13 +499,13 @@ async function processAudioAnalysis(objectPath, userEmail) {
       console.log("Error al recuperar el prompt activo:", err);
     }
 
-    // 4. Generar Prompt y Análisis con GPT-4o-mini
+    // 4. Generar Prompt y Análisis con GPT-5.4-mini
     const systemPrompt = getSystemPrompt(durationStr, additionalInstructions, transcription.text);
 
     let completion;
     try {
       completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: "gpt-5.4-mini",
         messages: [{ role: "user", content: systemPrompt }],
         response_format: { type: "json_object" },
         temperature: 0,
@@ -516,7 +516,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
       if (additionalInstructions) {
         console.log("Reintentando sin instrucciones adicionales...");
         completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
+          model: "gpt-5.4-mini",
           messages: [{ role: "user", content: getSystemPrompt(durationStr, "", transcription.text) }],
           response_format: { type: "json_object" },
         });
