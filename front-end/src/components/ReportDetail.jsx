@@ -50,14 +50,18 @@ export default function ReportDetail({ report, onClose }) {
               <span className="mLabel">Duración Total</span>
               <span className="mValue">{analysis.participacion?.duracion_total || "00:00"}</span>
             </div>
-            <div className="metricCard white">
-              <span className="mLabel">Participación</span>
+            <div className="metricCard white participationCard">
+              <div className="participationHeader">
+                <span className="pLabel user">Tú</span>
+                <span className="pLabel client">{clienteNome}</span>
+              </div>
               <div className="participationBar">
                 <div className="pPart user" style={{ width: analysis.participacion?.consultor_pct }}>
-                  <span>Tú: {analysis.participacion?.consultor_pct}</span>
+                  <span className="pPct">{analysis.participacion?.consultor_pct}</span>
                 </div>
+                <div className="participationDivider"></div>
                 <div className="pPart client" style={{ width: analysis.participacion?.cliente_pct }}>
-                  <span>{clienteNome}: {analysis.participacion?.cliente_pct}</span>
+                  <span className="pPct">{analysis.participacion?.cliente_pct}</span>
                 </div>
               </div>
             </div>
@@ -118,6 +122,19 @@ export default function ReportDetail({ report, onClose }) {
           </div>
 
           <div className="statsSection">
+            <h4>Tus Fortalezas</h4>
+            <div className="fortalezaCard">
+              <div className="fortalezaHeader">
+                <span className="starIcon">★</span>
+                <h5>{analysis.feedback?.fortaleza_destacada?.titulo || "Fortaleza Detectada"}</h5>
+              </div>
+              <div className="fortalezaCita">
+                <p>"{analysis.feedback?.fortaleza_destacada?.cita}"</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="statsSection">
             <h4>Puntos de Mejora</h4>
             <div className="improvementList">
               {(analysis.feedback?.puntos_mejora || []).map((item, idx) => (
@@ -143,6 +160,35 @@ export default function ReportDetail({ report, onClose }) {
               ))}
             </div>
           </div>
+
+          {/* Dos Columnas: Necesidades y Próximos Pasos */}
+          <div className="footerSectionsGrid">
+            <div className="footerSectionCol needs">
+              <h4>Lo que el lead necesita</h4>
+              <ul className="needsList">
+                {(analysis.necesidades || []).map((n, i) => (
+                  <li key={i}>{n}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="footerSectionCol steps">
+              <h4>Tus próximos pasos</h4>
+              <div className="stepsList">
+                {(analysis.proximos_pasos?.consultor || []).map((p, i) => (
+                  <div key={i} className="stepItem">
+                    <span className="stepNumber">{i + 1}</span>
+                    <p>{p}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <footer className="reportFooter">
+            <div className="footerLine"></div>
+            <p className="footerSlogan">KINEDRIꓘ — Elevating skills, boosting real knowledge</p>
+            <p className="footerCredits">Desarrolladores Internos</p>
+          </footer>
         </div>
       </div>
     </div>

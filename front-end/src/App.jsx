@@ -110,14 +110,14 @@ export default function App() {
           }
         />
 
-        <Route
+        {/* <Route
           path="/dashboard"
           element={
             <AdminRoute>
               <Dashboard />
             </AdminRoute>
           }
-        />
+        /> */}
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />

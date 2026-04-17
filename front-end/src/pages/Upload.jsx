@@ -423,9 +423,6 @@ export default function Upload() {
                           {new Date(session.date).toLocaleDateString()} - {session.duration}
                         </div>
                       </div>
-                      <button className="resendBtn" onClick={() => handleResendEmail(session.id)}>
-                        Reenviar reporte
-                      </button>
                     </div>
                   ))}
                 </div>

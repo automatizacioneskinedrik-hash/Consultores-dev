@@ -3,7 +3,7 @@ import "./History.css";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import { getUser } from "../utils/user";
-import { Search, Filter, Calendar, ChevronRight, User } from "lucide-react";
+import { Search, Filter, Calendar, ChevronRight, User, Eye, CheckCircle } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -42,25 +42,9 @@ export default function History() {
     fetchHistory();
   }, []);
 
-  const handleOpenDetail = async (id) => {
-    setSelectedReportId(id);
-    setIsDetailLoading(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/sessions/${id}?email=${user.email}&role=${user.role}`, {
-        headers: {
-          "X-Admin-Email": user.email,
-          "X-Auth-Token": user.authToken
-        }
-      });
-      const data = await res.json();
-      if (data.ok) {
-        setSelectedReportData(data.report);
-      }
-    } catch (err) {
-      console.error("Error fetching detail:", err);
-    } finally {
-      setIsDetailLoading(false);
-    }
+  const handleOpenDetail = (session) => {
+    setSelectedReportId(session.id);
+    setSelectedReportData(session.report);
   };
 
   const filteredSessions = sessions.filter(s => 
@@ -117,7 +101,7 @@ export default function History() {
                 </thead>
                 <tbody>
                   {filteredSessions.map((session) => (
-                    <tr key={session.id} onClick={() => handleOpenDetail(session.id)}>
+                    <tr key={session.id} onClick={() => handleOpenDetail(session)}>
                       <td>
                         <div className="dateCell">
                           <Calendar size={14} />
@@ -140,10 +124,16 @@ export default function History() {
                       </td>
                       <td>{session.duration}</td>
                       <td>
-                        <span className="statusTag processed">Procesado</span>
+                        <span className="statusTag processed">
+                          <CheckCircle size={12} className="tagIcon" />
+                          Realizado
+                        </span>
                       </td>
                       <td>
-                        <ChevronRight className="rowArrow" size={18} />
+                        <button className="viewSummaryBtn" onClick={(e) => { e.stopPropagation(); handleOpenDetail(session); }}>
+                          <Eye size={14} />
+                          <span>Ver Resumen</span>
+                        </button>
                       </td>
                     </tr>
                   ))}

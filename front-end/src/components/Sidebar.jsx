@@ -194,12 +194,6 @@ export default function Sidebar() {
             <span>Historial</span>
           </button>
 
-          {isAuthorizedAdmin && (
-            <button className={`sidebarItem ${isDashboardPage ? "active" : ""}`} onClick={() => { navigate("/dashboard"); setIsMobileSidebarOpen(false); }} title="Dashboard de métricas">
-              <DashboardIcon />
-              <span>Dashboard</span>
-            </button>
-          )}
 
           <button
             className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""}`}

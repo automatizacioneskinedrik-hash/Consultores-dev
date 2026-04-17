@@ -19,6 +19,8 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
 let adminConfig = {};
+const USER_CACHE = new Map(); // Simple cache para roles
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos de vida para la caché
 try {
   const serviceAccount = require("./serviceAccountKey.json");
   adminConfig = {
@@ -1404,13 +1406,26 @@ app.get("/api/sessions", async (req, res) => {
       return res.status(401).json({ ok: false, error: "No autorizado" });
     }
 
-    const { email, role, filterEmail, startDate, endDate } = req.query;
+    const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+    let userData;
 
+    // Check Cache first
+    const cached = USER_CACHE.get(requesterEmail);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      userData = cached.data;
+    } else {
+      const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+      if (userSnapshot.empty) return res.status(401).json({ ok: false, error: "Usuario no encontrado" });
+      userData = userSnapshot.docs[0].data();
+      USER_CACHE.set(requesterEmail, { data: userData, timestamp: Date.now() });
+    }
+
+    const { filterEmail } = req.query;
     let query = db.collection("meetings_analysis");
 
     // Seguridad: Si no es admin, solo puede ver sus propios audios
-    if (role !== "admin" && role !== "superadmin") {
-      query = query.where("userEmail", "==", email.toLowerCase().trim());
+    if (userData.role !== "admin" && userData.role !== "superadmin") {
+      query = query.where("userEmail", "==", userData.email.toLowerCase().trim());
     } else if (filterEmail) {
       // Si es admin y filtra por un consultor específico
       query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
@@ -1436,7 +1451,8 @@ app.get("/api/sessions", async (req, res) => {
         date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         duration: data.analysis?.participacion?.duracion_total || "00:00",
         score: generalScore,
-        status: "procesado" // Por ahora todo lo en DB está procesado
+        status: "procesado",
+        report: data // Enviamos el reporte completo para carga instantánea
       };
     });
 
@@ -1456,7 +1472,10 @@ app.get("/api/sessions/:id", async (req, res) => {
     }
 
     const { id } = req.params;
-    const { email, role } = req.query;
+    const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    if (userSnapshot.empty) return res.status(401).json({ ok: false, error: "Usuario no encontrado" });
+    const userData = userSnapshot.docs[0].data();
 
     const doc = await db.collection("meetings_analysis").doc(id).get();
     if (!doc.exists) return res.status(404).json({ ok: false, error: "Reporte no encontrado" });
@@ -1464,7 +1483,7 @@ app.get("/api/sessions/:id", async (req, res) => {
     const data = doc.data();
 
     // Verificación de seguridad básica
-    if (role !== "admin" && role !== "superadmin" && data.userEmail !== email) {
+    if (userData.role !== "admin" && userData.role !== "superadmin" && data.userEmail !== userData.email) {
       return res.status(403).json({ ok: false, error: "No tienes permiso para ver este reporte" });
     }
 
