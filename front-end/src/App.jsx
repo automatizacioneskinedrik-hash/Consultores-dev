@@ -2,10 +2,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Admin from "./pages/Admin";
-import Prompts from "./pages/Prompts";
 import AdvancedConfig from "./pages/AdvancedConfig";
+import WhatsNewModal from "./components/WhatsNewModal";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
+import "./App.css";
 
 function isLoggedIn() {
   return Boolean(localStorage.getItem("kinedrix_email"));
@@ -26,42 +27,22 @@ function isAdmin() {
   }
 }
 
-function AdminRoute({ children }) {
+const ProtectedRoute = ({ children }) => {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />;
+  return children;
+};
+
+const AdminRoute = ({ children }) => {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
   if (!isAdmin()) return <Navigate to="/upload" replace />;
   return children;
-}
-
-function isSuperAdmin() {
-  try {
-    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
-    const userEmail = (user.email || "").toLowerCase();
-    return (
-      user.role === "superadmin" ||
-      userEmail === "adminkinedrik@eadic.com"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function SuperAdminRoute({ children }) {
-  if (!isLoggedIn()) return <Navigate to="/login" replace />;
-  if (!isSuperAdmin()) return <Navigate to="/upload" replace />;
-  return children;
-}
-
-function ProtectedRoute({ children }) {
-  if (!isLoggedIn()) return <Navigate to="/login" replace />;
-  return children;
-}
+};
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-
         <Route
           path="/upload"
           element={
@@ -70,8 +51,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* RUTA ADMIN AGREGADA */}
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/admin"
           element={
@@ -80,33 +67,12 @@ export default function App() {
             </AdminRoute>
           }
         />
-
-        {/* RUTA PROMPTS */}
-        {/* <Route
-          path="/prompts"
-          element={
-            <SuperAdminRoute>
-              <Prompts />
-            </SuperAdminRoute>
-          }
-        /> */}
-
-        {/* RUTA ADVANCED CONFIG */}
         <Route
           path="/configuracion-avanzada"
           element={
-            <SuperAdminRoute>
+            <AdminRoute>
               <AdvancedConfig />
-            </SuperAdminRoute>
-          }
-        />
-
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <History />
-            </ProtectedRoute>
+            </AdminRoute>
           }
         />
 
@@ -122,6 +88,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      <WhatsNewModal />
     </BrowserRouter>
   );
 }

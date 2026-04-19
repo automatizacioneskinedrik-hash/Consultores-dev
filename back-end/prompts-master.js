@@ -71,7 +71,7 @@ Devuelve SIEMPRE un objeto JSON válido con este esquema exacto:
         "frase_detectada": "Cita textual real",
         "problema": "Por qué rompe la fase",
         "impacto": "Efecto en el lead",
-        "correcciones_sugeridas": ["Frase 1", "Frase 2"],
+        "correcciones_sugeridas": ["Sugerencia 1 (amable)", "Sugerencia 2 (fácil de aplicar)", "Sugerencia 3 (alternativa suave) - DEBES DAR SIEMPRE EXACTAMENTE 3"],
         "proxima_llamada": "Instrucción accionable"
       }
     ],

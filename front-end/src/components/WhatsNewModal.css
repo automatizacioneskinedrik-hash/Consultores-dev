@@ -1,0 +1,147 @@
+.whatsNewOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeInModal 0.4s ease-out;
+}
+
+.whatsNewCard {
+  background: white;
+  width: 100%;
+  max-width: 600px;
+  border-radius: 24px;
+  padding: 40px;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.whatsNewVersion {
+  background: #EEF2FF;
+  color: #4F46E5;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+.whatsNewTitle {
+  font-size: 32px;
+  font-weight: 850;
+  color: #1E293B;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.whatsNewSubtitle {
+  font-size: 16px;
+  color: #64748B;
+  margin-bottom: 32px;
+}
+
+.whatsNewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.wnFeature {
+  background: #F8FAFC;
+  padding: 20px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  transition: transform 0.2s ease;
+}
+
+.wnFeature:hover {
+  transform: translateY(-4px);
+  background: #F1F5F9;
+}
+
+.wnIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.wnIcon.history { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
+.wnIcon.prompt { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); color: white; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); }
+.wnIcon.muletillas { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
+.wnIcon.reports { background: linear-gradient(135deg, #334155 0%, #0f172a 100%); color: white; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.4); }
+
+.wnFeature h3 {
+  font-size: 16px;
+  font-weight: 850;
+  color: #0F172A;
+  margin-bottom: 8px;
+}
+
+.wnFeature p {
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.whatsNewBtn {
+  background: #0056D2;
+  color: white;
+  width: 100%;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.whatsNewBtn:hover {
+  background: #0044A7;
+  transform: scale(1.02);
+}
+
+.closeWhatsNew {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  cursor: pointer;
+  padding: 8px;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 480px) {
+  .whatsNewGrid { grid-template-columns: 1fr; }
+  .whatsNewCard { padding: 24px; }
+}

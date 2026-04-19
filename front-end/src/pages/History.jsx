@@ -63,19 +63,18 @@ export default function History() {
           </div>
 
           <div className="historyFilters">
-            <div className="searchBar">
-              <Search className="sIcon" size={18} />
-              <input 
-                type="text" 
-                placeholder="Buscar por cliente o consultor..." 
+            <div className="searchBox">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder={isAdmin ? "Buscar por cliente o consultor..." : "Buscar por nombre del cliente..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="filterBtn">
-              <Filter size={18} />
-              <span>Filtros</span>
-            </button>
           </div>
         </header>
 
