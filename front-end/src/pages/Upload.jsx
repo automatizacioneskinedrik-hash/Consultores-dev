@@ -67,7 +67,7 @@ function MicIcon() {
 
 export default function Upload() {
   const inputRef = useRef(null);
-  const [user] = useState(() => getUser());
+  const [user] = useState(() => getUser() || {});
 
   useEffect(() => {
     if (user && user.fullName) {

@@ -17,6 +17,8 @@ export default function ReportDetail({ report, onClose }) {
   const cierreScore = sc.cierre_negociacion?.score || 0;
   const objecionesScore = sc.manejo_objeciones?.score || 0;
   const valorScore = sc.propuesta_valor?.score || 0;
+
+  // Scoring General (Simplificado como estaba antes)
   const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
   const generalColor = generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
 
@@ -69,80 +71,64 @@ export default function ReportDetail({ report, onClose }) {
 
           {/* Probabilidades */}
           <div className="statsSection">
-             <h4>Probabilidades</h4>
-             <div className="probGrid">
-                <div className="probItem">
-                  <div className="probTop">
-                    <span>Interés del Cliente</span>
-                    <span className="pBadge">{analysis.probabilidades?.estado_interes}</span>
-                  </div>
-                  <div className="pBarBase"><div className="pBarFill blue" style={{width: `${analysis.probabilidades?.interes_cliente}%`}}></div></div>
+            <h4>Probabilidades</h4>
+            <div className="probGrid">
+              <div className="probItem">
+                <div className="probTop">
+                  <span>Interés del Cliente</span>
+                  <span className="pBadge">{analysis.probabilidades?.estado_interes}</span>
                 </div>
-                <div className="probItem">
-                  <div className="probTop">
-                    <span>Proximidad al Cierre</span>
-                    <span className="pBadge orange">{analysis.probabilidades?.estado_cierre}</span>
-                  </div>
-                  <div className="pBarBase"><div className="pBarFill orange" style={{width: `${analysis.probabilidades?.proximidad_cierre}%`}}></div></div>
+                <div className="pBarBase"><div className="pBarFill blue" style={{ width: `${analysis.probabilidades?.interes_cliente}%` }}></div></div>
+              </div>
+              <div className="probItem">
+                <div className="probTop">
+                  <span>Proximidad al Cierre</span>
+                  <span className="pBadge orange">{analysis.probabilidades?.estado_cierre}</span>
                 </div>
-             </div>
+                <div className="pBarBase"><div className="pBarFill orange" style={{ width: `${analysis.probabilidades?.proximidad_cierre}%` }}></div></div>
+              </div>
+            </div>
           </div>
 
           {/* Scorecard */}
           <div className="statsSection">
             <h4>Scorecard Detallado</h4>
             <div className="scorecardList">
-              {(() => {
-                // Encontrar la categoría con peor desempeño
-                const entries = Object.entries(sc);
-                let lowestPerfKey = null;
-                let lowestPerfScore = 999;
+              {[
+                { key: 'muletillas', title: 'Muletillas', score: muletillasScore },
+                { key: 'cierre_negociacion', title: 'Cierre y Negociación', score: cierreScore },
+                { key: 'manejo_objeciones', title: 'Manejo de Objeciones', score: objecionesScore },
+                { key: 'propuesta_valor', title: 'Propuesta de Valor', score: valorScore }
+              ].map((item) => {
+                const data = sc[item.key] || {};
+                let color = item.score >= 71 ? "#22C55E" : item.score >= 41 ? "#EAB308" : "#EF4444";
+                if (item.key === 'muletillas') {
+                  color = item.score <= 30 ? "#22C55E" : item.score <= 60 ? "#EAB308" : "#EF4444";
+                }
 
-                entries.forEach(([key, data]) => {
-                  const score = data.score || 0;
-                  // En muletillas, score alto es malo (hacemos 100 - score para comparar)
-                  const perf = key === 'muletillas' ? (100 - score) : score;
-                  if (perf < lowestPerfScore) {
-                    lowestPerfScore = perf;
-                    lowestPerfKey = key;
-                  }
-                });
-
-                return entries.map(([key, data]) => {
-                  const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
-                  const score = data.score || 0;
-                  let color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
-                  
-                  // Lógica especial de colores para muletillas (0 es bueno)
-                  if (key === 'muletillas') {
-                    color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
-                  }
-
-                  return (
-                    <div key={key} className="scoreItem">
-                      <div className="scoreTop">
-                        <span>{titles[key] || key}</span>
-                        <div className="scoreRightLabel">
-                          {key === lowestPerfKey && score !== 0 && (
-                            <span className="improveBadge">⚠️ Por Trabajar</span>
-                          )}
-                          <span style={{ color }}>{score}%</span>
-                        </div>
-                      </div>
-                      <p className="scoreContext">{data.contexto}</p>
-                      
-                      <div className={`trafficLightBar ${key === 'muletillas' ? 'inverted' : ''}`}>
-                        <div className="tlSegment s1"></div>
-                        <div className="tlSegment s2"></div>
-                        <div className="tlSegment s3"></div>
-                        <div className="tlMarker" style={{ left: `${score}%` }}>
-                          <div className="tlTriangle" style={{ borderBottomColor: color }}></div>
-                        </div>
+                return (
+                  <div key={item.key} className="scoreItem">
+                    <div className="scoreTop">
+                      <span>{item.title}</span>
+                      <div className="scoreRightLabel">
+                        {item.key === 'muletillas' && item.score > 50 && (
+                          <span className="improveBadge">⚠️ Por Trabajar</span>
+                        )}
+                        <span style={{ color }}>{item.score}%</span>
                       </div>
                     </div>
-                  );
-                });
-              })()}
+                    <p className="scoreContext">{data.contexto || ""}</p>
+                    <div className={`trafficLightBar ${item.key === 'muletillas' ? 'inverted' : ''}`}>
+                      <div className="tlSegment s1"></div>
+                      <div className="tlSegment s2"></div>
+                      <div className="tlSegment s3"></div>
+                      <div className="tlMarker" style={{ left: `${item.score}%` }}>
+                        <div className="tlTriangle" style={{ borderBottomColor: color }}></div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -183,7 +169,7 @@ export default function ReportDetail({ report, onClose }) {
                     <div className="impCorrections">
                       <strong>Correcciones Sugeridas:</strong>
                       <ul>
-                        {(item.correcciones_sugeridas || []).map((c, i) => <li key={i}>"{c}"</li>)}
+                        {(item.correcciones_sugeridas || []).slice(0, 3).map((c, i) => <li key={i}>"{c}"</li>)}
                       </ul>
                     </div>
                     <div className="impNext">
@@ -195,7 +181,6 @@ export default function ReportDetail({ report, onClose }) {
             </div>
           </div>
 
-          {/* Dos Columnas: Necesidades y Próximos Pasos */}
           <div className="footerSectionsGrid">
             <div className="footerSectionCol needs">
               <h4>Lo que el lead necesita</h4>

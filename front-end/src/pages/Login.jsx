@@ -118,6 +118,14 @@ export default function Login() {
   };
 
   useEffect(() => {
+    // Check if user is already logged in
+    const userEmail = localStorage.getItem("kinedrix_email");
+    if (userEmail) {
+      navigate("/upload", { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;

@@ -85,8 +85,8 @@ export default function App() {
           }
         /> */}
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
+        <Route path="*" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
       </Routes>
       <WhatsNewModal />
     </BrowserRouter>

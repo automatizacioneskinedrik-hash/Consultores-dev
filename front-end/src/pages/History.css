@@ -40,33 +40,36 @@ body.sidebar-collapsed .historyContent {
   gap: 16px;
 }
 
-.searchBar {
+.searchWrapper {
   position: relative;
-  width: 300px;
+  width: 340px;
 }
 
-.searchBar .sIcon {
+.searchWrapper .searchIcon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #94a3b8;
+  pointer-events: none;
 }
 
-.searchBar input {
+.searchWrapper input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
+  padding: 12px 16px 12px 42px;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: white;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
 }
 
-.searchBar input:focus {
+.searchWrapper input:focus {
   border-color: #2b6cff;
   box-shadow: 0 4px 12px rgba(43, 108, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 .filterBtn {
@@ -231,13 +234,15 @@ body.sidebar-collapsed .historyContent {
 
 @media (max-width: 1024px) {
   .historyContent {
-    padding: 20px;
+    padding: 30px;
+    margin-left: 215px;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .historyContent {
     margin-left: 0;
+    padding: 20px;
     padding-top: 80px;
   }
   .historyHeader {
@@ -245,7 +250,33 @@ body.sidebar-collapsed .historyContent {
     align-items: flex-start;
     gap: 20px;
   }
-  .searchBar {
+  .historyFilters {
     width: 100%;
+  }
+  .searchBox {
+    flex: 1;
+  }
+  .historyGrid {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: white;
+    border-radius: 20px;
+    padding: 0 5px;
+  }
+  .historyTable {
+    min-width: 800px; /* Ensure table keeps structure for scrolling */
+  }
+}
+
+@media (max-width: 480px) {
+  .headerText h1 {
+    font-size: 24px;
+  }
+  .headerText p {
+    font-size: 13px;
+  }
+  .historyLoading {
+    padding: 40px 20px;
   }
 }

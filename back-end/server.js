@@ -482,6 +482,30 @@ async function processAudioAnalysis(objectPath, userEmail) {
     });
     console.log("Transcription completed");
 
+    // 2.5 Lógica de Consistencia (Caché): Si el texto ya existe, no gastar en IA y devolver lo mismo
+    try {
+      const existingSnapshot = await db.collection("sessions")
+        .where("transcription", "==", transcription.text)
+        .limit(1)
+        .get();
+      
+      if (!existingSnapshot.empty) {
+        console.log("⚠️ Consistencia: Se detectó transcripción idéntica. Usando análisis previo para garantizar mismo score.");
+        const cachedAnalysis = existingSnapshot.docs[0].data().analysis;
+        const totalSeconds = transcription.duration || 0;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = Math.floor(totalSeconds % 60);
+        const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        return { 
+          ...cachedAnalysis, 
+          participacion: { ...cachedAnalysis.participacion, duracion_total: durationStr } 
+        };
+      }
+    } catch (cacheErr) {
+      console.log("Error en búsqueda de caché (continuando normalmente):", cacheErr);
+    }
+
     // Obtener la duración exacta
     const totalSeconds = transcription.duration || 0;
     const minutes = Math.floor(totalSeconds / 60);
@@ -509,6 +533,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
         messages: [{ role: "user", content: systemPrompt }],
         response_format: { type: "json_object" },
         temperature: 0,
+        seed: 42, // Forzar determinismo matemático
       });
     } catch (openAiErr) {
       console.error("OpenAI Error:", openAiErr.message);
@@ -519,6 +544,8 @@ async function processAudioAnalysis(objectPath, userEmail) {
           model: "gpt-5.4-mini",
           messages: [{ role: "user", content: getSystemPrompt(durationStr, "", transcription.text) }],
           response_format: { type: "json_object" },
+          temperature: 0,
+          seed: 42,
         });
       } else {
         throw openAiErr;
@@ -870,7 +897,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
             </td>
           </tr>
 
-          ${(analysis.feedback?.puntos_mejora || []).slice(0, 3).map(item => {
+          ${(analysis.feedback?.puntos_mejora || []).map(item => {
             const fasesMap = {
               'F01': 'F01 — Apertura con Liderazgo',
               'F02': 'F02 — Diagnóstico con Tensión',
@@ -900,7 +927,7 @@ async function processAudioAnalysis(objectPath, userEmail) {
                             <strong style="color:#EF4444;">Impacto:</strong> ${item.impacto}<br><br>
                             
                             <strong style="color:#166534;">Correcciones Sugeridas:</strong><br>
-                            ${(item.correcciones_sugeridas || (item.correccion_sugerida ? [item.correccion_sugerida] : [])).map(corr =>
+                            ${(item.correcciones_sugeridas || (item.correccion_sugerida ? [item.correccion_sugerida] : [])).slice(0, 3).map(corr =>
               `<span style="display:inline-block; background-color:#DCFCE7; color:#166534; padding:6px 12px; border-radius:6px; font-weight:600; margin-top:4px; margin-bottom:8px;">"${corr}"</span><br>`
             ).join('')}
                             
@@ -1102,12 +1129,17 @@ app.get("/api/admin/users", async (req, res) => {
     const userSnapReq = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
     const isSuperAdmin = !userSnapReq.empty && (userSnapReq.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
 
-    const snapshot = await db.collection("users").orderBy("createdAt", "desc").get();
+    const snapshot = await db.collection("users").get();
     const users = snapshot.docs
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }))
+      .sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return dateB - dateA;
+      })
       .filter(u => {
         // El Superadmin puede verlo TODO
         if (isSuperAdmin) return true;
@@ -1431,11 +1463,20 @@ app.get("/api/sessions", async (req, res) => {
       query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
     }
 
-    const snapshot = await query.orderBy("createdAt", "desc").get();
+    const snapshot = await query.get();
+
+    // Obtener nombres de usuarios para mapear
+    const usersSnapshot = await db.collection("users").get();
+    const userNamesMap = {};
+    usersSnapshot.forEach(u => {
+      const uData = u.data();
+      userNamesMap[normalizeEmailValue(uData.email)] = uData.name || "";
+    });
 
     const sessions = snapshot.docs.map(doc => {
       const data = doc.data();
       const sc = data.analysis?.scorecard || {};
+      const email = normalizeEmailValue(data.userEmail);
 
       // Calcular score general (misma formula que el email)
       const muletillasScore = sc.muletillas?.score || 0;
@@ -1447,6 +1488,7 @@ app.get("/api/sessions", async (req, res) => {
       return {
         id: doc.id,
         userEmail: data.userEmail,
+        userName: userNamesMap[email] || (data.userEmail ? data.userEmail.split('@')[0] : "Desconocido"),
         cliente: data.analysis?.nombre_cliente || "Desconocido",
         date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         duration: data.analysis?.participacion?.duracion_total || "00:00",
@@ -1454,6 +1496,13 @@ app.get("/api/sessions", async (req, res) => {
         status: "procesado",
         report: data // Enviamos el reporte completo para carga instantánea
       };
+    });
+
+    // Ordenar por fecha (más reciente primero)
+    sessions.sort((a, b) => {
+      const dateA = a.date ? new Date(a.date) : new Date(0);
+      const dateB = b.date ? new Date(b.date) : new Date(0);
+      return dateB - dateA;
     });
 
     return res.json({ ok: true, sessions });

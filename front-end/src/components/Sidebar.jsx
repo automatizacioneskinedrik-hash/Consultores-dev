@@ -78,7 +78,7 @@ const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KIN
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = getUser();
+  const user = getUser() || {};
   const { fullName, email, role } = user;
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -95,8 +95,8 @@ export default function Sidebar() {
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
 
   const isAuthorizedAdmin =
-    role === "admin" ||
-    role === "superadmin" ||
+    user?.role === "admin" ||
+    user?.role === "superadmin" ||
     (email && email.toLowerCase() === "adminkinedrik@eadic.com") ||
     (email && email.toLowerCase() === "admin123@eadic.com");
 

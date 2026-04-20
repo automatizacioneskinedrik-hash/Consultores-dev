@@ -15,8 +15,9 @@ export default function History() {
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [selectedReportData, setSelectedReportData] = useState(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const isAdmin = user.role === "admin" || user.role === "superadmin";
+  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -33,6 +34,7 @@ export default function History() {
       }
     } catch (err) {
       console.error("Error fetching history:", err);
+      setError("No se pudo cargar el historial. Por favor, verifica tu conexión o intenta más tarde.");
     } finally {
       setLoading(false);
     }
@@ -49,6 +51,7 @@ export default function History() {
 
   const filteredSessions = sessions.filter(s => 
     s.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (s.userName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -63,11 +66,8 @@ export default function History() {
           </div>
 
           <div className="historyFilters">
-            <div className="searchBox">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
+            <div className="searchWrapper">
+              <Search size={18} className="searchIcon" />
               <input
                 type="text"
                 placeholder={isAdmin ? "Buscar por cliente o consultor..." : "Buscar por nombre del cliente..."}
@@ -111,7 +111,7 @@ export default function History() {
                         <td>
                           <div className="userCell">
                             <User size={14} />
-                            {session.userEmail.split('@')[0]}
+                            {session.userName}
                           </div>
                         </td>
                       )}
@@ -138,6 +138,16 @@ export default function History() {
                   ))}
                 </tbody>
               </table>
+            ) : error ? (
+              <div className="noResults">
+                <p style={{ color: '#ef4444' }}>{error}</p>
+                <button 
+                  onClick={fetchHistory} 
+                  style={{ marginTop: '10px', background: 'var(--blue)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                >
+                  Reintentar
+                </button>
+              </div>
             ) : (
               <div className="noResults">
                 <p>No se encontraron reportes que coincidan con la búsqueda.</p>

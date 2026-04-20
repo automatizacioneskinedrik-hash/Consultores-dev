@@ -647,23 +647,28 @@ body.sidebar-collapsed .appShell {
   color: white;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .appShell {
     width: 100%;
-    margin-left: 0;
+    margin-left: 0 !important;
   }
   body.sidebar-collapsed .appShell {
     width: 100%;
-    margin-left: 0;
+    margin-left: 0 !important;
   }
   .mainContent {
-    padding-top: 60px; /* space for hamburger */
+    padding-top: 80px; /* Space for mobile toggle */
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  .container {
+    width: 100%;
   }
   .title {
-    font-size: 28px;
+    font-size: clamp(24px, 8vw, 32px);
   }
   .dropZone {
-    padding: 24px 16px;
+    padding: 30px 15px;
   }
   .pageUser {
     top: 15px;
@@ -671,6 +676,25 @@ body.sidebar-collapsed .appShell {
   }
   .userNameSmall {
     display: none;
+  }
+  .analyzingWidget {
+    width: 100%;
+    padding: 40px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 24px;
+  }
+  .subtitle {
+    font-size: 12px;
+  }
+  .dropZone h3 {
+    font-size: 16px;
+  }
+  .recentSessionsContainer {
+    padding: 0 10px;
   }
 }
 

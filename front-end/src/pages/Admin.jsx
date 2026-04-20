@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaPencilAlt, FaTrashAlt } from "react-icons/fa";
+import { User, Mail, Shield, Edit2, Trash2, Search, UserPlus } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import "./Admin.css";
 
@@ -18,7 +18,7 @@ export default function Admin() {
   const [formError, setFormError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
-  const itemsPerPage = 4;
+  const itemsPerPage = 8;
 
   const currentUser = useMemo(() => {
     try {
@@ -64,11 +64,19 @@ export default function Admin() {
 
   const filteredUsers = useMemo(() => {
     const q = queryStr.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
+    const roleOrder = { "user": 1, "admin": 2, "superadmin": 3 };
+    
+    let list = q ? users.filter(
       (u) =>
-        (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q),
-    );
+        (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q)
+    ) : [...users];
+
+    return list.sort((a, b) => {
+      const orderA = roleOrder[a.role || "user"] || 1;
+      const orderB = roleOrder[b.role || "user"] || 1;
+      if (orderA !== orderB) return orderA - orderB;
+      return (a.name || "").localeCompare(b.name || "");
+    });
   }, [users, queryStr]);
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -206,15 +214,15 @@ export default function Admin() {
       <Sidebar />
       <div className="adminPage">
         <main className="adminContent">
-          <div className="topSection">
-            <div className="cardHeader">
+          <div className="adminHeaderRow">
+            <div className="adminTitleSection">
               <h1>Gestión de Usuarios</h1>
-              <p>Administra el acceso de tu equipo</p>
+              <p>Administra el acceso y roles de tu equipo</p>
             </div>
 
-            <div className="actionsRow">
-              <div className="searchBox">
-                <SearchIcon />
+            <div className="adminActionsHeader">
+              <div className="searchWrapper">
+                <Search size={18} className="searchIcon" />
                 <input
                   type="text"
                   value={queryStr}
@@ -226,7 +234,8 @@ export default function Admin() {
                 />
               </div>
               <button className="addBtn" onClick={openCreate}>
-                + Añadir Usuario
+                <UserPlus size={18} />
+                <span>Añadir Usuario</span>
               </button>
             </div>
           </div>
@@ -244,56 +253,51 @@ export default function Admin() {
                   <div className="headerCell roleHeader">ROL</div>
                   <div className="headerCell actionsHeader">ACCIONES</div>
                 </div>
-                <div className="userCards">
-                  {paginatedUsers.map((u, idx) => {
-                    const initials = getInitials(u.name);
-                    const pillClass =
-                      idx % 3 === 0
-                        ? "blueBg"
-                        : idx % 3 === 1
-                          ? "lilacBg"
-                          : "yellowBg";
-                    return (
-                      <div key={u.id} className="userCard">
-                        <div className="cardTop">
-                          <div className="userNameCol">
-                            <div className={`initial ${pillClass}`}>
-                              {initials}
-                            </div>
-                            <span className="userName">{u.name}</span>
+                <div className="userCardsContainer">
+                  {paginatedUsers.map((u) => (
+                    <div key={u.id} className={`userLogRow role-${u.role || 'user'}`}>
+                      <div className="userRowContent">
+                        <div className="userNameCol">
+                          <div className="userAvatar">
+                            <User size={16} />
                           </div>
-                          
-                          <div className="userEmailCol">
-                            {u.email}
-                          </div>
+                          <span className="fullName">{u.name}</span>
+                        </div>
+                        
+                        <div className="userEmailCol">
+                          <Mail size={14} className="cellIcon" />
+                          <span>{u.email}</span>
+                        </div>
 
-                          <div className="userRoleCol" style={{ color: u.role === 'admin' ? '#f49b1a' : (u.role === 'superadmin' ? '#FF6B00' : '#6c3af6') }}>
-                            {u.role === 'admin' ? 'ADMIN' : (u.role === 'superadmin' ? 'SUPERADMIN' : 'USUARIO')}
-                          </div>
-
-                          <div className="actionsCol">
-                            <button
-                              className="iconBtn"
-                              title="Editar"
-                              onClick={() => openEdit(u)}
-                            >
-                              <FaPencilAlt />
-                            </button>
-                            {/* Restricted Deletion: Admin cannot delete other Admins OR Super Admins */}
-                            {!(currentUser.role === 'admin' && (u.role === 'admin' || u.role === 'superadmin')) && (
-                              <button
-                                className="iconBtn deleteBtn"
-                                title="Eliminar"
-                                onClick={() => onDelete(u)}
-                              >
-                                <FaTrashAlt />
-                              </button>
-                            )}
+                        <div className="userRoleCol">
+                          <div className={`roleBadge ${u.role || 'user'}`}>
+                            <Shield size={12} className="cellIcon" />
+                            <span>{u.role === 'admin' ? 'ADMIN' : (u.role === 'superadmin' ? 'SUPERADMIN' : 'USUARIO')}</span>
                           </div>
                         </div>
+
+                        <div className="userActionsCol">
+                          <button
+                            className="actionIconBtn"
+                            title="Editar"
+                            onClick={() => openEdit(u)}
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          {/* Restricted Deletion: Admin cannot delete other Admins OR Super Admins */}
+                          {!(currentUser.role === 'admin' && (u.role === 'admin' || u.role === 'superadmin')) && (
+                            <button
+                              className="actionIconBtn delete"
+                              title="Eliminar"
+                              onClick={() => onDelete(u)}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
 
                 {totalPages > 1 && (
