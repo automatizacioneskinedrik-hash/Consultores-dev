@@ -86,7 +86,12 @@ export default function Login() {
         }
 
         localStorage.setItem("kinedrix_email", email);
-        localStorage.setItem("kinedrix_user", JSON.stringify(data.user));
+        const userData = { 
+          ...data.user, 
+          picture: payload?.picture, 
+          fullName: data.user?.name || payload?.name || "" 
+        };
+        localStorage.setItem("kinedrix_user", JSON.stringify(userData));
         saveEmail(email);
         navigate("/upload");
       } catch (err) {

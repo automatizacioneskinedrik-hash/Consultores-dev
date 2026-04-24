@@ -185,7 +185,7 @@ export default function Upload() {
     setIsUploading(true);
 
     try {
-      const signRes = await fetch(`${API_BASE_URL}/api/uploads/signed-url`, {
+      const signRes = await fetch(`${API_BASE_URL}/api/upload/signed-url`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
@@ -248,7 +248,7 @@ export default function Upload() {
 
   const startEmailProcess = async () => {
     try {
-      const completeRes = await fetch(`${API_BASE_URL}/api/uploads/complete`, {
+      const completeRes = await fetch(`${API_BASE_URL}/api/upload/complete`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

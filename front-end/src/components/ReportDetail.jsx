@@ -1,9 +1,63 @@
-import React from "react";
+import React, { useRef } from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { FileText, X } from "lucide-react";
 import "./ReportDetail.css";
 
 export default function ReportDetail({ report, onClose }) {
+  const reportRef = useRef(null);
+
   if (!report) return null;
 
+  const handleExportPDF = async () => {
+    const element = reportRef.current;
+    if (!element) return;
+
+    // Show loading state or similar if needed
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#040025",
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Hide UI buttons in the PDF
+          const exportBtn = clonedDoc.querySelector(".exportPDFBtn");
+          const closeBtn = clonedDoc.querySelector(".closeReport");
+          if (exportBtn) exportBtn.style.display = "none";
+          if (closeBtn) closeBtn.style.display = "none";
+
+          // Ensure the scrollable content is fully expanded in the clone
+          const clonedContent = clonedDoc.querySelector(".reportContent");
+          if (clonedContent) {
+            clonedContent.style.overflow = "visible";
+            clonedContent.style.height = "auto";
+          }
+          // Ensure the container is fully visible
+          const clonedContainer = clonedDoc.querySelector(".reportContainer");
+          if (clonedContainer) {
+            clonedContainer.style.height = "auto";
+            clonedContainer.style.maxHeight = "none";
+          }
+        }
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "px",
+        format: [canvas.width, canvas.height]
+      });
+
+      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save(`Speech_Kinedrik_${analysis.nombre_cliente || 'Sesion'}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Hubo un error al generar el PDF.");
+    }
+  };
   const { analysis, createdAt, userEmail } = report;
   const clienteNome = analysis.nombre_cliente || "Cliente";
   const dateStr = createdAt ? new Date(createdAt._seconds * 1000).toLocaleDateString("es-ES", {
@@ -24,13 +78,21 @@ export default function ReportDetail({ report, onClose }) {
 
   return (
     <div className="reportOverlay">
-      <div className="reportContainer">
+      <div className="reportContainer" ref={reportRef}>
         <header className="reportHeader">
           <div className="headerLeft">
             <h2>Reporte de Sesión</h2>
             <span>{clienteNome} — {dateStr}</span>
           </div>
-          <button className="closeReport" onClick={onClose}>✕</button>
+          <div className="headerActions">
+            <button className="exportPDFBtn" onClick={handleExportPDF} title="Exportar a PDF">
+              <FileText size={18} />
+              <span>Exportar PDF</span>
+            </button>
+            <button className="closeReport" onClick={onClose} title="Cerrar">
+              <X size={20} />
+            </button>
+          </div>
         </header>
 
         <div className="reportContent">
@@ -166,12 +228,18 @@ export default function ReportDetail({ report, onClose }) {
                   <div className="impBody">
                     <p><strong>Frase detectada:</strong> <em>"{item.frase_detectada}"</em></p>
                     <p><strong>Problema:</strong> {item.problema}</p>
-                    <div className="impCorrections">
-                      <strong>Correcciones Sugeridas:</strong>
-                      <ul>
-                        {(item.correcciones_sugeridas || []).slice(0, 3).map((c, i) => <li key={i}>"{c}"</li>)}
-                      </ul>
-                    </div>
+                    {(item.correcciones_sugeridas || (item.correccion_sugerida ? [item.correccion_sugerida] : [])).slice(0, 5).length > 0 && (
+                      <div className="impCorrections">
+                        <strong>Correcciones Sugeridas:</strong>
+                        <div className="correctionsList">
+                          {(item.correcciones_sugeridas || (item.correccion_sugerida ? [item.correccion_sugerida] : [])).slice(0, 5).map((c, i) => (
+                            <div key={i} className="correctionBox">
+                              "{c}"
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="impNext">
                       <strong>Próxima llamada:</strong> {item.proxima_llamada}
                     </div>
@@ -205,8 +273,7 @@ export default function ReportDetail({ report, onClose }) {
 
           <footer className="reportFooter">
             <div className="footerLine"></div>
-            <p className="footerSlogan">KINEDRIꓘ — Elevating skills, boosting real knowledge</p>
-            <p className="footerCredits">Desarrolladores Internos</p>
+            <p className="footerCredits">Desarrollado por el equipo de Ingeniería</p>
           </footer>
         </div>
       </div>

@@ -10,7 +10,7 @@
   
   --role-user: #8b5cf6;
   --role-admin: #f59e0b;
-  --role-super: #ef4444;
+  --role-super: #8ABC43;
 }
 
 .adminPage {
@@ -225,7 +225,7 @@ body.sidebar-collapsed .adminPage .adminContent {
 
 .roleBadge.user { background: #f3e8ff; color: #6b21a8; }
 .roleBadge.admin { background: #fef3c7; color: #92400e; }
-.roleBadge.superadmin { background: #fee2e2; color: #991b1b; }
+.roleBadge.superadmin { background: rgba(138, 188, 67, 0.15); color: #6d9b2b; }
 
 .cellIcon {
   opacity: 0.6;

@@ -8,6 +8,7 @@ A. NO PENALICES NOMBRES PROPIOS: Repetir el nombre del cliente NO es una muletil
 B. ÉXITO DE CIERRE (24H): Si el vendedor logra un compromiso de pago firme para las próximas 24 horas, califícalo como CIERRE EXITOSO. No lo consideres "decisión no consolidada".
 C. NEGOCIACIÓN LATAM: En mercados como Bolivia, negociar la "viabilidad" y el "método de pago" es parte del cierre exitoso. Si acuerdan una reserva (ej: 250 USD), es un ÉXITO.
 D. VALIDACIÓN DE MEJORA: Reconoce positivamente cuando el vendedor utiliza estructuras de cierre sugeridas anteriormente. Es una fortaleza de adaptabilidad, JAMÁS un error.
+E. CORRECCIONES SUGERIDAS: Para cada punto de mejora, propón de 1 a 5 correcciones sugeridas en el arreglo "correcciones_sugeridas". Deben ser específicas para ESE punto de mejora, únicas (no repetitivas), directas y concisas (ni muy extensas ni muy cortas). Da el ejemplo claro de qué frase usar.
 
 ---
 SALIDA REQUERIDA (JSON EXACTO):
@@ -36,7 +37,7 @@ SALIDA REQUERIDA (JSON EXACTO):
     "aspecto_positivo": { "titulo": "String", "descripcion": "String" },
     "puntos_mejora": [
       { 
-        "codigo_fase": "String",
+        "codigo_fase": "F1-Apertura / F2-Diagnóstico / F3-Visión / F4-Propuesta / F5-Cierre",
         "titulo_error": "String",
         "frase_detectada": "Cita textual",
         "problema": "Descripción",

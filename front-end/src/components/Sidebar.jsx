@@ -1,76 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
+import { 
+  CloudUpload, 
+  History, 
+  Users, 
+  Sliders, 
+  LayoutDashboard, 
+  LogOut, 
+  ChevronLeft, 
+  ChevronRight 
+} from "lucide-react";
 import "../styles/Sidebar.css";
-
-function UploadIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M20.39 18.39A5 5 0 0018 8h-1.26A7 7 0 105 16.6"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M12 16V10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 13l3-3 3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function LogoutIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 17L21 12L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9 21H5C3.89543 21 3 20.1046 3 19V5C3 3.89543 3.89543 3 5 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <path
-        d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M16 11a4 4 0 11-8 0 4 4 0 018 0zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function AdvancedConfigIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3L13.7 5.8L16.9 5.6L17.5 8.7L20.3 10.4L18.6 13.2L19.2 16.3L16 16.5L14.3 19.3L11.5 17.6L8.7 19.3L7 16.5L3.8 16.3L4.4 13.2L2.7 10.4L5.5 8.7L6.1 5.6L9.3 5.8L11 3H12Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="12" cy="11.5" r="2.4" stroke="currentColor" strokeWidth="1.8" />
-    </svg>
-  );
-}
-
-function DashboardIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="9" />
-      <rect x="14" y="3" width="7" height="5" />
-      <rect x="14" y="11" width="7" height="10" />
-      <rect x="3" y="15" width="7" height="6" />
-    </svg>
-  );
-}
-
-function HistoryIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 8v4l3 3" />
-      <circle cx="12" cy="12" r="9" />
-    </svg>
-  );
-}
 
 const EXPANDED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Logotipo_negativo.svg";
 const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Simbolo_negativo.svg";
@@ -185,12 +126,12 @@ export default function Sidebar() {
 
         <nav className="sidebarNav">
           <button className={`sidebarItem ${isUploadPage ? "active" : ""}`} onClick={handleUploadClick} title="Subir archivo">
-            <UploadIcon />
+            <CloudUpload size={22} strokeWidth={2} />
             <span>Subir Archivo</span>
           </button>
 
           <button className={`sidebarItem ${isHistoryPage ? "active" : ""}`} onClick={() => { navigate("/history"); setIsMobileSidebarOpen(false); }} title="Historial de reportes">
-            <HistoryIcon />
+            <History size={22} strokeWidth={2} />
             <span>Historial</span>
           </button>
 
@@ -200,7 +141,7 @@ export default function Sidebar() {
             onClick={handleAdminClick}
             title={isAuthorizedAdmin ? "Gestionar usuarios" : "Sin acceso"}
           >
-            <UsersIcon />
+            <Users size={22} strokeWidth={2} />
             <span>Gestionar Usuarios</span>
           </button>
 
@@ -210,7 +151,20 @@ export default function Sidebar() {
               onClick={handleAdvancedConfigClick}
               title="Configuración avanzada"
             >
-              <AdvancedConfigIcon />
+              <svg 
+                width="22" 
+                height="22" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="1.8" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                className="lucide-custom-icon"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
               <span>Configuración<br />Avanzada</span>
             </button>
           )}
@@ -218,11 +172,44 @@ export default function Sidebar() {
 
         {storedName && (
           <button className="sidebarBadge" type="button" onClick={handleLogoutClick} title="Cerrar sesión">
-            <span className="logoutBtn" aria-hidden="true">
-              <LogoutIcon />
-            </span>
-            <span className="badgeName">{storedName}</span>
-            <span className="statusDot" aria-hidden="true" />
+            <div className={`userAvatarWrapper ${user.picture ? 'hasPic' : ''}`}>
+              {user.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={storedName || "Profile"} 
+                  className="userPhoto" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              {(
+                <div 
+                  className="defaultAvatar" 
+                  style={{ display: user.picture ? 'none' : 'flex' }}
+                >
+                  {(() => {
+                    const parts = (storedName || "").split(" ").filter(Boolean);
+                    if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                    return (storedName || "?").charAt(0).toUpperCase();
+                  })()}
+                </div>
+              )}
+              {!user.picture && <span className="statusDot" aria-hidden="true" />}
+            </div>
+            {!isSidebarCollapsed && (
+              <div className="badgeInfo">
+                <span className="badgeName">{storedName}</span>
+                <span className="badgeRole">{(role || 'user').toUpperCase()}</span>
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <span className="logoutActionIcon" aria-hidden="true">
+                <LogOut size={18} strokeWidth={2.5} />
+              </span>
+            )}
           </button>
         )}
       </div>
