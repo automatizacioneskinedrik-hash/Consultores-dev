@@ -777,3 +777,119 @@
     padding: 16px;
   }
 }
+
+/* =======================================================================
+   PRINT STYLES FOR PDF EXPORT (SELECTABLE TEXT)
+   ======================================================================= */
+@media print {
+  /* Quitar los encabezados y pies de página por defecto del navegador (como el localhost o la fecha) */
+  @page {
+    margin: 0;
+  }
+
+  /* Limpiar el fondo gris global */
+  html, body, #root, .appShell, .mainContent {
+    background: white !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ocultar elementos hermanos y menús completamente del flujo del documento */
+  .sidebar,
+  .historyContent,
+  .mobileToggle,
+  .appShell,
+  .historyHeader,
+  .historyGrid {
+    display: none !important;
+  }
+
+  /* Resetear el contenedor base donde vive el reporte */
+  .historyContainer {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+
+  /* Ocultar toda la app por defecto (respaldo) */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Hacer visible solo el overlay del reporte y sus hijos */
+  .reportOverlay, 
+  .reportOverlay * {
+    visibility: visible;
+  }
+
+  /* Resetear el posicionamiento del overlay para que fluya naturalmente en múltiples páginas */
+  .reportOverlay {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 2cm !important; /* Margen para el PDF ya que quitamos el del navegador */
+    background: white !important;
+    display: block;
+    margin: 0;
+  }
+
+  /* El contenedor no debe tener scroll ni límites de altura */
+  .reportContainer {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    background: white !important;
+    overflow: visible;
+  }
+
+  /* Asegurar que el contenido del reporte se expanda completamente */
+  .reportContent {
+    overflow: visible;
+    height: auto;
+    padding: 0;
+  }
+
+  /* Ocultar botones de acción en el PDF */
+  .headerActions {
+    display: none !important;
+  }
+
+  /* Mantener colores de fondo exactos (gradientes, traffic lights, etc) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Evitar saltos de página inmediatamente después de los títulos */
+  h1, h2, h3, h4, h5, h6,
+  .statsSection h4,
+  .recentTitle,
+  .footerSectionCol h4 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Evitar cortes indeseados de páginas a la mitad de los elementos */
+  .metricCard,
+  .probItem,
+  .scoreItem,
+  .fSection,
+  .improvementCard,
+  .fortalezaCard,
+  .footerSectionCol {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .reportHero {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

@@ -339,11 +339,14 @@ export default function Upload() {
               accionables
             </h1>
 
-            <p className="subtitle">
-              <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
-              <br />
-              Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
-            </p>
+            <div className="welcomeText">
+              <p className="subtitle highlightText">
+                <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
+              </p>
+              <p className="subtitleText">
+                Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
+              </p>
+            </div>
 
             {isOffline && (
               <div className="offlineWarning">

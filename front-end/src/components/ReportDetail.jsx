@@ -1,6 +1,4 @@
 import React, { useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { FileText, X } from "lucide-react";
 import "./ReportDetail.css";
 
@@ -9,54 +7,16 @@ export default function ReportDetail({ report, onClose }) {
 
   if (!report) return null;
 
-  const handleExportPDF = async () => {
-    const element = reportRef.current;
-    if (!element) return;
-
-    // Show loading state or similar if needed
-    try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#040025",
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Hide UI buttons in the PDF
-          const exportBtn = clonedDoc.querySelector(".exportPDFBtn");
-          const closeBtn = clonedDoc.querySelector(".closeReport");
-          if (exportBtn) exportBtn.style.display = "none";
-          if (closeBtn) closeBtn.style.display = "none";
-
-          // Ensure the scrollable content is fully expanded in the clone
-          const clonedContent = clonedDoc.querySelector(".reportContent");
-          if (clonedContent) {
-            clonedContent.style.overflow = "visible";
-            clonedContent.style.height = "auto";
-          }
-          // Ensure the container is fully visible
-          const clonedContainer = clonedDoc.querySelector(".reportContainer");
-          if (clonedContainer) {
-            clonedContainer.style.height = "auto";
-            clonedContainer.style.maxHeight = "none";
-          }
-        }
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "px",
-        format: [canvas.width, canvas.height]
-      });
-
-      pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-      pdf.save(`Speech_Kinedrik_${analysis.nombre_cliente || 'Sesion'}.pdf`);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Hubo un error al generar el PDF.");
-    }
+  const handleExportPDF = () => {
+    // Cambiamos el título temporalmente para que el PDF se guarde con este nombre por defecto
+    const originalTitle = document.title;
+    document.title = `Speech_Kinedrik_${report.analysis?.nombre_cliente || 'Sesion'}`;
+    
+    // Usamos el diálogo de impresión nativo del navegador (que permite "Guardar como PDF" y mantiene el texto seleccionable)
+    window.print();
+    
+    // Restauramos el título original
+    document.title = originalTitle;
   };
   const { analysis, createdAt, userEmail } = report;
   const clienteNome = analysis.nombre_cliente || "Cliente";

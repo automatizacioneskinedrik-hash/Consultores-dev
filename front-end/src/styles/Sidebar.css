@@ -21,7 +21,7 @@
   height: 100vh;
   z-index: 999;
   overflow-y: auto;
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -95,7 +95,7 @@
   cursor: pointer;
   font-size: 13.5px;
   font-weight: 600;
-  transition: all 0.25s ease;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   text-align: left;
   position: relative;
   overflow: hidden;
