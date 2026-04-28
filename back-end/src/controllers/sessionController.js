@@ -73,11 +73,10 @@ export const getAllSessions = async (req, res) => {
       const sc = data.analysis?.scorecard || {};
       const email = normalizeEmailValue(data.userEmail);
 
-      const muletillasScore = sc.muletillas?.score || 0;
-      const cierreScore = sc.cierre_negociacion?.score || 0;
-      const objecionesScore = sc.manejo_objeciones?.score || 0;
-      const valorScore = sc.propuesta_valor?.score || 0;
-      const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
+      // Usar el score persistido al momento del análisis; si no existe (registros antiguos), calcularlo
+      const generalScore = data.generalScore ?? Math.round(
+        ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
+      );
 
       return {
         id: doc.id,

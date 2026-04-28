@@ -32,8 +32,9 @@ export default function ReportDetail({ report, onClose }) {
   const objecionesScore = sc.manejo_objeciones?.score || 0;
   const valorScore = sc.propuesta_valor?.score || 0;
 
-  // Scoring General (Simplificado como estaba antes)
-  const generalScore = Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
+  // Usar el score persistido en Firestore (guardado al momento del análisis).
+  // Si no existe (registros anteriores), lo calculamos como fallback.
+  const generalScore = report.generalScore ?? Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
   const generalColor = generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
 
   return (

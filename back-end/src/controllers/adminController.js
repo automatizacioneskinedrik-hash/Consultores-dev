@@ -201,8 +201,11 @@ export const getDashboardStats = async (req, res) => {
 
       stats.totalUsers.add(email);
 
+      // Usar el score persistido; fallback para registros anteriores a esta actualización
       const sc = data.analysis?.scorecard || {};
-      const score = Math.round(((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4);
+      const score = data.generalScore ?? Math.round(
+        ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
+      );
       totalScoreSum += score;
 
       if (data.createdAt) {

@@ -13,6 +13,18 @@ import { normalizeEmailValue } from "../utils/helpers.js";
 
 export async function processAudioAnalysis(objectPath, userEmail) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
+
+  // GUARDIA ANTI-DUPLICADOS: si este audio ya fue analizado, no re-procesar.
+  // Esto garantiza que el mismo audio siempre tenga el mismo score, duración y resultados.
+  const existingSnap = await db.collection("meetings_analysis")
+    .where("objectPath", "==", objectPath)
+    .limit(1)
+    .get();
+  if (!existingSnap.empty) {
+    console.log(`Audio ya analizado previamente (objectPath: ${objectPath}). Saltando re-análisis.`);
+    return;
+  }
+
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
   let filesToClean = [tempFilePath];
 
@@ -68,11 +80,18 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const analysis = JSON.parse(completion.choices[0].message.content);
     analysis.participacion.duracion_total = durationStr;
 
+    // Calcular score general UNA SOLA VEZ aquí y persistirlo para que sea consistente en todas las vistas
+    const sc = analysis.scorecard || {};
+    const generalScore = Math.round(
+      ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
+    );
+
     const analysisData = {
       userEmail,
       objectPath,
       transcription: transcription.text,
       analysis,
+      generalScore,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -242,8 +261,12 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
               <div style="color:#0F172A; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Scorecard de la Sesión</div>
               ${(() => {
                 const sc = analysis.scorecard || {};
-                const scoreValues = Object.values(sc).map(d => d.score || 0);
-                const minScore = scoreValues.length > 0 ? Math.min(...scoreValues) : -1;
+                // Normalize scores to "performance" (higher = better) for all metrics
+                // Muletillas is inverted: 0 = excellent, 100 = terrible → performance = 100 - score
+                const performanceMap = Object.fromEntries(
+                  Object.entries(sc).map(([k, d]) => [k, k === 'muletillas' ? 100 - (d.score || 0) : (d.score || 0)])
+                );
+                const minPerformance = Math.min(...Object.values(performanceMap));
                 let hasBadgeGist = false;
                 return Object.entries(sc).map(([key, data]) => {
                   const titles = { muletillas: "Muletillas", cierre_negociacion: "Cierre y Negociación", manejo_objeciones: "Manejo de Objeciones", propuesta_valor: "Propuesta de Valor" };
@@ -253,7 +276,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                   if (key === 'muletillas') color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
                   else color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
                   let badgeHtml = '';
-                  if (score === minScore && !hasBadgeGist) {
+                  if (performanceMap[key] === minPerformance && !hasBadgeGist) {
                     badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">POR TRABAJAR</span>';
                     hasBadgeGist = true;
                   }
