@@ -44,8 +44,6 @@ steps:
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
-      - --timeout=3600
-      - --cpu-always-allocated
       - --set-env-vars=NODE_ENV=production
       - --set-env-vars=CORS_ORIGIN=${_CORS_ORIGIN}
       - --set-env-vars=GCS_BUCKET_NAME=${_GCS_BUCKET_NAME}
