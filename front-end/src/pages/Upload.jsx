@@ -86,6 +86,7 @@ export default function Upload() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [currentObjectPath, setCurrentObjectPath] = useState("");
   const [analysisText, setAnalysisText] = useState("Procesando información...");
+  const [isLargeFile, setIsLargeFile] = useState(false);
   const [recentSessions, setRecentSessions] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
@@ -246,11 +247,12 @@ export default function Upload() {
     }
   };
 
+  // Short audio: wait for /complete and confirm email was sent
   const startEmailProcess = async () => {
     try {
       const completeRes = await fetch(`${API_BASE_URL}/api/upload/complete`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "X-Admin-Email": user?.email || "",
           "X-Auth-Token": user?.authToken || ""
@@ -263,28 +265,47 @@ export default function Upload() {
         throw new Error(completeData?.error || "No se pudo enviar el correo.");
       }
 
-      setSuccessStep(3); 
+      setSuccessStep(3);
       setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
-      setErrorMsg(err.message || "Error enviando correo.");
+      setErrorMsg("El análisis de tu audio fue enviado al servidor. Recibirás tu reporte por correo en unos minutos.");
       setSuccessStep(0);
     }
   };
 
+  // Large audio: fire /complete without blocking the UI
+  const triggerAnalysisBackground = () => {
+    fetch(`${API_BASE_URL}/api/upload/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Email": user?.email || "",
+        "X-Auth-Token": user?.authToken || ""
+      },
+      body: JSON.stringify({ objectPath: currentObjectPath, userEmail: user?.email || "anonymous" }),
+    }).catch((err) => console.error("Background analysis trigger:", err));
+  };
+
   const handleSuccessClose = () => {
     if (successStep === 1) {
-      setShowSuccessModal(false);
-      setSuccessStep(2); // Iniciar proceso de envío de correo
-      
-      // Iniciar el fetch al backend
-      startEmailProcess();
-
-      // Removed setting toast timeout
+      // ~30 MB ≈ 45 min at typical voice recording bitrates — must match backend threshold
+      const large = fileMeta && fileMeta.size > 30 * 1024 * 1024;
+      if (large) {
+        setIsLargeFile(true);
+        setShowSuccessModal(false);
+        setSuccessStep(3);
+        setShowSuccessModal(true);
+        triggerAnalysisBackground();
+      } else {
+        setShowSuccessModal(false);
+        setSuccessStep(2);
+        startEmailProcess();
+      }
     } else if (successStep === 3) {
-      // Reiniciar todo
       setShowSuccessModal(false);
       setSuccessStep(0);
+      setIsLargeFile(false);
       setFileMeta(null);
       setProgress(0);
       setStatus("");
@@ -322,7 +343,9 @@ export default function Upload() {
       return "Gracias, por tu gran trabajo, pronto recibirás más información";
     }
     if (successStep === 3) {
-      return "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
+      return isLargeFile
+        ? "Tu audio fue subido correctamente. Por la duración de la grabación, el análisis puede tardar varios minutos. Recibirás el reporte por correo cuando esté listo."
+        : "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
     }
     return "";
   };

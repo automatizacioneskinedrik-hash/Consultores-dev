@@ -63,9 +63,23 @@ export const completeUpload = async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    await processAudioAnalysis(objectPath, userEmail);
+    const [metadata] = await file.getMetadata();
+    const fileSizeBytes = parseInt(metadata.size || 0);
+    // ~30 MB ≈ 45 minutes at typical voice recording bitrates (64-96 kbps)
+    const isLargeFile = fileSizeBytes > 30 * 1024 * 1024;
 
-    return res.json({ ok: true, message: "Análisis completado y correo enviado." });
+    if (isLargeFile) {
+      // Long audio: return immediately so Cloud Run doesn't hit the request timeout.
+      // Processing continues in the background container.
+      processAudioAnalysis(objectPath, userEmail).catch((err) => {
+        console.error("Background analysis error:", err);
+      });
+      return res.json({ ok: true, isLargeFile: true });
+    }
+
+    // Short audio: wait for completion so the frontend can confirm the email was sent.
+    await processAudioAnalysis(objectPath, userEmail);
+    return res.json({ ok: true, isLargeFile: false });
   } catch (err) {
     console.error("Error en complete:", err);
     return res.status(500).json({ ok: false, error: err.message });

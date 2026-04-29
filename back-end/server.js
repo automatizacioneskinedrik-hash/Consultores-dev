@@ -53,7 +53,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ ok: false, error: "Something went wrong!" });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`✅ Allowed origins: ${allowedOrigins.join(", ")}`);
 });
+
+// Disable Node.js socket and request timeouts — long audio analysis can take 20-30 min.
+// Cloud Run request timeout must also be set to 3600s in the GCP console.
+server.setTimeout(0);
+server.requestTimeout = 0;
