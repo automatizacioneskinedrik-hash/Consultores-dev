@@ -11,6 +11,63 @@ import { getSystemPrompt } from "../../prompts-master.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
+const CHUNK_DURATION_SEC = 10 * 60;   // 10 min por chunk
+const WHISPER_CONCURRENCY = 3;         // máximo 3 chunks en paralelo
+const LONG_AUDIO_THRESHOLD_SEC = 15 * 60; // chunking si > 15 min
+const WHISPER_LIMIT_BYTES = 25 * 1024 * 1024;
+
+function getAudioDurationSec(filePath) {
+  return new Promise((resolve) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) {
+        console.warn("ffprobe failed, using size-based fallback:", err.message);
+        resolve(0);
+      } else {
+        resolve(metadata?.format?.duration || 0);
+      }
+    });
+  });
+}
+
+async function splitIntoChunks(inputPath, chunkDir) {
+  const outputPattern = path.join(chunkDir, "chunk_%03d.mp3");
+  await new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .outputOptions([
+        "-f", "segment",
+        "-segment_time", String(CHUNK_DURATION_SEC),
+        "-reset_timestamps", "1",
+        "-c:a", "libmp3lame",
+        "-b:a", "32k",
+      ])
+      .output(outputPattern)
+      .on("end", resolve)
+      .on("error", reject)
+      .run();
+  });
+  const files = (await fs.readdir(chunkDir))
+    .filter(f => /^chunk_\d+\.mp3$/.test(f))
+    .sort();
+  return files.map(f => path.join(chunkDir, f));
+}
+
+async function transcribeChunks(chunkPaths) {
+  const results = new Array(chunkPaths.length);
+  for (let i = 0; i < chunkPaths.length; i += WHISPER_CONCURRENCY) {
+    const batch = chunkPaths.slice(i, i + WHISPER_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(p => openai.audio.transcriptions.create({
+        file: fs.createReadStream(p),
+        model: "whisper-1",
+        response_format: "verbose_json",
+      }))
+    );
+    batchResults.forEach((r, j) => { results[i + j] = r; });
+    console.log(`Chunks ${i + 1}–${Math.min(i + WHISPER_CONCURRENCY, chunkPaths.length)} / ${chunkPaths.length} transcritos`);
+  }
+  return results;
+}
+
 export async function processAudioAnalysis(objectPath, userEmail) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
 
@@ -36,31 +93,53 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("File downloaded to temp path:", tempFilePath);
 
-    const stats = await fs.stat(tempFilePath);
-    let finalAudioPath = tempFilePath;
-    const WHISPER_LIMIT_BYTES = 25 * 1024 * 1024;
+    const durationSec = await getAudioDurationSec(tempFilePath);
+    const isLongAudio = durationSec > LONG_AUDIO_THRESHOLD_SEC;
 
-    if (stats.size > WHISPER_LIMIT_BYTES) {
-      console.log(`Archivo excede los 25MB (${stats.size} bytes). Comprimiendo...`);
-      const compressedPath = path.join(os.tmpdir(), `compressed_${uuidv4()}.mp3`);
-      await new Promise((resolve, reject) => {
-        ffmpeg(tempFilePath).audioBitrate('32k').format('mp3')
-          .on('end', () => resolve()).on('error', (err) => reject(err)).save(compressedPath);
+    let transcriptionText;
+    let totalSeconds;
+
+    if (isLongAudio) {
+      const durationMin = Math.round(durationSec / 60);
+      console.log(`Audio largo (${durationMin} min). Dividiendo en chunks de ${CHUNK_DURATION_SEC / 60} min...`);
+
+      const chunkDir = path.join(os.tmpdir(), `chunks_${uuidv4()}`);
+      await fs.ensureDir(chunkDir);
+      filesToClean.push(chunkDir);
+
+      const chunkPaths = await splitIntoChunks(tempFilePath, chunkDir);
+      console.log(`Dividido en ${chunkPaths.length} chunks. Transcribiendo (${WHISPER_CONCURRENCY} en paralelo)...`);
+
+      const chunkResults = await transcribeChunks(chunkPaths);
+      transcriptionText = chunkResults.map(r => r.text.trim()).join(" ");
+      totalSeconds = durationSec; // ffprobe es la fuente autoritativa de duración
+    } else {
+      let finalAudioPath = tempFilePath;
+      const stats = await fs.stat(tempFilePath);
+
+      if (stats.size > WHISPER_LIMIT_BYTES) {
+        console.log(`Archivo excede los 25MB (${stats.size} bytes). Comprimiendo...`);
+        const compressedPath = path.join(os.tmpdir(), `compressed_${uuidv4()}.mp3`);
+        await new Promise((resolve, reject) => {
+          ffmpeg(tempFilePath).audioBitrate("32k").format("mp3")
+            .on("end", resolve).on("error", reject).save(compressedPath);
+        });
+        finalAudioPath = compressedPath;
+        filesToClean.push(compressedPath);
+      }
+
+      const transcription = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(finalAudioPath),
+        model: "whisper-1",
+        response_format: "verbose_json",
       });
-      finalAudioPath = compressedPath;
-      filesToClean.push(compressedPath);
+      transcriptionText = transcription.text;
+      totalSeconds = transcription.duration || 0;
     }
 
-    const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(finalAudioPath),
-      model: "whisper-1",
-      response_format: "verbose_json",
-    });
-
-    const totalSeconds = transcription.duration || 0;
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
-    const durationStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
     let additionalInstructions = "";
     const promptSnapshot = await db.collection("prompts").where("isActive", "==", true).limit(1).get();
@@ -68,7 +147,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       additionalInstructions = promptSnapshot.docs[0].data().content || "";
     }
 
-    const systemPrompt = getSystemPrompt(durationStr, additionalInstructions, transcription.text);
+    const systemPrompt = getSystemPrompt(durationStr, additionalInstructions, transcriptionText);
     const completion = await openai.chat.completions.create({
       model: "gpt-5.4-mini",
       messages: [{ role: "user", content: systemPrompt }],
@@ -89,7 +168,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const analysisData = {
       userEmail,
       objectPath,
-      transcription: transcription.text,
+      transcription: transcriptionText,
       analysis,
       generalScore,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

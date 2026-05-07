@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { FileText, X } from "lucide-react";
+import { FileText, FileDown, X } from "lucide-react";
 import "./ReportDetail.css";
 
 export default function ReportDetail({ report, onClose }) {
@@ -11,12 +11,27 @@ export default function ReportDetail({ report, onClose }) {
     // Cambiamos el título temporalmente para que el PDF se guarde con este nombre por defecto
     const originalTitle = document.title;
     document.title = `Speech_Kinedrik_${report.analysis?.nombre_cliente || 'Sesion'}`;
-    
+
     // Usamos el diálogo de impresión nativo del navegador (que permite "Guardar como PDF" y mantiene el texto seleccionable)
     window.print();
-    
+
     // Restauramos el título original
     document.title = originalTitle;
+  };
+
+  const handleExportTXT = () => {
+    const clientName = report.analysis?.nombre_cliente || "Cliente";
+    const date = report.createdAt
+      ? new Date(report.createdAt._seconds * 1000).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })
+      : "";
+    const header = `Transcripción — ${clientName} — ${date}\nConsultor: ${report.userEmail || ""}\n${"─".repeat(60)}\n\n`;
+    const blob = new Blob([header + (report.transcription || "Sin transcripción disponible")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Transcripcion_${clientName.replace(/\s+/g, "_")}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
   const { analysis, createdAt, userEmail } = report;
   const clienteNome = analysis.nombre_cliente || "Cliente";
@@ -46,6 +61,10 @@ export default function ReportDetail({ report, onClose }) {
             <span>{clienteNome} — {dateStr}</span>
           </div>
           <div className="headerActions">
+            <button className="exportTXTBtn" onClick={handleExportTXT} title="Descargar transcripción en TXT">
+              <FileDown size={18} />
+              <span>Transcripción TXT</span>
+            </button>
             <button className="exportPDFBtn" onClick={handleExportPDF} title="Exportar a PDF">
               <FileText size={18} />
               <span>Exportar PDF</span>
