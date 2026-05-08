@@ -182,6 +182,9 @@ function formatWeekPickerValue(value) {
 function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
   return (
     <Card className="dashboardKpiCard">
+      <div className="dashboardKpiTop">
+        <div className="dashboardKpiLabel">{label}</div>
+      </div>
       <div className="dashboardKpiValue">
         {loading ? (
           <span className="dashboardKpiNumber dashboardKpiLoading">
@@ -204,7 +207,6 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
         )}
       </div>
       <div className="dashboardKpiLegend">
-        <div className="dashboardKpiLegendTitle">{label}</div>
         <div className="dashboardKpiLegendText">{legend}</div>
       </div>
     </Card>
