@@ -1,7 +1,7 @@
 .dashboardPage {
   display: flex;
   min-height: 100vh;
-  background: #f1f5f9;
+  background: var(--off);
 }
 
 .dashboardContent {
@@ -19,7 +19,7 @@ body.sidebar-collapsed .dashboardContent {
   display: flex;
   align-items: flex-end;
   gap: 14px;
-  margin-bottom: 36px;
+  margin-bottom: 18px;
 }
 
 .dashboardHeaderIcon {
@@ -49,6 +49,10 @@ body.sidebar-collapsed .dashboardContent {
   margin-bottom: 0;
 }
 
+.dashboardSection {
+  margin-top: 16px;
+}
+
 .dashboardDenied {
   background: white;
   padding: 18px 20px;
@@ -58,37 +62,146 @@ body.sidebar-collapsed .dashboardContent {
   font-weight: 800;
 }
 
-.dashboardEmpty {
+.dashboardKpiCard {
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboardKpiCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: var(--blue);
+}
+
+.dashboardKpiCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 64, 164, 0.25);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.07);
+}
+
+.dashboardKpiTop {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.dashboardCard {
-  width: min(760px, 100%);
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 28px 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-}
-
-.dashboardCard h2 {
-  margin: 0 0 10px 0;
-  color: var(--navy);
+.dashboardKpiLabel {
+  color: rgba(4, 0, 37, 0.65);
+  font-size: 12px;
   font-weight: 900;
-  font-size: 20px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }
 
-.dashboardCard p {
-  margin: 0;
-  color: #64748b;
-  line-height: 1.6;
-  font-weight: 600;
+.dashboardKpiIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: rgba(0, 64, 164, 0.08);
+  color: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dashboardKpiIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dashboardKpiValue {
+  margin-top: 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dashboardKpiNumber {
+  font-size: 30px;
+  font-weight: 950;
+  color: var(--navy);
+  line-height: 1.1;
+}
+
+.dashboardKpiSuffix {
+  color: rgba(4, 0, 37, 0.55);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.dashboardFiltersCard {
+  border-radius: 18px;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+}
+
+.dashboardCardTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+  font-weight: 950;
+}
+
+.dashboardFiltersGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.dashboardFilterLabel {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.65);
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+
+.dashboardFilterControl {
+  width: 100%;
+}
+
+.dashboardChartsHeader {
+  margin-bottom: 10px;
+}
+
+.dashboardChartsTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--navy);
+  font-weight: 950;
+}
+
+.dashboardPanel {
+  border-radius: 18px;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+}
+
+.dashboardChartWrap {
+  height: 260px;
 }
 
 @media (max-width: 1024px) {
   .dashboardContent {
     padding: 30px;
     margin-left: 215px;
+  }
+
+  .dashboardFiltersGrid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -100,5 +213,9 @@ body.sidebar-collapsed .dashboardContent {
   }
   body.sidebar-collapsed .dashboardContent {
     margin-left: 0;
+  }
+
+  .dashboardFiltersGrid {
+    grid-template-columns: 1fr;
   }
 }
