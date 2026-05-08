@@ -1,4 +1,3 @@
-
 steps:
   - id: configure-bucket-cors
     name: gcr.io/google.com/cloudsdktool/cloud-sdk
