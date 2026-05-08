@@ -160,6 +160,17 @@ body.sidebar-collapsed .dashboardContent {
   align-items: end;
 }
 
+.dashboardHint {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 64, 164, 0.18);
+  background: rgba(0, 64, 164, 0.06);
+  color: rgba(4, 0, 37, 0.8);
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .dashboardFilterLabel {
   font-size: 12px;
   font-weight: 900;

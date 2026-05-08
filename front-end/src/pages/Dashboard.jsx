@@ -20,6 +20,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import dayjs from "dayjs";
 import Sidebar from "../components/Sidebar";
 import { getUser } from "../utils/user";
 import "./Dashboard.css";
@@ -151,6 +152,15 @@ function buildTimeRange({ month, week, day }) {
   }
 
   return { startMs: null, endMs: null, label: "Histórico" };
+}
+
+function formatWeekPickerValue(value) {
+  const date = toDate(value);
+  if (!date) return "";
+  const start = startOfWeekMonday(date);
+  const end = addDays(start, 6);
+  const dtf = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+  return `${dtf.format(start)} – ${dtf.format(end)}`;
 }
 
 function DashboardKpiCard({ label, icon, value, suffix, loading }) {
@@ -292,6 +302,19 @@ export default function Dashboard() {
   );
 
   const timeRange = useMemo(() => buildTimeRange({ month, week, day }), [month, week, day]);
+
+  const isFutureRange = useMemo(() => {
+    if (!Number.isFinite(timeRange.startMs)) return false;
+    return timeRange.startMs > Date.now();
+  }, [timeRange.startMs]);
+
+  const weekPresets = useMemo(
+    () => [
+      { label: "Esta semana", value: () => dayjs() },
+      { label: "Semana pasada", value: () => dayjs().subtract(1, "week") },
+    ],
+    [],
+  );
 
   const clearTimeFilters = () => {
     setMonth(null);
@@ -514,6 +537,8 @@ export default function Dashboard() {
                         size="large"
                         picker="week"
                         placeholder="Selecciona semana"
+                        presets={weekPresets}
+                        format={formatWeekPickerValue}
                         value={week}
                         onChange={(value) => {
                           setWeek(value);
@@ -554,6 +579,12 @@ export default function Dashboard() {
                       />
                     </div>
                   </div>
+
+                  {isFutureRange ? (
+                    <div className="dashboardHint" role="status">
+                      La segmentación de tiempo seleccionada está en el futuro; no habrá datos disponibles aún.
+                    </div>
+                  ) : null}
                 </Card>
               </section>
 
