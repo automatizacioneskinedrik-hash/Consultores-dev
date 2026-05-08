@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Select, Spin } from "antd";
 import {
   ClockCircleOutlined,
@@ -12,6 +12,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import {
+  Area,
   CartesianGrid,
   Line,
   LineChart,
@@ -201,6 +202,8 @@ function DashboardLineCard({
   valueSuffix,
   valueLabel,
 }) {
+  const rawId = useId();
+  const gradientId = useMemo(() => `dash_grad_${rawId.replace(/:/g, "")}`, [rawId]);
   const formatTick = useMemo(() => {
     const dtfHour = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" });
     const dtfDay = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short" });
@@ -229,7 +232,14 @@ function DashboardLineCard({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+            <LineChart data={data} margin={{ top: 8, right: 16, left: 6, bottom: 0 }}>
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={stroke} stopOpacity={0.28} />
+                  <stop offset="70%" stopColor={stroke} stopOpacity={0.08} />
+                  <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(4, 0, 37, 0.08)" />
               <XAxis
                 dataKey="ts"
@@ -252,6 +262,14 @@ function DashboardLineCard({
                   return [formatted, valueLabel || ""];
                 }}
               />
+              <Area
+                type="monotone"
+                dataKey={dataKey}
+                fill={`url(#${gradientId})`}
+                stroke="none"
+                connectNulls
+                isAnimationActive={false}
+              />
               <Line
                 type="monotone"
                 dataKey={dataKey}
@@ -261,6 +279,7 @@ function DashboardLineCard({
                 dot={false}
                 connectNulls
                 activeDot={{ r: 5 }}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -606,7 +625,7 @@ export default function Dashboard() {
                 </div>
 
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} lg={8}>
+                  <Col xs={24}>
                     <DashboardLineCard
                       title="Evolución de score medio (μ)"
                       data={dashboardData.series}
@@ -619,7 +638,7 @@ export default function Dashboard() {
                       valueLabel="μ Score"
                     />
                   </Col>
-                  <Col xs={24} lg={8}>
+                  <Col xs={24}>
                     <DashboardLineCard
                       title="Evolución de P(cierre) (μ)"
                       data={dashboardData.series}
@@ -632,7 +651,7 @@ export default function Dashboard() {
                       valueLabel="μ P(cierre)"
                     />
                   </Col>
-                  <Col xs={24} lg={8}>
+                  <Col xs={24}>
                     <DashboardLineCard
                       title="Evolución de share cliente (μ)"
                       data={dashboardData.series}
