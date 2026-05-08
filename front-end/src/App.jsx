@@ -27,6 +27,16 @@ function isAdmin() {
   }
 }
 
+function isSuperAdmin() {
+  try {
+    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
+    const userEmail = (user.email || "").toLowerCase();
+    return user.role === "superadmin" || userEmail === "adminkinedrik@eadic.com";
+  } catch {
+    return false;
+  }
+}
+
 const ProtectedRoute = ({ children }) => {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
   return children;
@@ -35,6 +45,12 @@ const ProtectedRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
   if (!isAdmin()) return <Navigate to="/upload" replace />;
+  return children;
+};
+
+const SuperAdminRoute = ({ children }) => {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />;
+  if (!isSuperAdmin()) return <Navigate to="/upload" replace />;
   return children;
 };
 
@@ -76,14 +92,14 @@ export default function App() {
           }
         />
 
-        {/* <Route
+        <Route
           path="/dashboard"
           element={
-            <AdminRoute>
+            <SuperAdminRoute>
               <Dashboard />
-            </AdminRoute>
+            </SuperAdminRoute>
           }
-        /> */}
+        />
 
         <Route path="/" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />

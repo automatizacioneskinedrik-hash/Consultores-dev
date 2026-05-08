@@ -85,6 +85,15 @@ export default function Sidebar() {
     setIsMobileSidebarOpen(false);
   };
 
+  const handleDashboardClick = () => {
+    if (!isAuthorizedSuperAdmin) {
+      alert("No tienes permiso para acceder a esta sección");
+      return;
+    }
+    navigate("/dashboard");
+    setIsMobileSidebarOpen(false);
+  };
+
   const handleLogoutClick = () => setShowLogoutModal(true);
 
   const handleConfirmLogout = () => {
@@ -144,6 +153,17 @@ export default function Sidebar() {
             <Users size={22} strokeWidth={2} />
             <span>Gestionar Usuarios</span>
           </button>
+
+          {isAuthorizedSuperAdmin && (
+            <button
+              className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
+              onClick={handleDashboardClick}
+              title="Dashboard"
+            >
+              <LayoutDashboard size={22} strokeWidth={2} />
+              <span>Dashboard</span>
+            </button>
+          )}
 
           {isAuthorizedSuperAdmin && (
             <button
