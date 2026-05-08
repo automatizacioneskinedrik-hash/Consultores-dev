@@ -48,3 +48,31 @@ export async function isAdminOrSuperadminRequest(req) {
 }
 
 export { USER_CACHE, CACHE_TTL, MASTER_SUPERADMIN_EMAIL };
+
+export async function isSuperAdminRequest(req) {
+  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+  const authToken = req.headers["x-auth-token"];
+
+  if (!requesterEmail || !authToken) return false;
+
+  try {
+    let userData;
+
+    const cached = USER_CACHE.get(requesterEmail);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      userData = cached.data;
+    } else {
+      const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+      if (userSnapshot.empty) return false;
+      userData = userSnapshot.docs[0].data();
+      USER_CACHE.set(requesterEmail, { data: userData, timestamp: Date.now() });
+    }
+
+    if (userData.authToken !== authToken) return false;
+
+    return userData.role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL;
+  } catch (err) {
+    console.error("Auth validation error:", err);
+    return false;
+  }
+}
