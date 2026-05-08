@@ -31,28 +31,43 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001
 const DEFAULT_CONSULTANT_OPTIONS = [{ label: "Todos", value: "all" }];
 
 const KPI_DEFS = [
-  { key: "callVolumeN", label: "Total de llamadas", icon: <PhoneOutlined /> },
-  { key: "meanScore", label: "Score promedio", icon: <StarOutlined />, suffix: "%" },
+  {
+    key: "callVolumeN",
+    label: "Total de llamadas",
+    legend: "Número de llamadas analizadas en el periodo.",
+    icon: <PhoneOutlined />,
+  },
+  {
+    key: "meanScore",
+    label: "Score promedio",
+    legend: "Promedio de la calificación general de las llamadas.",
+    icon: <StarOutlined />,
+    suffix: "%",
+  },
   {
     key: "expectedDurationSec",
     label: "Tiempo promedio",
+    legend: "Promedio de duración de las llamadas.",
     icon: <ClockCircleOutlined />,
   },
   {
     key: "meanCloseProbability",
     label: "Cierre promedio",
+    legend: "Promedio del porcentaje de cierre estimado.",
     icon: <PercentageOutlined />,
     suffix: "%",
   },
   {
     key: "meanConsultantTalkPct",
     label: "Habla del consultor",
+    legend: "Promedio del % hablado por el consultor.",
     icon: <UserOutlined />,
     suffix: "%",
   },
   {
     key: "meanClientTalkPct",
     label: "Habla del cliente",
+    legend: "Promedio del % hablado por el cliente.",
     icon: <TeamOutlined />,
     suffix: "%",
   },
@@ -164,15 +179,9 @@ function formatWeekPickerValue(value) {
   return `${dtf.format(start)} – ${dtf.format(end)}`;
 }
 
-function DashboardKpiCard({ label, icon, value, suffix, loading }) {
+function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
   return (
     <Card className="dashboardKpiCard">
-      <div className="dashboardKpiTop">
-        <div className="dashboardKpiLabel">{label}</div>
-        <div className="dashboardKpiIcon" aria-hidden="true">
-          {icon}
-        </div>
-      </div>
       <div className="dashboardKpiValue">
         {loading ? (
           <span className="dashboardKpiNumber dashboardKpiLoading">
@@ -180,12 +189,23 @@ function DashboardKpiCard({ label, icon, value, suffix, loading }) {
           </span>
         ) : (
           <>
-            <span className="dashboardKpiNumber">{value}</span>
-            {suffix && value !== "—" ? (
-              <span className="dashboardKpiSuffix">{suffix}</span>
-            ) : null}
+            <div className="dashboardKpiValueRow">
+              <div className="dashboardKpiValueLeft">
+                <span className="dashboardKpiNumber">{value}</span>
+                {suffix && value !== "—" ? (
+                  <span className="dashboardKpiSuffix">{suffix}</span>
+                ) : null}
+              </div>
+              <div className="dashboardKpiIcon" aria-hidden="true">
+                {icon}
+              </div>
+            </div>
           </>
         )}
+      </div>
+      <div className="dashboardKpiLegend">
+        <div className="dashboardKpiLegendTitle">{label}</div>
+        <div className="dashboardKpiLegendText">{legend}</div>
       </div>
     </Card>
   );
@@ -523,6 +543,7 @@ export default function Dashboard() {
                     <Col key={kpi.key} xs={24} sm={12} lg={8}>
                       <DashboardKpiCard
                         label={kpi.label}
+                        legend={kpi.legend}
                         icon={kpi.icon}
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}
