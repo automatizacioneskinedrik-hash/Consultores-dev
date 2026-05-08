@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { LayoutDashboard } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getUser } from "../utils/user";
 import "./Dashboard.css";
@@ -16,7 +15,24 @@ export default function Dashboard() {
         <header className="dashboardHeader">
           <div className="dashboardHeaderTitle">
             <div className="dashboardHeaderIcon" aria-hidden="true">
-              <LayoutDashboard size={26} strokeWidth={2} />
+              <svg
+                width="26"
+                height="26"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 20h18" />
+                <path d="M6 20v-8" />
+                <path d="M10 20v-12" />
+                <path d="M14 20v-6" />
+                <path d="M18 13v-3" />
+                <path d="M15 11l3-3 3 3" />
+              </svg>
             </div>
             <div className="dashboardHeaderText">
               <h1>Dashboard</h1>

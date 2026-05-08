@@ -1,15 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import { 
   CloudUpload, 
   History, 
   Users, 
-  Sliders, 
-  LayoutDashboard, 
   LogOut, 
-  ChevronLeft, 
-  ChevronRight 
 } from "lucide-react";
 import "../styles/Sidebar.css";
 
@@ -160,7 +156,25 @@ export default function Sidebar() {
               onClick={handleDashboardClick}
               title="Dashboard"
             >
-              <LayoutDashboard size={22} strokeWidth={2} />
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="lucide-custom-icon"
+                aria-hidden="true"
+              >
+                <path d="M3 20h18" />
+                <path d="M6 20v-8" />
+                <path d="M10 20v-12" />
+                <path d="M14 20v-6" />
+                <path d="M18 13v-3" />
+                <path d="M15 11l3-3 3 3" />
+              </svg>
               <span>Dashboard</span>
             </button>
           )}
