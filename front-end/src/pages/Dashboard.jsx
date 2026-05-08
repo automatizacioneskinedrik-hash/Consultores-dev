@@ -31,28 +31,28 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001
 const DEFAULT_CONSULTANT_OPTIONS = [{ label: "Todos", value: "all" }];
 
 const KPI_DEFS = [
-  { key: "callVolumeN", label: "Volumen de llamadas (N)", icon: <PhoneOutlined /> },
-  { key: "meanScore", label: "Score medio (μ)", icon: <StarOutlined />, suffix: "%" },
+  { key: "callVolumeN", label: "Total de llamadas", icon: <PhoneOutlined /> },
+  { key: "meanScore", label: "Score promedio", icon: <StarOutlined />, suffix: "%" },
   {
     key: "expectedDurationSec",
-    label: "Duración esperada (E[t])",
+    label: "Tiempo promedio",
     icon: <ClockCircleOutlined />,
   },
   {
     key: "meanCloseProbability",
-    label: "P(cierre) media (μ)",
+    label: "Cierre promedio",
     icon: <PercentageOutlined />,
     suffix: "%",
   },
   {
     key: "meanConsultantTalkPct",
-    label: "Share consultor (μ)",
+    label: "Habla del consultor",
     icon: <UserOutlined />,
     suffix: "%",
   },
   {
     key: "meanClientTalkPct",
-    label: "Share cliente (μ)",
+    label: "Habla del cliente",
     icon: <TeamOutlined />,
     suffix: "%",
   },
@@ -299,6 +299,11 @@ export default function Dashboard() {
   const isAuthorizedSuperAdmin =
     user?.role === "superadmin" || email === "adminkinedrik@eadic.com";
 
+  const disableFutureDate = useMemo(
+    () => (current) => Boolean(current && current.isAfter(dayjs(), "day")),
+    [],
+  );
+
   const [month, setMonth] = useState(null);
   const [week, setWeek] = useState(null);
   const [day, setDay] = useState(null);
@@ -544,6 +549,7 @@ export default function Dashboard() {
                         size="large"
                         picker="month"
                         placeholder="Selecciona mes"
+                        disabledDate={disableFutureDate}
                         value={month}
                         onChange={(value) => {
                           setMonth(value);
@@ -562,6 +568,7 @@ export default function Dashboard() {
                         placeholder="Selecciona semana"
                         presets={weekPresets}
                         format={formatWeekPickerValue}
+                        disabledDate={disableFutureDate}
                         value={week}
                         onChange={(value) => {
                           setWeek(value);
@@ -578,6 +585,7 @@ export default function Dashboard() {
                         size="large"
                         picker="date"
                         placeholder="Selecciona día"
+                        disabledDate={disableFutureDate}
                         value={day}
                         onChange={(value) => {
                           setDay(value);
@@ -631,7 +639,7 @@ export default function Dashboard() {
                 <Row gutter={[16, 16]}>
                   <Col xs={24}>
                     <DashboardLineCard
-                      title="Evolución de score medio (μ)"
+                      title="Tendencia de score"
                       data={dashboardData.series}
                       dataKey="meanScore"
                       stroke="#0040A4"
@@ -639,12 +647,12 @@ export default function Dashboard() {
                       loading={dashboardLoading}
                       yDomain={[0, 100]}
                       valueSuffix="%"
-                      valueLabel="μ Score"
+                      valueLabel="Score"
                     />
                   </Col>
                   <Col xs={24}>
                     <DashboardLineCard
-                      title="Evolución de P(cierre) (μ)"
+                      title="Tendencia de cierre"
                       data={dashboardData.series}
                       dataKey="meanClose"
                       stroke="#2885FF"
@@ -652,12 +660,12 @@ export default function Dashboard() {
                       loading={dashboardLoading}
                       yDomain={[0, 100]}
                       valueSuffix="%"
-                      valueLabel="μ P(cierre)"
+                      valueLabel="Cierre"
                     />
                   </Col>
                   <Col xs={24}>
                     <DashboardLineCard
-                      title="Evolución de share cliente (μ)"
+                      title="Tendencia de habla del cliente"
                       data={dashboardData.series}
                       dataKey="meanClientTalk"
                       stroke="#0040A4"
@@ -665,7 +673,7 @@ export default function Dashboard() {
                       loading={dashboardLoading}
                       yDomain={[0, 100]}
                       valueSuffix="%"
-                      valueLabel="μ Share cliente"
+                      valueLabel="Habla cliente"
                     />
                   </Col>
                 </Row>
