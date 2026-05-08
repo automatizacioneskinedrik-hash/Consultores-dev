@@ -235,9 +235,9 @@ function DashboardLineCard({
             <LineChart data={data} margin={{ top: 8, right: 16, left: 6, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={stroke} stopOpacity={0.28} />
-                  <stop offset="70%" stopColor={stroke} stopOpacity={0.08} />
-                  <stop offset="100%" stopColor={stroke} stopOpacity={0.02} />
+                  <stop offset="5%" stopColor={stroke} stopOpacity={0.22} />
+                  <stop offset="65%" stopColor={stroke} stopOpacity={0.08} />
+                  <stop offset="95%" stopColor={stroke} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(4, 0, 37, 0.08)" />
@@ -266,6 +266,7 @@ function DashboardLineCard({
                 type="monotone"
                 dataKey={dataKey}
                 fill={`url(#${gradientId})`}
+                fillOpacity={1}
                 stroke="none"
                 connectNulls
                 isAnimationActive={false}
@@ -276,6 +277,8 @@ function DashboardLineCard({
                 name={valueLabel || title}
                 stroke={stroke}
                 strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 dot={false}
                 connectNulls
                 activeDot={{ r: 5 }}
