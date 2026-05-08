@@ -238,6 +238,49 @@ body.sidebar-collapsed .dashboardContent {
   padding: 12px;
 }
 
+.dashboardTooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(4, 0, 37, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  min-width: 170px;
+}
+
+.dashboardTooltipLabel {
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.82);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.dashboardTooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboardTooltipDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(0, 64, 164, 0.12);
+  flex-shrink: 0;
+}
+
+.dashboardTooltipName {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(4, 0, 37, 0.78);
+}
+
+.dashboardTooltipValue {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--navy);
+}
+
 .dashboardKpiLoading {
   min-height: 34px;
   display: inline-flex;

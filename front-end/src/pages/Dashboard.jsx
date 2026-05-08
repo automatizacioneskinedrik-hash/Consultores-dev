@@ -219,6 +219,36 @@ function DashboardLineCard({
     };
   }, [bucket]);
 
+  const renderTooltip = useMemo(() => {
+    return ({ active, label, payload }) => {
+      if (!active || !payload?.length) return null;
+      const item =
+        payload.find((p) => p?.stroke && p.dataKey === dataKey) ||
+        payload.find((p) => p.dataKey === dataKey) ||
+        payload[0];
+
+      const rawValue = item?.value;
+      const n = clampNumber(rawValue);
+      const formatted =
+        n == null
+          ? "—"
+          : valueSuffix
+            ? `${formatFixed(n, 1)}${valueSuffix}`
+            : formatFixed(n, 1);
+
+      return (
+        <div className="dashboardTooltip">
+          <div className="dashboardTooltipLabel">{formatTick(label)}</div>
+          <div className="dashboardTooltipRow">
+            <span className="dashboardTooltipDot" style={{ background: stroke }} />
+            <span className="dashboardTooltipName">{valueLabel || title}</span>
+            <span className="dashboardTooltipValue">{formatted}</span>
+          </div>
+        </div>
+      );
+    };
+  }, [dataKey, formatTick, stroke, title, valueLabel, valueSuffix]);
+
   return (
     <Card className="dashboardPanel" title={title}>
       <div className="dashboardChartWrap">
@@ -254,13 +284,7 @@ function DashboardLineCard({
                 tickFormatter={(v) => (valueSuffix ? `${Math.round(v)}${valueSuffix}` : Math.round(v))}
               />
               <Tooltip
-                labelFormatter={(label) => formatTick(label)}
-                formatter={(v) => {
-                  const n = clampNumber(v);
-                  if (n == null) return ["—", valueLabel || ""];
-                  const formatted = valueSuffix ? `${formatFixed(n, 1)}${valueSuffix}` : formatFixed(n, 1);
-                  return [formatted, valueLabel || ""];
-                }}
+                content={renderTooltip}
               />
               <Area
                 type="monotone"
