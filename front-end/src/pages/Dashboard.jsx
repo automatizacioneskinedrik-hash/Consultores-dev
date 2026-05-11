@@ -2,7 +2,6 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Select, Spin } from "antd";
 import {
   ClockCircleOutlined,
-  FilterOutlined,
   LineChartOutlined,
   PercentageOutlined,
   PhoneOutlined,
@@ -509,53 +508,18 @@ export default function Dashboard() {
         >
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
-              <div className="dashboardHeaderIcon" aria-hidden="true">
-                <svg
-                  width="26"
-                  height="26"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3 20h18" />
-                  <path d="M6 20v-8" />
-                  <path d="M10 20v-12" />
-                  <path d="M14 20v-6" />
-                  <path d="M18 13v-3" />
-                  <path d="M15 11l3-3 3 3" />
-                </svg>
-              </div>
               <div className="dashboardHeaderText">
-                <h1>Tablero directivo de control</h1>
-                <p>Indicadores, segmentación y tendencias para análisis de datos.</p>
+                <h1>DASHBOARD EJECUTIVO</h1>
+                <p>Tablero de seguimiento consultores</p>
               </div>
             </div>
 
             <div className="dashboardTopFilters">
-              <div className="dashboardTopFiltersHeader">
-                <div className="dashboardTopFiltersTitle">
-                  <FilterOutlined /> Segmentación de datos
-                </div>
-                <div className="dashboardTopFiltersActions">
-                  <Button
-                    size="small"
-                    onClick={clearTimeFilters}
-                    disabled={!month && !week && !day}
-                  >
-                    Limpiar tiempo
-                  </Button>
-                </div>
-              </div>
               <div className="dashboardTopFiltersGrid">
                 <div className="dashboardFilter">
                   <div className="dashboardFilterLabel">Mes</div>
                   <DatePicker
                     className="dashboardFilterControl"
-                    size="small"
                     picker="month"
                     placeholder="Mes"
                     disabledDate={disableFutureDate}
@@ -572,7 +536,6 @@ export default function Dashboard() {
                   <div className="dashboardFilterLabel">Semana</div>
                   <DatePicker
                     className="dashboardFilterControl"
-                    size="small"
                     picker="week"
                     placeholder="Semana"
                     presets={weekPresets}
@@ -591,7 +554,6 @@ export default function Dashboard() {
                   <div className="dashboardFilterLabel">Día</div>
                   <DatePicker
                     className="dashboardFilterControl"
-                    size="small"
                     picker="date"
                     placeholder="Día"
                     disabledDate={disableFutureDate}
@@ -608,7 +570,6 @@ export default function Dashboard() {
                   <div className="dashboardFilterLabel">Consultor</div>
                   <Select
                     className="dashboardFilterControl"
-                    size="small"
                     value={consultant}
                     onChange={setConsultant}
                     options={consultantOptions}
@@ -618,6 +579,17 @@ export default function Dashboard() {
                     placeholder="Consultor"
                   />
                 </div>
+              </div>
+
+              <div className="dashboardTopFiltersActions">
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={clearTimeFilters}
+                  disabled={!month && !week && !day}
+                >
+                  Limpiar tiempo
+                </Button>
               </div>
 
               {isFutureRange ? (
@@ -683,9 +655,9 @@ export default function Dashboard() {
                 </div>
 
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} lg={12}>
+                  <Col xs={24}>
                     <DashboardLineCard
-                      title="Tendencia de score"
+                      title="Score histórico"
                       data={dashboardData.series}
                       dataKey="meanScore"
                       stroke="#0040A4"
@@ -709,7 +681,7 @@ export default function Dashboard() {
                       valueLabel="Cierre"
                     />
                   </Col>
-                  <Col xs={24}>
+                  <Col xs={24} lg={12}>
                     <DashboardLineCard
                       title="Tendencia de habla del cliente"
                       data={dashboardData.series}
