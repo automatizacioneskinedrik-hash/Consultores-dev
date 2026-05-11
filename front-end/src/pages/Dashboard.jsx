@@ -280,7 +280,10 @@ function DashboardLineCard({
           </div>
         ) : !data?.length ? (
           <div className="dashboardChartState">
-            <Empty description="Sin datos para los filtros seleccionados" />
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Sin datos para los filtros seleccionados"
+            />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -504,7 +507,7 @@ export default function Dashboard() {
             },
           }}
         >
-          <header className="dashboardHeader">
+          <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderIcon" aria-hidden="true">
                 <svg
@@ -531,6 +534,98 @@ export default function Dashboard() {
                 <p>Indicadores, segmentación y tendencias para análisis de datos.</p>
               </div>
             </div>
+
+            <div className="dashboardTopFilters">
+              <div className="dashboardTopFiltersHeader">
+                <div className="dashboardTopFiltersTitle">
+                  <FilterOutlined /> Segmentación de datos
+                </div>
+                <div className="dashboardTopFiltersActions">
+                  <Button
+                    size="small"
+                    onClick={clearTimeFilters}
+                    disabled={!month && !week && !day}
+                  >
+                    Limpiar tiempo
+                  </Button>
+                </div>
+              </div>
+              <div className="dashboardTopFiltersGrid">
+                <div className="dashboardFilter">
+                  <div className="dashboardFilterLabel">Mes</div>
+                  <DatePicker
+                    className="dashboardFilterControl"
+                    size="small"
+                    picker="month"
+                    placeholder="Mes"
+                    disabledDate={disableFutureDate}
+                    value={month}
+                    onChange={(value) => {
+                      setMonth(value);
+                      setWeek(null);
+                      setDay(null);
+                    }}
+                  />
+                </div>
+
+                <div className="dashboardFilter">
+                  <div className="dashboardFilterLabel">Semana</div>
+                  <DatePicker
+                    className="dashboardFilterControl"
+                    size="small"
+                    picker="week"
+                    placeholder="Semana"
+                    presets={weekPresets}
+                    format={formatWeekPickerValue}
+                    disabledDate={disableFutureDate}
+                    value={week}
+                    onChange={(value) => {
+                      setWeek(value);
+                      setMonth(null);
+                      setDay(null);
+                    }}
+                  />
+                </div>
+
+                <div className="dashboardFilter">
+                  <div className="dashboardFilterLabel">Día</div>
+                  <DatePicker
+                    className="dashboardFilterControl"
+                    size="small"
+                    picker="date"
+                    placeholder="Día"
+                    disabledDate={disableFutureDate}
+                    value={day}
+                    onChange={(value) => {
+                      setDay(value);
+                      setMonth(null);
+                      setWeek(null);
+                    }}
+                  />
+                </div>
+
+                <div className="dashboardFilter">
+                  <div className="dashboardFilterLabel">Consultor</div>
+                  <Select
+                    className="dashboardFilterControl"
+                    size="small"
+                    value={consultant}
+                    onChange={setConsultant}
+                    options={consultantOptions}
+                    loading={consultantsLoading}
+                    showSearch
+                    optionFilterProp="label"
+                    placeholder="Consultor"
+                  />
+                </div>
+              </div>
+
+              {isFutureRange ? (
+                <div className="dashboardHint" role="status">
+                  La segmentación de tiempo seleccionada está en el futuro; no habrá datos disponibles aún.
+                </div>
+              ) : null}
+            </div>
           </header>
 
           {!isAuthorizedSuperAdmin ? (
@@ -542,7 +637,7 @@ export default function Dashboard() {
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
                   {KPI_DEFS.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={8}>
+                    <Col key={kpi.key} xs={24} sm={12} lg={4}>
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}
@@ -571,102 +666,6 @@ export default function Dashboard() {
               </section>
 
               <section className="dashboardSection">
-                <Card
-                  className="dashboardFiltersCard"
-                  title={
-                    <span className="dashboardCardTitle">
-                      <FilterOutlined /> Segmentación de datos
-                    </span>
-                  }
-                  extra={
-                    <Button
-                      size="middle"
-                      onClick={clearTimeFilters}
-                      disabled={!month && !week && !day}
-                    >
-                      Limpiar tiempo
-                    </Button>
-                  }
-                >
-                  <div className="dashboardFiltersGrid">
-                    <div className="dashboardFilter">
-                      <div className="dashboardFilterLabel">Mes</div>
-                      <DatePicker
-                        className="dashboardFilterControl"
-                        size="large"
-                        picker="month"
-                        placeholder="Selecciona mes"
-                        disabledDate={disableFutureDate}
-                        value={month}
-                        onChange={(value) => {
-                          setMonth(value);
-                          setWeek(null);
-                          setDay(null);
-                        }}
-                      />
-                    </div>
-
-                    <div className="dashboardFilter">
-                      <div className="dashboardFilterLabel">Semana</div>
-                      <DatePicker
-                        className="dashboardFilterControl"
-                        size="large"
-                        picker="week"
-                        placeholder="Selecciona semana"
-                        presets={weekPresets}
-                        format={formatWeekPickerValue}
-                        disabledDate={disableFutureDate}
-                        value={week}
-                        onChange={(value) => {
-                          setWeek(value);
-                          setMonth(null);
-                          setDay(null);
-                        }}
-                      />
-                    </div>
-
-                    <div className="dashboardFilter">
-                      <div className="dashboardFilterLabel">Día</div>
-                      <DatePicker
-                        className="dashboardFilterControl"
-                        size="large"
-                        picker="date"
-                        placeholder="Selecciona día"
-                        disabledDate={disableFutureDate}
-                        value={day}
-                        onChange={(value) => {
-                          setDay(value);
-                          setMonth(null);
-                          setWeek(null);
-                        }}
-                      />
-                    </div>
-
-                    <div className="dashboardFilter">
-                      <div className="dashboardFilterLabel">Consultor</div>
-                      <Select
-                        className="dashboardFilterControl"
-                        size="large"
-                        value={consultant}
-                        onChange={setConsultant}
-                        options={consultantOptions}
-                        loading={consultantsLoading}
-                        showSearch
-                        optionFilterProp="label"
-                        placeholder="Selecciona consultor"
-                      />
-                    </div>
-                  </div>
-
-                  {isFutureRange ? (
-                    <div className="dashboardHint" role="status">
-                      La segmentación de tiempo seleccionada está en el futuro; no habrá datos disponibles aún.
-                    </div>
-                  ) : null}
-                </Card>
-              </section>
-
-              <section className="dashboardSection">
                 <div className="dashboardChartsHeader">
                   <div className="dashboardChartsTitle">
                     <LineChartOutlined /> Gráficos de líneas
@@ -684,7 +683,7 @@ export default function Dashboard() {
                 </div>
 
                 <Row gutter={[16, 16]}>
-                  <Col xs={24}>
+                  <Col xs={24} lg={12}>
                     <DashboardLineCard
                       title="Tendencia de score"
                       data={dashboardData.series}
@@ -697,7 +696,7 @@ export default function Dashboard() {
                       valueLabel="Score"
                     />
                   </Col>
-                  <Col xs={24}>
+                  <Col xs={24} lg={12}>
                     <DashboardLineCard
                       title="Tendencia de cierre"
                       data={dashboardData.series}
