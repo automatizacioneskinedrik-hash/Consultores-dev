@@ -12,7 +12,6 @@ import {
   AreaChart,
   CartesianGrid,
   Cell,
-  Line,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -335,17 +334,9 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
               <Area
                 type="monotone"
                 dataKey={tab.dataKey}
+                name={tab.valueLabel || tab.label}
                 fill={`url(#${gradientId})`}
                 fillOpacity={1}
-                stroke="none"
-                connectNulls
-                isAnimationActive={false}
-                baseValue={0}
-              />
-              <Line
-                type="monotone"
-                dataKey={tab.dataKey}
-                name={tab.valueLabel || tab.label}
                 stroke={tab.stroke}
                 strokeWidth={3}
                 strokeLinecap="round"
@@ -356,6 +347,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
                 isAnimationActive={true}
                 animationDuration={700}
                 animationEasing="ease-out"
+                baseValue={0}
               />
             </AreaChart>
           </ResponsiveContainer>
