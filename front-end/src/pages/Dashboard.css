@@ -50,28 +50,30 @@ body.sidebar-collapsed .dashboardContent {
   background: transparent;
 }
 
-.dashboardTopFiltersActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 6px;
-}
-
-.dashboardTopFiltersActions .ant-btn {
-  border-radius: 999px;
-  font-weight: 800;
-  color: rgba(4, 0, 37, 0.7);
-}
-
-.dashboardTopFiltersGrid {
+.dashboardFiltersLabels {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
-  gap: 14px;
-  align-items: end;
+  grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
 }
 
-.dashboardFilter {
-  min-width: 0;
+.dashboardFiltersLabels .dashboardFilterLabel {
+  margin-bottom: 0;
+}
+
+.dashboardFiltersInputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.dashboardClearBtn {
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  color: rgba(4, 0, 37, 0.7) !important;
+  white-space: nowrap;
+  align-self: center;
 }
 
 .dashboardHeaderIcon {
@@ -252,7 +254,7 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardFilterControl.ant-picker {
-  height: 44px;
+  height: 38px;
   border-radius: 16px;
   border: 1px solid rgba(4, 0, 37, 0.12);
   background: white;
@@ -269,7 +271,7 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardFilterControl.ant-select .ant-select-selector {
-  height: 44px !important;
+  height: 38px !important;
   border-radius: 16px !important;
   border: 1px solid rgba(4, 0, 37, 0.12) !important;
   background: white !important;
@@ -283,7 +285,7 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardFilterControl.ant-select .ant-select-selection-item {
-  line-height: 42px !important;
+  line-height: 36px !important;
   font-weight: 750;
   color: rgba(4, 0, 37, 0.85);
 }
@@ -475,8 +477,12 @@ body.sidebar-collapsed .dashboardContent {
     margin-left: 215px;
   }
 
-  .dashboardTopFiltersGrid {
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  .dashboardFiltersLabels {
+    grid-template-columns: repeat(2, minmax(130px, 1fr)) auto;
+  }
+
+  .dashboardFiltersInputs {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
   }
 }
 
@@ -491,8 +497,12 @@ body.sidebar-collapsed .dashboardContent {
     margin-left: 0;
   }
 
-  .dashboardTopFiltersGrid {
-    grid-template-columns: 1fr;
+  .dashboardFiltersLabels {
+    grid-template-columns: repeat(2, 1fr) auto;
+  }
+
+  .dashboardFiltersInputs {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .dashboardChartTabs {

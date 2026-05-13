@@ -471,10 +471,11 @@ export default function Dashboard() {
     [],
   );
 
-  const clearTimeFilters = () => {
+  const clearAllFilters = () => {
     setMonth(null);
     setWeek(null);
     setDay(null);
+    setConsultant("all");
   };
 
   useEffect(() => {
@@ -592,83 +593,71 @@ export default function Dashboard() {
             </div>
 
             <div className="dashboardTopFilters">
-              <div className="dashboardTopFiltersGrid">
-                <div className="dashboardFilter">
-                  <div className="dashboardFilterLabel">Mes</div>
-                  <DatePicker
-                    className="dashboardFilterControl"
-                    picker="month"
-                    placeholder="Mes"
-                    disabledDate={disableFutureDate}
-                    value={month}
-                    onChange={(value) => {
-                      setMonth(value);
-                      setWeek(null);
-                      setDay(null);
-                    }}
-                  />
-                </div>
-
-                <div className="dashboardFilter">
-                  <div className="dashboardFilterLabel">Semana</div>
-                  <DatePicker
-                    className="dashboardFilterControl"
-                    picker="week"
-                    placeholder="Semana"
-                    presets={weekPresets}
-                    format={formatWeekPickerValue}
-                    disabledDate={disableFutureDate}
-                    value={week}
-                    onChange={(value) => {
-                      setWeek(value);
-                      setMonth(null);
-                      setDay(null);
-                    }}
-                  />
-                </div>
-
-                <div className="dashboardFilter">
-                  <div className="dashboardFilterLabel">Día</div>
-                  <DatePicker
-                    className="dashboardFilterControl"
-                    picker="date"
-                    placeholder="Día"
-                    disabledDate={disableFutureDate}
-                    value={day}
-                    onChange={(value) => {
-                      setDay(value);
-                      setMonth(null);
-                      setWeek(null);
-                    }}
-                  />
-                </div>
-
-                <div className="dashboardFilter">
-                  <div className="dashboardFilterLabel">Consultor</div>
-                  <Select
-                    className="dashboardFilterControl"
-                    value={consultant}
-                    onChange={setConsultant}
-                    options={consultantOptions}
-                    loading={consultantsLoading}
-                    showSearch
-                    optionFilterProp="label"
-                    placeholder="Consultor"
-                  />
-                </div>
-              </div>
-
-              <div className="dashboardTopFiltersActions">
+              <div className="dashboardFiltersLabels">
+                <div className="dashboardFilterLabel">Mes</div>
+                <div className="dashboardFilterLabel">Semana</div>
+                <div className="dashboardFilterLabel">Día</div>
+                <div className="dashboardFilterLabel">Consultor</div>
                 <Button
                   type="text"
                   size="small"
-                  onClick={clearTimeFilters}
-                  disabled={!month && !week && !day}
+                  onClick={clearAllFilters}
+                  disabled={!month && !week && !day && consultant === "all"}
+                  className="dashboardClearBtn"
                 >
-                  Limpiar tiempo
+                  Limpiar
                 </Button>
               </div>
-
+              <div className="dashboardFiltersInputs">
+                <DatePicker
+                  className="dashboardFilterControl"
+                  picker="month"
+                  placeholder="Mes"
+                  disabledDate={disableFutureDate}
+                  value={month}
+                  onChange={(value) => {
+                    setMonth(value);
+                    setWeek(null);
+                    setDay(null);
+                  }}
+                />
+                <DatePicker
+                  className="dashboardFilterControl"
+                  picker="week"
+                  placeholder="Semana"
+                  presets={weekPresets}
+                  format={formatWeekPickerValue}
+                  disabledDate={disableFutureDate}
+                  value={week}
+                  onChange={(value) => {
+                    setWeek(value);
+                    setMonth(null);
+                    setDay(null);
+                  }}
+                />
+                <DatePicker
+                  className="dashboardFilterControl"
+                  picker="date"
+                  placeholder="Día"
+                  disabledDate={disableFutureDate}
+                  value={day}
+                  onChange={(value) => {
+                    setDay(value);
+                    setMonth(null);
+                    setWeek(null);
+                  }}
+                />
+                <Select
+                  className="dashboardFilterControl"
+                  value={consultant}
+                  onChange={setConsultant}
+                  options={consultantOptions}
+                  loading={consultantsLoading}
+                  showSearch
+                  optionFilterProp="label"
+                  placeholder="Consultor"
+                />
+              </div>
               {isFutureRange ? (
                 <div className="dashboardHint" role="status">
                   La segmentación de tiempo seleccionada está en el futuro; no habrá datos disponibles aún.
