@@ -342,6 +342,11 @@ body.sidebar-collapsed .dashboardContent {
   color: white;
 }
 
+.dashboardChartTab.dashboardChartTabActive:hover {
+  color: white;
+  background: var(--navy);
+}
+
 /* ── Tooltip ── */
 
 .dashboardTooltip {
