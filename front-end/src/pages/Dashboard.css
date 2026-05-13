@@ -115,6 +115,8 @@ body.sidebar-collapsed .dashboardContent {
   font-weight: 800;
 }
 
+/* ── KPI Cards ── */
+
 .dashboardKpiCard {
   border-radius: 18px;
   overflow: hidden;
@@ -211,13 +213,6 @@ body.sidebar-collapsed .dashboardContent {
   margin-top: 12px;
 }
 
-.dashboardKpiLegendTitle {
-  font-size: 13px;
-  font-weight: 900;
-  color: rgba(4, 0, 37, 0.84);
-  margin-bottom: 4px;
-}
-
 .dashboardKpiLegendText {
   font-size: 12px;
   font-weight: 650;
@@ -225,26 +220,14 @@ body.sidebar-collapsed .dashboardContent {
   line-height: 1.35;
 }
 
-.dashboardFiltersCard {
-  border-radius: 18px;
-  border: 1px solid rgba(4, 0, 37, 0.08);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
-}
-
-.dashboardCardTitle {
+.dashboardKpiLoading {
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  color: var(--navy);
-  font-weight: 950;
+  justify-content: center;
 }
 
-.dashboardFiltersGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  align-items: end;
-}
+/* ── Filters ── */
 
 .dashboardHint {
   margin-top: 14px;
@@ -306,42 +289,7 @@ body.sidebar-collapsed .dashboardContent {
   color: rgba(4, 0, 37, 0.85);
 }
 
-.dashboardChartsHeader {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.dashboardChartsTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--navy);
-  font-weight: 950;
-}
-
-.dashboardChartsMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.dashboardMetaPill {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.2px;
-  color: var(--blue);
-  background: rgba(0, 64, 164, 0.08);
-  border: 1px solid rgba(0, 64, 164, 0.16);
-}
+/* ── Chart panels ── */
 
 .dashboardPanel {
   border-radius: 18px;
@@ -360,6 +308,41 @@ body.sidebar-collapsed .dashboardContent {
   justify-content: center;
   padding: 12px;
 }
+
+/* ── Multi-line chart tab buttons ── */
+
+.dashboardChartTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dashboardChartTab {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1.5px solid rgba(4, 0, 37, 0.15);
+  background: white;
+  color: rgba(4, 0, 37, 0.6);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  line-height: 1.4;
+  font-family: inherit;
+}
+
+.dashboardChartTab:hover {
+  border-color: rgba(0, 64, 164, 0.35);
+  color: var(--navy);
+}
+
+.dashboardChartTabActive {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: white;
+}
+
+/* ── Tooltip ── */
 
 .dashboardTooltip {
   background: rgba(255, 255, 255, 0.98);
@@ -404,12 +387,62 @@ body.sidebar-collapsed .dashboardContent {
   color: var(--navy);
 }
 
-.dashboardKpiLoading {
-  min-height: 34px;
-  display: inline-flex;
+/* ── Donut chart ── */
+
+.dashboardDonutCard {
+  height: 100%;
+}
+
+.dashboardDonutWrap {
+  min-height: 240px;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
+
+.dashboardDonutContent {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  justify-content: center;
+}
+
+.dashboardDonutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboardDonutLegendRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboardDonutDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dashboardDonutLegendName {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(4, 0, 37, 0.78);
+  flex: 1;
+  white-space: nowrap;
+}
+
+.dashboardDonutLegendValue {
+  font-size: 15px;
+  font-weight: 950;
+  color: var(--navy);
+  margin-left: 16px;
+}
+
+/* ── Error banner ── */
 
 .dashboardError {
   margin-top: 14px;
@@ -430,14 +463,12 @@ body.sidebar-collapsed .dashboardContent {
   border-radius: 999px;
 }
 
+/* ── Responsive ── */
+
 @media (max-width: 1024px) {
   .dashboardContent {
     padding: 24px;
     margin-left: 215px;
-  }
-
-  .dashboardFiltersGrid {
-    grid-template-columns: repeat(2, 1fr);
   }
 
   .dashboardTopFiltersGrid {
@@ -451,15 +482,21 @@ body.sidebar-collapsed .dashboardContent {
     padding: 20px;
     padding-top: 80px;
   }
+
   body.sidebar-collapsed .dashboardContent {
     margin-left: 0;
   }
 
-  .dashboardFiltersGrid {
+  .dashboardTopFiltersGrid {
     grid-template-columns: 1fr;
   }
 
-  .dashboardTopFiltersGrid {
-    grid-template-columns: 1fr;
+  .dashboardChartTabs {
+    gap: 4px;
+  }
+
+  .dashboardChartTab {
+    padding: 4px 10px;
+    font-size: 11px;
   }
 }

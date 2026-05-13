@@ -2,19 +2,19 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Select, Spin } from "antd";
 import {
   ClockCircleOutlined,
-  LineChartOutlined,
   PercentageOutlined,
   PhoneOutlined,
   ReloadOutlined,
   StarOutlined,
-  TeamOutlined,
-  UserOutlined,
 } from "@ant-design/icons";
 import {
   Area,
   AreaChart,
   CartesianGrid,
+  Cell,
   Line,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -56,21 +56,39 @@ const KPI_DEFS = [
     icon: <PercentageOutlined />,
     suffix: "%",
   },
+];
+
+const CHART_TABS = [
   {
-    key: "meanConsultantTalkPct",
-    label: "Habla del consultor",
-    legend: "Promedio del % hablado por el consultor.",
-    icon: <UserOutlined />,
-    suffix: "%",
+    key: "score",
+    label: "Score histórico",
+    dataKey: "meanScore",
+    stroke: "#0040A4",
+    yDomain: [0, 100],
+    valueSuffix: "%",
+    valueLabel: "Score",
   },
   {
-    key: "meanClientTalkPct",
+    key: "cierre",
+    label: "Tendencia de cierre",
+    dataKey: "meanClose",
+    stroke: "#2885FF",
+    yDomain: [0, 100],
+    valueSuffix: "%",
+    valueLabel: "Cierre",
+  },
+  {
+    key: "habla",
     label: "Habla del cliente",
-    legend: "Promedio del % hablado por el cliente.",
-    icon: <TeamOutlined />,
-    suffix: "%",
+    dataKey: "meanClientTalk",
+    stroke: "#0040A4",
+    yDomain: [0, 100],
+    valueSuffix: "%",
+    valueLabel: "Habla cliente",
   },
 ];
+
+const DONUT_COLORS = ["#0040A4", "#2885FF"];
 
 const NUMBER_FORMAT = new Intl.NumberFormat("es-CO");
 
@@ -126,8 +144,8 @@ function addDays(date, days) {
 
 function startOfWeekMonday(date) {
   const d = startOfLocalDay(date);
-  const day = d.getDay(); // 0=Sun ... 6=Sat
-  const diff = (day + 6) % 7; // monday=0
+  const day = d.getDay();
+  const diff = (day + 6) % 7;
   d.setDate(d.getDate() - diff);
   return d;
 }
@@ -190,19 +208,17 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
             <Spin size="small" />
           </span>
         ) : (
-          <>
-            <div className="dashboardKpiValueRow">
-              <div className="dashboardKpiValueLeft">
-                <span className="dashboardKpiNumber">{value}</span>
-                {suffix && value !== "—" ? (
-                  <span className="dashboardKpiSuffix">{suffix}</span>
-                ) : null}
-              </div>
-              <div className="dashboardKpiIcon" aria-hidden="true">
-                {icon}
-              </div>
+          <div className="dashboardKpiValueRow">
+            <div className="dashboardKpiValueLeft">
+              <span className="dashboardKpiNumber">{value}</span>
+              {suffix && value !== "—" ? (
+                <span className="dashboardKpiSuffix">{suffix}</span>
+              ) : null}
             </div>
-          </>
+            <div className="dashboardKpiIcon" aria-hidden="true">
+              {icon}
+            </div>
+          </div>
         )}
       </div>
       <div className="dashboardKpiLegend">
@@ -212,24 +228,20 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
   );
 }
 
-function DashboardLineCard({
-  title,
-  data,
-  dataKey,
-  stroke,
-  bucket,
-  loading,
-  yDomain,
-  valueSuffix,
-  valueLabel,
-}) {
+function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
+  const [activeKey, setActiveKey] = useState(tabs[0].key);
   const rawId = useId();
-  const gradientId = useMemo(() => `dash_grad_${rawId.replace(/:/g, "")}`, [rawId]);
+
+  const tab = useMemo(() => tabs.find((t) => t.key === activeKey) || tabs[0], [tabs, activeKey]);
+  const gradientId = useMemo(
+    () => `dash_grad_${rawId.replace(/:/g, "")}_${activeKey}`,
+    [rawId, activeKey],
+  );
+
   const formatTick = useMemo(() => {
     const dtfHour = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" });
     const dtfDay = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short" });
     const dtfMonth = new Intl.DateTimeFormat("es-CO", { month: "short", year: "2-digit", timeZone: "UTC" });
-
     return (ts) => {
       const n = clampNumber(ts);
       if (n == null) return "";
@@ -243,35 +255,45 @@ function DashboardLineCard({
   const renderTooltip = useMemo(() => {
     return ({ active, label, payload }) => {
       if (!active || !payload?.length) return null;
-      const item =
-        payload.find((p) => p?.stroke && p.dataKey === dataKey) ||
-        payload.find((p) => p.dataKey === dataKey) ||
-        payload[0];
-
-      const rawValue = item?.value;
-      const n = clampNumber(rawValue);
+      const item = payload.find((p) => p.dataKey === tab.dataKey) || payload[0];
+      const n = clampNumber(item?.value);
       const formatted =
         n == null
           ? "—"
-          : valueSuffix
-            ? `${formatFixed(n, 1)}${valueSuffix}`
+          : tab.valueSuffix
+            ? `${formatFixed(n, 1)}${tab.valueSuffix}`
             : formatFixed(n, 1);
-
       return (
         <div className="dashboardTooltip">
           <div className="dashboardTooltipLabel">{formatTick(label)}</div>
           <div className="dashboardTooltipRow">
-            <span className="dashboardTooltipDot" style={{ background: stroke }} />
-            <span className="dashboardTooltipName">{valueLabel || title}</span>
+            <span className="dashboardTooltipDot" style={{ background: tab.stroke }} />
+            <span className="dashboardTooltipName">{tab.valueLabel || tab.label}</span>
             <span className="dashboardTooltipValue">{formatted}</span>
           </div>
         </div>
       );
     };
-  }, [dataKey, formatTick, stroke, title, valueLabel, valueSuffix]);
+  }, [tab, formatTick]);
 
   return (
-    <Card className="dashboardPanel" title={title}>
+    <Card
+      className="dashboardPanel"
+      title="Análisis temporal"
+      extra={
+        <div className="dashboardChartTabs">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              className={`dashboardChartTab${activeKey === t.key ? " dashboardChartTabActive" : ""}`}
+              onClick={() => setActiveKey(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      }
+    >
       <div className="dashboardChartWrap">
         {loading ? (
           <div className="dashboardChartState">
@@ -289,9 +311,9 @@ function DashboardLineCard({
             <AreaChart data={data} margin={{ top: 8, right: 16, left: 6, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={stroke} stopOpacity={0.3} />
-                  <stop offset="65%" stopColor={stroke} stopOpacity={0.12} />
-                  <stop offset="95%" stopColor={stroke} stopOpacity={0} />
+                  <stop offset="5%" stopColor={tab.stroke} stopOpacity={0.3} />
+                  <stop offset="65%" stopColor={tab.stroke} stopOpacity={0.12} />
+                  <stop offset="95%" stopColor={tab.stroke} stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(4, 0, 37, 0.08)" />
@@ -304,15 +326,15 @@ function DashboardLineCard({
               />
               <YAxis
                 tick={{ fontSize: 12 }}
-                domain={yDomain || ["auto", "auto"]}
-                tickFormatter={(v) => (valueSuffix ? `${Math.round(v)}${valueSuffix}` : Math.round(v))}
+                domain={tab.yDomain || ["auto", "auto"]}
+                tickFormatter={(v) =>
+                  tab.valueSuffix ? `${Math.round(v)}${tab.valueSuffix}` : Math.round(v)
+                }
               />
-              <Tooltip
-                content={renderTooltip}
-              />
+              <Tooltip content={renderTooltip} />
               <Area
                 type="monotone"
-                dataKey={dataKey}
+                dataKey={tab.dataKey}
                 fill={`url(#${gradientId})`}
                 fillOpacity={1}
                 stroke="none"
@@ -322,9 +344,9 @@ function DashboardLineCard({
               />
               <Line
                 type="monotone"
-                dataKey={dataKey}
-                name={valueLabel || title}
-                stroke={stroke}
+                dataKey={tab.dataKey}
+                name={tab.valueLabel || tab.label}
+                stroke={tab.stroke}
                 strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -335,6 +357,69 @@ function DashboardLineCard({
               />
             </AreaChart>
           </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DashboardDonutCard({ consultantPct, clientPct, loading }) {
+  const donutData = useMemo(() => {
+    const c = clampNumber(consultantPct);
+    const cl = clampNumber(clientPct);
+    if (c == null && cl == null) return null;
+    const cv = Math.max(0, c ?? 0);
+    const clv = Math.max(0, cl ?? 0);
+    if (cv === 0 && clv === 0) return null;
+    return [
+      { name: "Consultor", value: cv, color: DONUT_COLORS[0] },
+      { name: "Cliente", value: clv, color: DONUT_COLORS[1] },
+    ];
+  }, [consultantPct, clientPct]);
+
+  return (
+    <Card className="dashboardPanel dashboardDonutCard" title="Distribución de habla">
+      <div className="dashboardDonutWrap">
+        {loading ? (
+          <div className="dashboardChartState">
+            <Spin />
+          </div>
+        ) : !donutData ? (
+          <div className="dashboardChartState">
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Sin datos para los filtros seleccionados"
+            />
+          </div>
+        ) : (
+          <div className="dashboardDonutContent">
+            <PieChart width={160} height={160}>
+              <Pie
+                data={donutData}
+                cx={75}
+                cy={75}
+                innerRadius={50}
+                outerRadius={72}
+                dataKey="value"
+                startAngle={90}
+                endAngle={-270}
+                stroke="none"
+              >
+                {donutData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+            <div className="dashboardDonutLegend">
+              {donutData.map((entry) => (
+                <div key={entry.name} className="dashboardDonutLegendRow">
+                  <span className="dashboardDonutDot" style={{ background: entry.color }} />
+                  <span className="dashboardDonutLegendName">{entry.name}</span>
+                  <span className="dashboardDonutLegendValue">{formatFixed(entry.value, 1)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </Card>
@@ -486,8 +571,6 @@ export default function Dashboard() {
       meanScore: formatFixed(k.meanScore, 1),
       expectedDurationSec: formatDurationSeconds(k.expectedDurationSec),
       meanCloseProbability: formatFixed(k.meanCloseProbability, 1),
-      meanConsultantTalkPct: formatFixed(k.meanConsultantTalkPct, 1),
-      meanClientTalkPct: formatFixed(k.meanClientTalkPct, 1),
     };
   }, [dashboardData.kpis]);
 
@@ -609,7 +692,7 @@ export default function Dashboard() {
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
                   {KPI_DEFS.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={4}>
+                    <Col key={kpi.key} xs={24} sm={12} lg={6}>
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}
@@ -627,9 +710,7 @@ export default function Dashboard() {
                     <Button
                       className="dashboardErrorBtn"
                       icon={<ReloadOutlined />}
-                      onClick={() => {
-                        setRefetchToken((v) => v + 1);
-                      }}
+                      onClick={() => setRefetchToken((v) => v + 1)}
                     >
                       Reintentar
                     </Button>
@@ -638,60 +719,20 @@ export default function Dashboard() {
               </section>
 
               <section className="dashboardSection">
-                <div className="dashboardChartsHeader">
-                  <div className="dashboardChartsTitle">
-                    <LineChartOutlined /> Gráficos de líneas
-                  </div>
-                  <div className="dashboardChartsMeta">
-                    <span className="dashboardMetaPill">{timeRange.label}</span>
-                    {consultant !== "all" ? (
-                      <span className="dashboardMetaPill">
-                        {consultantOptions.find((o) => o.value === consultant)?.label || "Consultor"}
-                      </span>
-                    ) : (
-                      <span className="dashboardMetaPill">Todos</span>
-                    )}
-                  </div>
-                </div>
-
                 <Row gutter={[16, 16]}>
-                  <Col xs={24}>
-                    <DashboardLineCard
-                      title="Score histórico"
+                  <Col xs={24} xl={16}>
+                    <DashboardMultiLineCard
+                      tabs={CHART_TABS}
                       data={dashboardData.series}
-                      dataKey="meanScore"
-                      stroke="#0040A4"
                       bucket={dashboardData.meta?.bucket}
                       loading={dashboardLoading}
-                      yDomain={[0, 100]}
-                      valueSuffix="%"
-                      valueLabel="Score"
                     />
                   </Col>
-                  <Col xs={24} lg={12}>
-                    <DashboardLineCard
-                      title="Tendencia de cierre"
-                      data={dashboardData.series}
-                      dataKey="meanClose"
-                      stroke="#2885FF"
-                      bucket={dashboardData.meta?.bucket}
+                  <Col xs={24} xl={8}>
+                    <DashboardDonutCard
+                      consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
+                      clientPct={dashboardData.kpis?.meanClientTalkPct}
                       loading={dashboardLoading}
-                      yDomain={[0, 100]}
-                      valueSuffix="%"
-                      valueLabel="Cierre"
-                    />
-                  </Col>
-                  <Col xs={24} lg={12}>
-                    <DashboardLineCard
-                      title="Tendencia de habla del cliente"
-                      data={dashboardData.series}
-                      dataKey="meanClientTalk"
-                      stroke="#0040A4"
-                      bucket={dashboardData.meta?.bucket}
-                      loading={dashboardLoading}
-                      yDomain={[0, 100]}
-                      valueSuffix="%"
-                      valueLabel="Habla cliente"
                     />
                   </Col>
                 </Row>
