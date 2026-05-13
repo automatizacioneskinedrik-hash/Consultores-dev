@@ -586,7 +586,7 @@ export default function Dashboard() {
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderText">
-                <h1>DASHBOARD EJECUTIVO</h1>
+                <h1>Dashboard Ejecutivo</h1>
                 <p>Tablero de seguimiento consultores</p>
               </div>
             </div>

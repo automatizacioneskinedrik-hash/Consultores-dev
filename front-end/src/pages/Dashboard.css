@@ -1,7 +1,7 @@
 .dashboardPage {
   display: flex;
   min-height: 100vh;
-  background: var(--off);
+  background: #f1f5f9;
 }
 
 .dashboardContent {
@@ -92,7 +92,6 @@ body.sidebar-collapsed .dashboardContent {
   font-weight: 900;
   color: var(--navy);
   margin: 0;
-  letter-spacing: 0.8px;
 }
 
 .dashboardHeaderText p {
