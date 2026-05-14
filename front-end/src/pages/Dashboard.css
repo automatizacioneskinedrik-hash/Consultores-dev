@@ -52,9 +52,8 @@ body.sidebar-collapsed .dashboardContent {
 
 .dashboardFiltersLabels {
   display: grid;
-  grid-template-columns: repeat(4, minmax(130px, 1fr)) auto;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
   gap: 12px;
-  align-items: center;
   margin-bottom: 6px;
 }
 
@@ -68,12 +67,16 @@ body.sidebar-collapsed .dashboardContent {
   gap: 12px;
 }
 
+.dashboardFiltersFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
 .dashboardClearBtn {
   border-radius: 999px !important;
   font-weight: 800 !important;
   color: rgba(4, 0, 37, 0.7) !important;
-  white-space: nowrap;
-  align-self: center;
 }
 
 .dashboardHeaderIcon {
@@ -478,7 +481,7 @@ body.sidebar-collapsed .dashboardContent {
   }
 
   .dashboardFiltersLabels {
-    grid-template-columns: repeat(2, minmax(130px, 1fr)) auto;
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
   }
 
   .dashboardFiltersInputs {
@@ -498,7 +501,7 @@ body.sidebar-collapsed .dashboardContent {
   }
 
   .dashboardFiltersLabels {
-    grid-template-columns: repeat(2, 1fr) auto;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .dashboardFiltersInputs {

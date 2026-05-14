@@ -598,15 +598,6 @@ export default function Dashboard() {
                 <div className="dashboardFilterLabel">Semana</div>
                 <div className="dashboardFilterLabel">Día</div>
                 <div className="dashboardFilterLabel">Consultor</div>
-                <Button
-                  type="text"
-                  size="small"
-                  onClick={clearAllFilters}
-                  disabled={!month && !week && !day && consultant === "all"}
-                  className="dashboardClearBtn"
-                >
-                  Limpiar
-                </Button>
               </div>
               <div className="dashboardFiltersInputs">
                 <DatePicker
@@ -657,6 +648,17 @@ export default function Dashboard() {
                   optionFilterProp="label"
                   placeholder="Consultor"
                 />
+              </div>
+              <div className="dashboardFiltersFooter">
+                <Button
+                  type="text"
+                  size="small"
+                  onClick={clearAllFilters}
+                  disabled={!month && !week && !day && consultant === "all"}
+                  className="dashboardClearBtn"
+                >
+                  Limpiar
+                </Button>
               </div>
               {isFutureRange ? (
                 <div className="dashboardHint" role="status">
