@@ -1,4 +1,4 @@
-.dashboardContainer {
+.dashboardPage {
   display: flex;
   min-height: 100vh;
   background: #f1f5f9;
@@ -6,8 +6,8 @@
 
 .dashboardContent {
   flex: 1;
-  padding: 40px 60px;
-  margin-left: 215px;
+  padding: 28px 36px;
+  margin-left: 215px; /* Sidebar width */
   transition: margin-left 0.28s ease;
 }
 
@@ -15,236 +15,509 @@ body.sidebar-collapsed .dashboardContent {
   margin-left: 88px;
 }
 
-.dashHeader {
+.dashboardHeaderTitle {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 40px;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.dashHeader h1 {
+.dashboardTopBar {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.dashboardTopBar .dashboardHeaderTitle {
+  margin-bottom: 0;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 280px;
+}
+
+.dashboardTopFilters {
+  flex: 2;
+  min-width: 460px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.dashboardFiltersLabels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.dashboardFiltersLabels .dashboardFilterLabel {
+  margin-bottom: 0;
+}
+
+.dashboardFiltersInputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.dashboardFiltersFooter {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.dashboardClearBtn {
+  border-radius: 999px !important;
+  font-weight: 800 !important;
+  color: rgba(4, 0, 37, 0.7) !important;
+}
+
+.dashboardHeaderIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #2885ff 0%, #0040a4 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(43, 108, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.dashboardHeaderText h1 {
   font-size: 32px;
   font-weight: 900;
   color: var(--navy);
   margin: 0;
 }
 
-.headerDate {
-  background: white;
-  padding: 8px 16px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
+.dashboardHeaderText p {
+  font-size: 14px;
   color: #64748b;
-  text-transform: capitalize;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  margin-top: 8px;
+  margin-bottom: 0;
 }
 
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-  margin-bottom: 40px;
+.dashboardSection {
+  margin-top: 16px;
 }
 
-.statCard {
+.dashboardDenied {
   background: white;
-  padding: 24px;
-  border-radius: 20px;
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eef2f6;
-  transition: transform 0.2s;
-}
-
-.statCard:hover {
-  transform: translateY(-4px);
-}
-
-.statIcon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-}
-
-.statIcon.blue { background: #eff6ff; color: #2b6cff; }
-.statIcon.green { background: #f0fdf4; color: #22c55e; }
-.statIcon.purple { background: #f5f3ff; color: #8b5cf6; }
-
-.statInfo {
-  display: flex;
-  flex-direction: column;
-}
-
-.statLabel {
-  font-size: 13px;
-  font-weight: 600;
-  color: #94a3b8;
-}
-
-.statValue {
-  font-size: 24px;
-  font-weight: 900;
-  color: var(--navy);
-  margin: 4px 0;
-}
-
-.statTrend {
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-}
-
-.statTrend.up { color: #22c55e; }
-.statTrend.down { color: #ef4444; }
-
-.chartsGrid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 24px;
-}
-
-.chartCard {
-  background: white;
-  padding: 24px;
-  border-radius: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #eef2f6;
-}
-
-.chartHeader {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-}
-
-.chartHeader h3 {
-  font-size: 18px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid #fecaca;
+  color: #991b1b;
   font-weight: 800;
-  color: var(--navy);
-  margin: 0;
 }
 
-.chartHeader span {
+/* ── KPI Cards ── */
+
+.dashboardKpiCard {
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboardKpiCard .ant-card-body {
+  padding: 14px 14px 12px;
+}
+
+.dashboardKpiCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: var(--blue);
+}
+
+.dashboardKpiCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(0, 64, 164, 0.25);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.07);
+}
+
+.dashboardKpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dashboardKpiLabel {
+  color: rgba(4, 0, 37, 0.65);
   font-size: 12px;
-  color: #94a3b8;
-  font-weight: 600;
+  font-weight: 900;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }
 
-.topConsultantsList {
+.dashboardKpiIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(0, 64, 164, 0.08);
+  color: var(--blue);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.consultantLine {
+.dashboardKpiIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dashboardKpiValue {
+  margin-top: 4px;
+}
+
+.dashboardKpiValueRow {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboardKpiValueLeft {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
 }
 
-.consInfo {
+.dashboardKpiNumber {
+  font-size: 30px;
+  font-weight: 950;
+  color: var(--navy);
+  line-height: 1.1;
+}
+
+.dashboardKpiSuffix {
+  color: rgba(4, 0, 37, 0.55);
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.dashboardKpiLegend {
+  margin-top: 12px;
+}
+
+.dashboardKpiLegendText {
+  font-size: 12px;
+  font-weight: 650;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.dashboardKpiLoading {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Filters ── */
+
+.dashboardHint {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 64, 164, 0.18);
+  background: rgba(0, 64, 164, 0.06);
+  color: rgba(4, 0, 37, 0.8);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.dashboardFilterLabel {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.65);
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+
+.dashboardFilterControl {
+  width: 100%;
+}
+
+.dashboardFilterControl.ant-picker {
+  height: 38px;
+  border-radius: 16px;
+  border: 1px solid rgba(4, 0, 37, 0.12);
+  background: white;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+}
+
+.dashboardFilterControl.ant-picker:hover {
+  border-color: rgba(0, 64, 164, 0.25);
+}
+
+.dashboardFilterControl.ant-picker .ant-picker-input > input {
+  font-weight: 750;
+  color: rgba(4, 0, 37, 0.85);
+}
+
+.dashboardFilterControl.ant-select .ant-select-selector {
+  height: 38px !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(4, 0, 37, 0.12) !important;
+  background: white !important;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+}
+
+.dashboardFilterControl.ant-select:hover .ant-select-selector {
+  border-color: rgba(0, 64, 164, 0.25) !important;
+}
+
+.dashboardFilterControl.ant-select .ant-select-selection-item {
+  line-height: 36px !important;
+  font-weight: 750;
+  color: rgba(4, 0, 37, 0.85);
+}
+
+/* ── Chart panels ── */
+
+.dashboardPanel {
+  border-radius: 18px;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
+}
+
+.dashboardChartWrap {
+  height: 280px;
+}
+
+.dashboardChartState {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+/* ── Multi-line chart tab buttons ── */
+
+.dashboardChartTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.dashboardChartTab {
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1.5px solid rgba(4, 0, 37, 0.15);
+  background: white;
+  color: rgba(4, 0, 37, 0.6);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  line-height: 1.4;
+  font-family: inherit;
+}
+
+.dashboardChartTab:hover {
+  border-color: rgba(0, 64, 164, 0.35);
+  color: var(--navy);
+}
+
+.dashboardChartTabActive {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: white;
+}
+
+.dashboardChartTab.dashboardChartTabActive:hover {
+  color: white;
+  background: var(--navy);
+}
+
+/* ── Tooltip ── */
+
+.dashboardTooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(4, 0, 37, 0.12);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  min-width: 170px;
+}
+
+.dashboardTooltipLabel {
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.82);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.dashboardTooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboardTooltipDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(0, 64, 164, 0.12);
+  flex-shrink: 0;
+}
+
+.dashboardTooltipName {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgba(4, 0, 37, 0.78);
+}
+
+.dashboardTooltipValue {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 950;
+  color: var(--navy);
+}
+
+/* ── Talk distribution bar chart ── */
+
+.dashboardTalkCard {
+  height: 100%;
+}
+
+.dashboardTalkCard .ant-card-body {
+  height: calc(100% - 57px);
+  display: flex;
+  align-items: center;
+}
+
+.dashboardTalkWrap {
+  width: 100%;
+}
+
+.dashboardTalkBars {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+}
+
+.dashboardTalkBarRow {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.consRank {
-  width: 24px;
-  height: 24px;
-  background: #f1f5f9;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
+.dashboardTalkBarLabel {
+  width: 78px;
+  font-size: 13px;
   font-weight: 800;
-  color: #64748b;
+  color: rgba(4, 0, 37, 0.75);
+  flex-shrink: 0;
 }
 
-.consName {
-  display: flex;
-  flex-direction: column;
-}
-
-.consName span {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--navy);
-}
-
-.consName small {
-  font-size: 11px;
-  color: #94a3b8;
-}
-
-.consScore {
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 4px;
-  position: relative;
+.dashboardTalkBarTrack {
+  flex: 1;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(4, 0, 37, 0.07);
   overflow: hidden;
 }
 
-.scoreFill {
+.dashboardTalkBarFill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 999px;
+  transition: width 0.7s ease;
 }
 
-.scoreNum {
-  position: absolute;
-  right: 0;
-  top: -18px;
-  font-size: 11px;
+.dashboardTalkBarValue {
+  width: 48px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 950;
+  flex-shrink: 0;
+}
+
+/* ── Error banner ── */
+
+.dashboardError {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(248, 113, 113, 0.55);
+  background: rgba(254, 242, 242, 0.9);
+  color: #991b1b;
   font-weight: 800;
-  color: #64748b;
-}
-
-.dashLoadingContainer {
   display: flex;
-  height: 100vh;
-  background: #f1f5f9;
-}
-
-.dashLoading {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  color: #64748b;
-  font-weight: 600;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.dashSpinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid #e2e8f0;
-  border-top-color: #2b6cff;
-  border-radius: 50%;
-  animation: dashSpin 1s ease infinite;
+.dashboardErrorBtn {
+  border-radius: 999px;
 }
 
-@keyframes dashSpin {
-  to { transform: rotate(360deg); }
-}
+/* ── Responsive ── */
 
-@media (max-width: 1200px) {
-  .chartsGrid {
-    grid-template-columns: 1fr;
+@media (max-width: 1024px) {
+  .dashboardContent {
+    padding: 24px;
+    margin-left: 215px;
+  }
+
+  .dashboardFiltersLabels {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+  }
+
+  .dashboardFiltersInputs {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .dashboardContent {
     margin-left: 0;
-    padding: 80px 20px 20px 20px;
+    padding: 20px;
+    padding-top: 80px;
+  }
+
+  body.sidebar-collapsed .dashboardContent {
+    margin-left: 0;
+  }
+
+  .dashboardFiltersLabels {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboardFiltersInputs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboardChartTabs {
+    gap: 4px;
+  }
+
+  .dashboardChartTab {
+    padding: 4px 10px;
+    font-size: 11px;
   }
 }
