@@ -133,12 +133,23 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
 
 export const getDashboardConsultants = async (req, res) => {
   try {
-    const snapshot = await db.collection("users").get();
-    const consultants = snapshot.docs
+    const [usersSnapshot, callsSnapshot] = await Promise.all([
+      db.collection("users").get(),
+      db.collection("meetings_analysis").select("userEmail").get(),
+    ]);
+
+    const activeEmails = new Set(
+      callsSnapshot.docs
+        .map((doc) => normalizeEmailValue(doc.data().userEmail))
+        .filter(Boolean)
+    );
+
+    const consultants = usersSnapshot.docs
       .map((doc) => doc.data())
       .map((user) => {
         const email = normalizeEmailValue(user.email);
         if (!email) return null;
+        if (!activeEmails.has(email)) return null;
         const label = user.name || formatConsultantLabel(email);
         return { value: email, label };
       })
