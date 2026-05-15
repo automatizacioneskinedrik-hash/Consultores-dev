@@ -234,6 +234,21 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
     if (!bucket) return false;
     return { r: 4, fill: tab.stroke, strokeWidth: 2, stroke: "white" };
   }, [bucket, tab.stroke]);
+
+  const labelProps = useMemo(() => {
+    if (!bucket) return false;
+    return {
+      position: "top",
+      fontSize: 11,
+      fontWeight: 700,
+      fill: tab.stroke,
+      formatter: (value) => {
+        const n = clampNumber(value);
+        if (n == null) return "";
+        return tab.valueSuffix ? `${formatFixed(n, 1)}${tab.valueSuffix}` : formatFixed(n, 1);
+      },
+    };
+  }, [bucket, tab]);
   const gradientId = useMemo(
     () => `dash_grad_${rawId.replace(/:/g, "")}_${activeKey}`,
     [rawId, activeKey],
@@ -309,7 +324,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
           </div>
         ) : (
           <ResponsiveContainer key={activeKey} width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 8, right: 16, left: 6, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 24, right: 16, left: 6, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={tab.stroke} stopOpacity={0.3} />
@@ -344,6 +359,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={dotProps}
+                label={labelProps}
                 connectNulls
                 activeDot={{ r: 6, strokeWidth: 2, stroke: "white" }}
                 isAnimationActive={true}

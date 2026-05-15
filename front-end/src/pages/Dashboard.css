@@ -402,11 +402,14 @@ body.sidebar-collapsed .dashboardContent {
   height: 100%;
 }
 
-.dashboardTalkWrap {
-  min-height: 120px;
+.dashboardTalkCard .ant-card-body {
+  height: calc(100% - 57px);
   display: flex;
   align-items: center;
-  padding: 8px 0;
+}
+
+.dashboardTalkWrap {
+  width: 100%;
 }
 
 .dashboardTalkBars {
