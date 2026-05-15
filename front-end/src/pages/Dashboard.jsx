@@ -1,11 +1,13 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Select, Spin } from "antd";
 import {
+  CheckCircleOutlined,
   ClockCircleOutlined,
   PercentageOutlined,
   PhoneOutlined,
   ReloadOutlined,
   StarOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import {
   Area,
@@ -24,6 +26,13 @@ import "./Dashboard.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const DEFAULT_CONSULTANT_OPTIONS = [{ label: "Todos", value: "all" }];
+
+function getScoreIcon(rawScore) {
+  const n = Number(rawScore);
+  if (!Number.isFinite(n) || n <= 40) return <WarningOutlined />;
+  if (n <= 70) return <CheckCircleOutlined />;
+  return <StarOutlined />;
+}
 
 const KPI_DEFS = [
   {
@@ -687,7 +696,11 @@ export default function Dashboard() {
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}
-                        icon={kpi.icon}
+                        icon={
+                          kpi.key === "meanScore"
+                            ? getScoreIcon(dashboardData.kpis?.meanScore)
+                            : kpi.icon
+                        }
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}
                         loading={dashboardLoading}
