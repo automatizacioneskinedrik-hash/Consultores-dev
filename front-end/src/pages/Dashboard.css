@@ -396,59 +396,60 @@ body.sidebar-collapsed .dashboardContent {
   color: var(--navy);
 }
 
-/* ── Donut chart ── */
+/* ── Talk distribution bar chart ── */
 
-.dashboardDonutCard {
+.dashboardTalkCard {
   height: 100%;
 }
 
-.dashboardDonutWrap {
-  min-height: 240px;
+.dashboardTalkWrap {
+  min-height: 120px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding: 8px 0;
 }
 
-.dashboardDonutContent {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  width: 100%;
-  justify-content: center;
-}
-
-.dashboardDonutLegend {
+.dashboardTalkBars {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
+  width: 100%;
 }
 
-.dashboardDonutLegendRow {
+.dashboardTalkBarRow {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.dashboardDonutDot {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
+.dashboardTalkBarLabel {
+  width: 78px;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(4, 0, 37, 0.75);
   flex-shrink: 0;
 }
 
-.dashboardDonutLegendName {
-  font-size: 13px;
-  font-weight: 800;
-  color: rgba(4, 0, 37, 0.78);
+.dashboardTalkBarTrack {
   flex: 1;
-  white-space: nowrap;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(4, 0, 37, 0.07);
+  overflow: hidden;
 }
 
-.dashboardDonutLegendValue {
+.dashboardTalkBarFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.7s ease;
+}
+
+.dashboardTalkBarValue {
+  width: 48px;
+  text-align: right;
   font-size: 15px;
   font-weight: 950;
-  color: var(--navy);
-  margin-left: 16px;
+  flex-shrink: 0;
 }
 
 /* ── Error banner ── */

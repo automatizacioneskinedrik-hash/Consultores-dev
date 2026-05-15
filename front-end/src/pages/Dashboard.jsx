@@ -11,9 +11,6 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -232,6 +229,11 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
   const rawId = useId();
 
   const tab = useMemo(() => tabs.find((t) => t.key === activeKey) || tabs[0], [tabs, activeKey]);
+
+  const dotProps = useMemo(() => {
+    if (!bucket) return false;
+    return { r: 4, fill: tab.stroke, strokeWidth: 2, stroke: "white" };
+  }, [bucket, tab.stroke]);
   const gradientId = useMemo(
     () => `dash_grad_${rawId.replace(/:/g, "")}_${activeKey}`,
     [rawId, activeKey],
@@ -341,9 +343,9 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
                 strokeWidth={3}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                dot={false}
+                dot={dotProps}
                 connectNulls
-                activeDot={{ r: 5 }}
+                activeDot={{ r: 6, strokeWidth: 2, stroke: "white" }}
                 isAnimationActive={true}
                 animationDuration={700}
                 animationEasing="ease-out"
@@ -357,8 +359,8 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
   );
 }
 
-function DashboardDonutCard({ consultantPct, clientPct, loading }) {
-  const donutData = useMemo(() => {
+function DashboardTalkBarCard({ consultantPct, clientPct, loading }) {
+  const bars = useMemo(() => {
     const c = clampNumber(consultantPct);
     const cl = clampNumber(clientPct);
     if (c == null && cl == null) return null;
@@ -372,13 +374,13 @@ function DashboardDonutCard({ consultantPct, clientPct, loading }) {
   }, [consultantPct, clientPct]);
 
   return (
-    <Card className="dashboardPanel dashboardDonutCard" title="Distribución de habla">
-      <div className="dashboardDonutWrap">
+    <Card className="dashboardPanel dashboardTalkCard" title="Distribución de habla">
+      <div className="dashboardTalkWrap">
         {loading ? (
           <div className="dashboardChartState">
             <Spin />
           </div>
-        ) : !donutData ? (
+        ) : !bars ? (
           <div className="dashboardChartState">
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -386,33 +388,21 @@ function DashboardDonutCard({ consultantPct, clientPct, loading }) {
             />
           </div>
         ) : (
-          <div className="dashboardDonutContent">
-            <PieChart width={160} height={160}>
-              <Pie
-                data={donutData}
-                cx={75}
-                cy={75}
-                innerRadius={50}
-                outerRadius={72}
-                dataKey="value"
-                startAngle={90}
-                endAngle={-270}
-                stroke="none"
-              >
-                {donutData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-            <div className="dashboardDonutLegend">
-              {donutData.map((entry) => (
-                <div key={entry.name} className="dashboardDonutLegendRow">
-                  <span className="dashboardDonutDot" style={{ background: entry.color }} />
-                  <span className="dashboardDonutLegendName">{entry.name}</span>
-                  <span className="dashboardDonutLegendValue">{formatFixed(entry.value, 1)}%</span>
+          <div className="dashboardTalkBars">
+            {bars.map((bar) => (
+              <div key={bar.name} className="dashboardTalkBarRow">
+                <div className="dashboardTalkBarLabel">{bar.name}</div>
+                <div className="dashboardTalkBarTrack">
+                  <div
+                    className="dashboardTalkBarFill"
+                    style={{ width: `${bar.value}%`, background: bar.color }}
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="dashboardTalkBarValue" style={{ color: bar.color }}>
+                  {formatFixed(bar.value, 1)}%
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -714,7 +704,7 @@ export default function Dashboard() {
                     />
                   </Col>
                   <Col xs={24} xl={8}>
-                    <DashboardDonutCard
+                    <DashboardTalkBarCard
                       consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
                       clientPct={dashboardData.kpis?.meanClientTalkPct}
                       loading={dashboardLoading}
