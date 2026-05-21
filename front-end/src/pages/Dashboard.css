@@ -295,6 +295,14 @@ body.sidebar-collapsed .dashboardContent {
 
 /* ── Chart panels ── */
 
+.dashboardPanel .ant-card-head-title {
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.65);
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
 .dashboardPanel {
   border-radius: 18px;
   border: 1px solid rgba(4, 0, 37, 0.08);

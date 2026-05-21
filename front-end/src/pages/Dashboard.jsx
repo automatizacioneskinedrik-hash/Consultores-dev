@@ -34,6 +34,13 @@ function getScoreIcon(rawScore) {
   return <StarOutlined />;
 }
 
+function getScoreColor(rawScore) {
+  const n = Number(rawScore);
+  if (!Number.isFinite(n) || n <= 40) return "#dc2626";
+  if (n <= 70) return "#d97706";
+  return "#16a34a";
+}
+
 const KPI_DEFS = [
   {
     key: "callVolumeN",
@@ -201,7 +208,7 @@ function formatWeekPickerValue(value) {
   return `${dtf.format(start)} – ${dtf.format(end)}`;
 }
 
-function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
+function DashboardKpiCard({ label, legend, icon, value, suffix, loading, iconColor }) {
   return (
     <Card className="dashboardKpiCard">
       <div className="dashboardKpiTop">
@@ -220,7 +227,11 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
                 <span className="dashboardKpiSuffix">{suffix}</span>
               ) : null}
             </div>
-            <div className="dashboardKpiIcon" aria-hidden="true">
+            <div
+              className="dashboardKpiIcon"
+              aria-hidden="true"
+              style={iconColor ? { color: iconColor } : undefined}
+            >
               {icon}
             </div>
           </div>
@@ -707,6 +718,11 @@ export default function Dashboard() {
                           kpi.key === "meanScore"
                             ? getScoreIcon(dashboardData.kpis?.meanScore)
                             : kpi.icon
+                        }
+                        iconColor={
+                          kpi.key === "meanScore"
+                            ? getScoreColor(dashboardData.kpis?.meanScore)
+                            : undefined
                         }
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}
