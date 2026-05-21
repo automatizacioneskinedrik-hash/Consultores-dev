@@ -244,6 +244,14 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
     return { r: 4, fill: tab.stroke, strokeWidth: 2, stroke: "white" };
   }, [bucket, tab.stroke]);
 
+  const xAxisInterval = useMemo(() => {
+    const len = data?.length || 0;
+    if (len <= 7) return 0;
+    if (len <= 14) return 1;
+    if (len <= 21) return 2;
+    return Math.floor(len / 7);
+  }, [data]);
+
   const labelProps = useMemo(() => {
     if (!bucket) return false;
     return {
@@ -344,10 +352,10 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(4, 0, 37, 0.08)" />
               <XAxis
                 dataKey="ts"
-                type="number"
-                domain={["dataMin", "dataMax"]}
+                type="category"
                 tick={{ fontSize: 12 }}
-                tickFormatter={formatTick}
+                tickFormatter={(ts) => formatTick(Number(ts))}
+                interval={xAxisInterval}
               />
               <YAxis
                 tick={{ fontSize: 12 }}
