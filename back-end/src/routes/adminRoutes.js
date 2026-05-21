@@ -27,6 +27,12 @@ router.get("/dashboard-consultants", async (req, res, next) => {
   next();
 }, executiveDashboardController.getDashboardConsultants);
 
+router.get("/consultant-available-dates", async (req, res, next) => {
+  const authorized = await isSuperAdminRequest(req);
+  if (!authorized) return res.status(403).json({ ok: false, error: "No autorizado" });
+  next();
+}, executiveDashboardController.getConsultantAvailableDates);
+
 router.get("/executive-dashboard", async (req, res, next) => {
   const authorized = await isSuperAdminRequest(req);
   if (!authorized) return res.status(403).json({ ok: false, error: "No autorizado" });

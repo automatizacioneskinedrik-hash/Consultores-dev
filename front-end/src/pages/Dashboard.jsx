@@ -34,11 +34,13 @@ function getScoreIcon(rawScore) {
   return <StarOutlined />;
 }
 
-function getScoreColor(rawScore) {
+function getScoreStyle(rawScore) {
   const n = Number(rawScore);
-  if (!Number.isFinite(n) || n <= 40) return "#dc2626";
-  if (n <= 70) return "#d97706";
-  return "#16a34a";
+  if (!Number.isFinite(n) || n <= 40)
+    return { color: "#dc2626", background: "rgba(220, 38, 38, 0.1)" };
+  if (n <= 70)
+    return { color: "#d97706", background: "rgba(217, 119, 6, 0.1)" };
+  return { color: "#16a34a", background: "rgba(22, 163, 74, 0.1)" };
 }
 
 const KPI_DEFS = [
@@ -208,7 +210,7 @@ function formatWeekPickerValue(value) {
   return `${dtf.format(start)} – ${dtf.format(end)}`;
 }
 
-function DashboardKpiCard({ label, legend, icon, value, suffix, loading, iconColor }) {
+function DashboardKpiCard({ label, legend, icon, value, suffix, loading, iconStyle }) {
   return (
     <Card className="dashboardKpiCard">
       <div className="dashboardKpiTop">
@@ -230,7 +232,7 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading, iconCol
             <div
               className="dashboardKpiIcon"
               aria-hidden="true"
-              style={iconColor ? { color: iconColor } : undefined}
+              style={iconStyle || undefined}
             >
               {icon}
             </div>
@@ -465,11 +467,23 @@ export default function Dashboard() {
     [],
   );
 
+  const disableDayDate = useMemo(
+    () => (current) => {
+      if (!current) return false;
+      if (current.isAfter(dayjs(), "day")) return true;
+      if (!availableDates) return false;
+      return !availableDates.has(current.format("YYYY-MM-DD"));
+    },
+    [availableDates],
+  );
+
   const [month, setMonth] = useState(null);
   const [week, setWeek] = useState(null);
   const [day, setDay] = useState(null);
   const [consultant, setConsultant] = useState("all");
   const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
+
+  const [availableDates, setAvailableDates] = useState(null);
 
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [consultantsLoading, setConsultantsLoading] = useState(false);
@@ -511,6 +525,41 @@ export default function Dashboard() {
     setDay(null);
     setConsultant("all");
   };
+
+  useEffect(() => {
+    if (!isAuthorizedSuperAdmin || !consultant || consultant === "all") {
+      setAvailableDates(null);
+      return;
+    }
+    const controller = new AbortController();
+    let ignore = false;
+
+    (async () => {
+      try {
+        const params = new URLSearchParams({ consultantEmail: consultant });
+        const res = await fetch(
+          `${API_BASE_URL}/api/admin/consultant-available-dates?${params}`,
+          { headers: authHeaders, signal: controller.signal },
+        );
+        const data = await res.json();
+        if (ignore) return;
+        if (data.ok && data.dates?.length) {
+          setAvailableDates(new Set(data.dates));
+        } else {
+          setAvailableDates(null);
+        }
+      } catch (err) {
+        if (!ignore && err?.name !== "AbortError") {
+          console.debug("Available dates fetch error:", err?.message || err);
+        }
+      }
+    })();
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, [authHeaders, consultant, isAuthorizedSuperAdmin]);
 
   useEffect(() => {
     if (!isAuthorizedSuperAdmin) return;
@@ -663,7 +712,7 @@ export default function Dashboard() {
                   className="dashboardFilterControl"
                   picker="date"
                   placeholder="Día"
-                  disabledDate={disableFutureDate}
+                  disabledDate={disableDayDate}
                   value={day}
                   onChange={(value) => {
                     setDay(value);
@@ -719,9 +768,9 @@ export default function Dashboard() {
                             ? getScoreIcon(dashboardData.kpis?.meanScore)
                             : kpi.icon
                         }
-                        iconColor={
+                        iconStyle={
                           kpi.key === "meanScore"
-                            ? getScoreColor(dashboardData.kpis?.meanScore)
+                            ? getScoreStyle(dashboardData.kpis?.meanScore)
                             : undefined
                         }
                         value={kpiValues[kpi.key]}
