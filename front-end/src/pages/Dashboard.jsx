@@ -467,6 +467,14 @@ export default function Dashboard() {
     [],
   );
 
+  const [month, setMonth] = useState(null);
+  const [week, setWeek] = useState(null);
+  const [day, setDay] = useState(null);
+  const [consultant, setConsultant] = useState("all");
+  const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
+
+  const [availableDates, setAvailableDates] = useState(null);
+
   const disableDayDate = useMemo(
     () => (current) => {
       if (!current) return false;
@@ -476,14 +484,6 @@ export default function Dashboard() {
     },
     [availableDates],
   );
-
-  const [month, setMonth] = useState(null);
-  const [week, setWeek] = useState(null);
-  const [day, setDay] = useState(null);
-  const [consultant, setConsultant] = useState("all");
-  const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
-
-  const [availableDates, setAvailableDates] = useState(null);
 
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [consultantsLoading, setConsultantsLoading] = useState(false);
