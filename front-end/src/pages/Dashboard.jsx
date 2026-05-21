@@ -34,6 +34,15 @@ function getScoreIcon(rawScore) {
   return <StarOutlined />;
 }
 
+function getScoreStyle(rawScore) {
+  const n = Number(rawScore);
+  if (!Number.isFinite(n) || n <= 40)
+    return { color: "#dc2626", background: "rgba(220, 38, 38, 0.1)" };
+  if (n <= 70)
+    return { color: "#d97706", background: "rgba(217, 119, 6, 0.1)" };
+  return { color: "#16a34a", background: "rgba(22, 163, 74, 0.1)" };
+}
+
 const KPI_DEFS = [
   {
     key: "callVolumeN",
@@ -201,7 +210,7 @@ function formatWeekPickerValue(value) {
   return `${dtf.format(start)} – ${dtf.format(end)}`;
 }
 
-function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
+function DashboardKpiCard({ label, legend, icon, value, suffix, loading, iconStyle }) {
   return (
     <Card className="dashboardKpiCard">
       <div className="dashboardKpiTop">
@@ -220,7 +229,11 @@ function DashboardKpiCard({ label, legend, icon, value, suffix, loading }) {
                 <span className="dashboardKpiSuffix">{suffix}</span>
               ) : null}
             </div>
-            <div className="dashboardKpiIcon" aria-hidden="true">
+            <div
+              className="dashboardKpiIcon"
+              aria-hidden="true"
+              style={iconStyle || undefined}
+            >
               {icon}
             </div>
           </div>
@@ -243,6 +256,14 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
     if (!bucket) return false;
     return { r: 4, fill: tab.stroke, strokeWidth: 2, stroke: "white" };
   }, [bucket, tab.stroke]);
+
+  const xAxisInterval = useMemo(() => {
+    const len = data?.length || 0;
+    if (len <= 7) return 0;
+    if (len <= 14) return 1;
+    if (len <= 21) return 2;
+    return Math.floor(len / 7);
+  }, [data]);
 
   const labelProps = useMemo(() => {
     if (!bucket) return false;
@@ -344,10 +365,10 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(4, 0, 37, 0.08)" />
               <XAxis
                 dataKey="ts"
-                type="number"
-                domain={["dataMin", "dataMax"]}
+                type="category"
                 tick={{ fontSize: 12 }}
-                tickFormatter={formatTick}
+                tickFormatter={(ts) => formatTick(Number(ts))}
+                interval={xAxisInterval}
               />
               <YAxis
                 tick={{ fontSize: 12 }}
@@ -452,6 +473,18 @@ export default function Dashboard() {
   const [consultant, setConsultant] = useState("all");
   const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
 
+  const [availableDates, setAvailableDates] = useState(null);
+
+  const disableDayDate = useMemo(
+    () => (current) => {
+      if (!current) return false;
+      if (current.isAfter(dayjs(), "day")) return true;
+      if (!availableDates) return false;
+      return !availableDates.has(current.format("YYYY-MM-DD"));
+    },
+    [availableDates],
+  );
+
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [consultantsLoading, setConsultantsLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState("");
@@ -492,6 +525,41 @@ export default function Dashboard() {
     setDay(null);
     setConsultant("all");
   };
+
+  useEffect(() => {
+    if (!isAuthorizedSuperAdmin || !consultant || consultant === "all") {
+      setAvailableDates(null);
+      return;
+    }
+    const controller = new AbortController();
+    let ignore = false;
+
+    (async () => {
+      try {
+        const params = new URLSearchParams({ consultantEmail: consultant });
+        const res = await fetch(
+          `${API_BASE_URL}/api/admin/consultant-available-dates?${params}`,
+          { headers: authHeaders, signal: controller.signal },
+        );
+        const data = await res.json();
+        if (ignore) return;
+        if (data.ok && data.dates?.length) {
+          setAvailableDates(new Set(data.dates));
+        } else {
+          setAvailableDates(null);
+        }
+      } catch (err) {
+        if (!ignore && err?.name !== "AbortError") {
+          console.debug("Available dates fetch error:", err?.message || err);
+        }
+      }
+    })();
+
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, [authHeaders, consultant, isAuthorizedSuperAdmin]);
 
   useEffect(() => {
     if (!isAuthorizedSuperAdmin) return;
@@ -602,8 +670,7 @@ export default function Dashboard() {
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderText">
-                <h1>Dashboard Ejecutivo</h1>
-                <p>Tablero de seguimiento consultores</p>
+                <h1>Tablero de seguimiento consultores</h1>
               </div>
             </div>
 
@@ -645,7 +712,7 @@ export default function Dashboard() {
                   className="dashboardFilterControl"
                   picker="date"
                   placeholder="Día"
-                  disabledDate={disableFutureDate}
+                  disabledDate={disableDayDate}
                   value={day}
                   onChange={(value) => {
                     setDay(value);
@@ -700,6 +767,11 @@ export default function Dashboard() {
                           kpi.key === "meanScore"
                             ? getScoreIcon(dashboardData.kpis?.meanScore)
                             : kpi.icon
+                        }
+                        iconStyle={
+                          kpi.key === "meanScore"
+                            ? getScoreStyle(dashboardData.kpis?.meanScore)
+                            : undefined
                         }
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}

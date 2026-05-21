@@ -131,6 +131,51 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
   return docs;
 }
 
+export const getConsultantAvailableDates = async (req, res) => {
+  try {
+    const consultantEmail = normalizeEmailValue(req.query.consultantEmail);
+
+    if (!consultantEmail || consultantEmail === "all") {
+      return res.json({ ok: true, dates: [] });
+    }
+
+    const batchSize = 800;
+    const dateSet = new Set();
+    let lastDoc = null;
+
+    for (;;) {
+      let query = db
+        .collection("meetings_analysis")
+        .orderBy("createdAt", "asc")
+        .select("createdAt", "userEmail")
+        .limit(batchSize);
+
+      if (lastDoc) query = query.startAfter(lastDoc);
+
+      const snapshot = await query.get();
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        const email = normalizeEmailValue(data.userEmail);
+        if (email !== consultantEmail) continue;
+
+        const ms = toMillis(data.createdAt);
+        if (!Number.isFinite(ms)) continue;
+
+        dateSet.add(new Date(ms).toISOString().slice(0, 10));
+      }
+
+      if (snapshot.size < batchSize) break;
+      lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    }
+
+    return res.json({ ok: true, dates: [...dateSet].sort() });
+  } catch (err) {
+    console.error("Error loading consultant available dates:", err);
+    return res.status(500).json({ ok: false, error: "Error al obtener fechas disponibles" });
+  }
+};
+
 export const getDashboardConsultants = async (req, res) => {
   try {
     const [usersSnapshot, callsSnapshot] = await Promise.all([
