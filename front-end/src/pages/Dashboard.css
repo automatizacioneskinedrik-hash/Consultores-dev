@@ -37,9 +37,15 @@ body.sidebar-collapsed .dashboardContent {
 
 .dashboardTopBar .dashboardHeaderTitle {
   margin-bottom: 0;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
   flex: 1;
   min-width: 280px;
+}
+
+.dashboardTopBar .dashboardHeaderText {
+  text-align: center;
+  width: 100%;
 }
 
 .dashboardTopFilters {
@@ -95,8 +101,16 @@ body.sidebar-collapsed .dashboardContent {
 .dashboardHeaderText h1 {
   font-size: 32px;
   font-weight: 900;
-  color: var(--navy);
   margin: 0;
+  text-align: center;
+}
+
+.dashboardTitleBlack {
+  color: #040025;
+}
+
+.dashboardTitleBlue {
+  color: #0040a4;
 }
 
 .dashboardHeaderText p {
