@@ -27,24 +27,29 @@ body.sidebar-collapsed .dashboardContent {
   border-radius: 18px;
   border: 1px solid rgba(4, 0, 37, 0.08);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.04);
-  padding: 18px 20px;
+  padding: 16px 24px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 0;
   flex-wrap: wrap;
 }
 
 .dashboardTopBar .dashboardHeaderTitle {
   margin-bottom: 0;
-  align-items: flex-start;
-  flex: 1;
-  min-width: 280px;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 25%;
+  padding-left: 14px;
+}
+
+.dashboardTopBar .dashboardHeaderText {
+  text-align: left;
 }
 
 .dashboardTopFilters {
-  flex: 2;
-  min-width: 460px;
+  flex: 0 0 75%;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -95,8 +100,15 @@ body.sidebar-collapsed .dashboardContent {
 .dashboardHeaderText h1 {
   font-size: 32px;
   font-weight: 900;
-  color: var(--navy);
   margin: 0;
+}
+
+.dashboardTitleBlack {
+  color: #040025;
+}
+
+.dashboardTitleBlue {
+  color: #0040a4;
 }
 
 .dashboardHeaderText p {
