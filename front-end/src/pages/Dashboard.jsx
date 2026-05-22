@@ -670,7 +670,7 @@ export default function Dashboard() {
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderText">
-                <h1>Tablero de seguimiento consultores</h1>
+                <h1>Speech Analytics</h1>
               </div>
             </div>
 
