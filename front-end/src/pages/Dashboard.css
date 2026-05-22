@@ -31,7 +31,7 @@ body.sidebar-collapsed .dashboardContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 0;
   flex-wrap: wrap;
 }
 
@@ -39,7 +39,7 @@ body.sidebar-collapsed .dashboardContent {
   margin-bottom: 0;
   align-items: center;
   justify-content: flex-start;
-  flex: 0 0 auto;
+  flex: 0 0 25%;
   padding-left: 14px;
 }
 
@@ -48,8 +48,8 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardTopFilters {
-  flex: 1;
-  min-width: 460px;
+  flex: 0 0 75%;
+  min-width: 0;
   padding: 0;
   border: 0;
   background: transparent;
