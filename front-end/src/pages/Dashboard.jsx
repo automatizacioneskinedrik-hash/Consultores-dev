@@ -670,11 +670,7 @@ export default function Dashboard() {
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderText">
-<<<<<<< HEAD
-                <h1>Speech Analytics</h1>
-=======
                 <h1><span className="dashboardTitleBlack">Speech</span> <span className="dashboardTitleBlue">Analytics</span></h1>
->>>>>>> develop
               </div>
             </div>
 
