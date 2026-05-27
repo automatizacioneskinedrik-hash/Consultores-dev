@@ -60,6 +60,7 @@ async function transcribeChunks(chunkPaths) {
         file: fs.createReadStream(p),
         model: "gpt-4o-transcribe-diarize",
         response_format: "json",
+        chunking_strategy: "auto",
       }))
     );
     batchResults.forEach((r, j) => { results[i + j] = r; });
@@ -132,6 +133,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
         file: fs.createReadStream(finalAudioPath),
         model: "gpt-4o-transcribe-diarize",
         response_format: "json",
+        chunking_strategy: "auto",
       });
       transcriptionText = transcription.text;
       totalSeconds = durationSec;
