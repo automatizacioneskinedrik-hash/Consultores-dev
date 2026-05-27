@@ -27,23 +27,27 @@ async function transcribeWithDiarization(filePath) {
 
   const utterances = transcript.utterances || [];
 
-  // El primer hablante se asume como el CONSULTOR (quien inicia la llamada de ventas)
-  const firstSpeaker = utterances[0]?.speaker || "A";
-
-  const formattedText = utterances.length > 0
-    ? utterances
-        .map(u => `${u.speaker === firstSpeaker ? "CONSULTOR" : "CLIENTE"}: ${u.text}`)
-        .join("\n")
-    : (transcript.text || "");
-
-  // Calcular participación real por conteo de palabras por hablante
+  // Calcular palabras por hablante primero
   const wordCounts = {};
   for (const u of utterances) {
     const wc = u.text.split(/\s+/).filter(Boolean).length;
     wordCounts[u.speaker] = (wordCounts[u.speaker] || 0) + wc;
   }
+
+  // En una llamada de ventas el CONSULTOR siempre habla más que el cliente.
+  // Usamos el hablante con más palabras como CONSULTOR en lugar del orden de aparición,
+  // porque el cliente/prospecto suele hablar primero con un saludo corto.
+  const consultorSpeaker = Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || utterances[0]?.speaker || "A";
+
+  const formattedText = utterances.length > 0
+    ? utterances
+        .map(u => `${u.speaker === consultorSpeaker ? "CONSULTOR" : "CLIENTE"}: ${u.text}`)
+        .join("\n")
+    : (transcript.text || "");
+
   const totalWords = Object.values(wordCounts).reduce((a, b) => a + b, 0) || 1;
-  const consultorWords = wordCounts[firstSpeaker] || 0;
+  const consultorWords = wordCounts[consultorSpeaker] || 0;
   const consultorPct = Math.round((consultorWords / totalWords) * 100);
 
   return {
