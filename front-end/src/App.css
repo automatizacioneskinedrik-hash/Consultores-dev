@@ -128,7 +128,7 @@ body.sidebar-collapsed .appShell {
 .mainContent {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   position: relative;
   padding: 40px 0 60px 0;
@@ -589,11 +589,22 @@ body.sidebar-collapsed .appShell {
 }
 
 /* RECENT SESSIONS */
+@keyframes sessionsFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .recentSessionsContainer {
   width: 720px;
   max-width: 100%;
   margin: 20px auto 40px auto;
   text-align: left;
+  animation: sessionsFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .recentTitle {
@@ -603,6 +614,7 @@ body.sidebar-collapsed .appShell {
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 1px;
+  text-align: center;
 }
 
 .recentList {
@@ -618,8 +630,18 @@ body.sidebar-collapsed .appShell {
   padding: 16px 20px;
   border-radius: 16px;
   border: 1px solid #E2E8F0;
-  transition: all 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  animation: cardSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.sessionCard:nth-child(1) { animation-delay: 0.06s; }
+.sessionCard:nth-child(2) { animation-delay: 0.14s; }
+.sessionCard:nth-child(3) { animation-delay: 0.22s; }
+.sessionCard:nth-child(4) { animation-delay: 0.30s; }
+.sessionCard:nth-child(5) { animation-delay: 0.38s; }
+.sessionCard:nth-child(6) { animation-delay: 0.46s; }
+.sessionCard:nth-child(7) { animation-delay: 0.54s; }
+.sessionCard:nth-child(8) { animation-delay: 0.62s; }
 
 .sessionCard:hover {
   transform: translateY(-2px);
