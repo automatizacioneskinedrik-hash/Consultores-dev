@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
@@ -178,6 +178,23 @@ export default function Upload() {
     pollingRef.current = setInterval(poll, 5000);
     return () => clearInterval(pollingRef.current);
   }, [pollingObjectPath]);
+
+  const todaySessions = useMemo(() => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return recentSessions.filter(s => s.date && new Date(s.date) >= todayStart);
+  }, [recentSessions]);
+
+  useEffect(() => {
+    if (!user?.email || !user?.authToken) return;
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const timer = setTimeout(() => {
+      fetchRecentSessions(user.email);
+    }, midnight.getTime() - now.getTime());
+    return () => clearTimeout(timer);
+  }, [user?.email, user?.authToken]);
 
   const handleResendEmail = async (sessionId) => {
     alert("Procesando reenvío de reporte...");
@@ -477,11 +494,11 @@ export default function Upload() {
             {isUploading && <p>Subiendo archivo...</p>}
             {errorMsg && <p className="errorMessage">{errorMsg}</p>}
 
-            {recentSessions.length > 0 && (
+            {todaySessions.length > 0 && (
               <div className="recentSessionsContainer">
-                <h3 className="recentTitle">Últimas sesiones procesadas</h3>
+                <h3 className="recentTitle">Tus sesiones del día de hoy</h3>
                 <div className="recentList">
-                  {recentSessions.map((session) => (
+                  {todaySessions.map((session) => (
                     <div key={session.id} className="sessionCard">
                       <div className="sessionIcon">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

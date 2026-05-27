@@ -10,7 +10,7 @@ export const getRecentSessions = async (req, res) => {
     const snapshot = await db.collection("meetings_analysis")
       .where("userEmail", "==", email)
       .orderBy("createdAt", "desc")
-      .limit(3)
+      .limit(20)
       .get();
 
     const sessions = snapshot.docs.map(doc => {
