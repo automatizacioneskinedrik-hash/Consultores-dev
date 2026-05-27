@@ -17,7 +17,7 @@ async function transcribeWithDiarization(filePath) {
   const transcript = await assemblyai.transcripts.transcribe({
     audio: filePath,
     speaker_labels: true,
-    speech_model: "universal-2",
+    speech_models: ["universal-2"],
     language_code: "es",
   });
 
