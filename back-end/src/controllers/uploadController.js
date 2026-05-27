@@ -77,9 +77,9 @@ export const completeUpload = async (req, res) => {
       return res.json({ ok: true, isLargeFile: true });
     }
 
-    // Short audio: wait for completion so the frontend can confirm the email was sent.
-    await processAudioAnalysis(objectPath, userEmail);
-    return res.json({ ok: true, isLargeFile: false });
+    // Short audio: wait for completion so the frontend can show the report immediately.
+    const report = await processAudioAnalysis(objectPath, userEmail);
+    return res.json({ ok: true, isLargeFile: false, report: report || null });
   } catch (err) {
     console.error("Error en complete:", err);
     return res.status(500).json({ ok: false, error: err.message });

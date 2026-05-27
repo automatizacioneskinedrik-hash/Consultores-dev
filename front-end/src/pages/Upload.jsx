@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
+import ReportDetail from "../components/ReportDetail";
 import "../App.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -67,6 +68,7 @@ function MicIcon() {
 
 export default function Upload() {
   const inputRef = useRef(null);
+  const pollingRef = useRef(null);
   const [user] = useState(() => getUser() || {});
 
   useEffect(() => {
@@ -85,6 +87,8 @@ export default function Upload() {
   const [successStep, setSuccessStep] = useState(0); // 0: none, 1: upload success message, 2: pending email, 3: email sent message
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [currentObjectPath, setCurrentObjectPath] = useState("");
+  const [reportData, setReportData] = useState(null);
+  const [pollingObjectPath, setPollingObjectPath] = useState("");
   const [analysisText, setAnalysisText] = useState("Procesando información...");
   const [isLargeFile, setIsLargeFile] = useState(false);
   const [recentSessions, setRecentSessions] = useState([]);
@@ -142,6 +146,38 @@ export default function Upload() {
       return () => clearInterval(interval);
     }
   }, [successStep]);
+
+  useEffect(() => {
+    if (!pollingObjectPath) return;
+
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/sessions/by-path?objectPath=${encodeURIComponent(pollingObjectPath)}`,
+          { headers: { "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" } }
+        );
+        const data = await res.json();
+        if (data.ok && data.found && data.report) {
+          clearInterval(pollingRef.current);
+          setPollingObjectPath("");
+          setSuccessStep(0);
+          setIsLargeFile(false);
+          setReportData(data.report);
+          setFileMeta(null);
+          setProgress(0);
+          setStatus("");
+          setCurrentObjectPath("");
+          if (inputRef.current) inputRef.current.value = "";
+          if (user?.email) fetchRecentSessions(user.email);
+        }
+      } catch {
+        // red inestable: seguir intentando
+      }
+    };
+
+    pollingRef.current = setInterval(poll, 5000);
+    return () => clearInterval(pollingRef.current);
+  }, [pollingObjectPath]);
 
   const handleResendEmail = async (sessionId) => {
     alert("Procesando reenvío de reporte...");
@@ -247,7 +283,7 @@ export default function Upload() {
     }
   };
 
-  // Short audio: wait for /complete and confirm email was sent
+  // Short audio: wait for /complete and show the report card immediately
   const startEmailProcess = async () => {
     try {
       const completeRes = await fetch(`${API_BASE_URL}/api/upload/complete`, {
@@ -262,11 +298,22 @@ export default function Upload() {
 
       const completeData = await completeRes.json();
       if (!completeRes.ok) {
-        throw new Error(completeData?.error || "No se pudo enviar el correo.");
+        throw new Error(completeData?.error || "No se pudo procesar el análisis.");
       }
 
-      setSuccessStep(3);
-      setShowSuccessModal(true);
+      if (completeData.report) {
+        setSuccessStep(0);
+        setReportData(completeData.report);
+        setFileMeta(null);
+        setProgress(0);
+        setStatus("");
+        setCurrentObjectPath("");
+        if (inputRef.current) inputRef.current.value = "";
+        if (user?.email) fetchRecentSessions(user.email);
+      } else {
+        setSuccessStep(3);
+        setShowSuccessModal(true);
+      }
     } catch (err) {
       console.error(err);
       setErrorMsg("El análisis de tu audio fue enviado al servidor. Recibirás tu reporte por correo en unos minutos.");
@@ -294,9 +341,9 @@ export default function Upload() {
       if (large) {
         setIsLargeFile(true);
         setShowSuccessModal(false);
-        setSuccessStep(3);
-        setShowSuccessModal(true);
+        setSuccessStep(2);
         triggerAnalysisBackground();
+        setPollingObjectPath(currentObjectPath);
       } else {
         setShowSuccessModal(false);
         setSuccessStep(2);
@@ -329,6 +376,10 @@ export default function Upload() {
     }
   };
 
+  const handleReportClose = () => {
+    setReportData(null);
+  };
+
   const onDrop = (e) => {
     e.preventDefault();
     handleFile(e.dataTransfer.files[0]);
@@ -339,14 +390,8 @@ export default function Upload() {
   };
 
   const getSuccessMessage = () => {
-    if (successStep === 1) {
-      return "Gracias, por tu gran trabajo, pronto recibirás más información";
-    }
-    if (successStep === 3) {
-      return isLargeFile
-        ? "Tu audio fue subido correctamente. Por la duración de la grabación, el análisis puede tardar varios minutos. Recibirás el reporte por correo cuando esté listo."
-        : "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
-    }
+    if (successStep === 1) return "Gracias, por tu gran trabajo, pronto recibirás más información";
+    if (successStep === 3) return "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
     return "";
   };
 
@@ -467,6 +512,8 @@ export default function Upload() {
         />
 
         <SuccessModal isOpen={showSuccessModal} message={getSuccessMessage()} onClose={handleSuccessClose} />
+
+        {reportData && <ReportDetail report={reportData} onClose={handleReportClose} />}
 
         {isToastVisible && (
           <div className="toastNotice">

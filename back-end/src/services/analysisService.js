@@ -165,6 +165,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
     );
 
+    const now = new Date();
     const analysisData = {
       userEmail,
       objectPath,
@@ -174,7 +175,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    await db.collection("meetings_analysis").add(analysisData);
+    const docRef = await db.collection("meetings_analysis").add(analysisData);
 
     if (transporter && userEmail && userEmail !== "anonymous") {
       const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
@@ -199,6 +200,15 @@ export async function processAudioAnalysis(objectPath, userEmail) {
 
       await transporter.sendMail(mailOptions);
     }
+
+    return {
+      id: docRef.id,
+      userEmail,
+      transcription: transcriptionText,
+      analysis,
+      generalScore,
+      createdAt: { _seconds: Math.floor(now.getTime() / 1000) },
+    };
   } catch (err) {
     console.error("Error processing analysis:", err);
     throw err;

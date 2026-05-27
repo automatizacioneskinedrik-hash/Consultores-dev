@@ -11,6 +11,7 @@ router.use(async (req, res, next) => {
 });
 
 router.get("/recent", sessionController.getRecentSessions);
+router.get("/by-path", sessionController.getSessionByPath);
 router.get("/", sessionController.getAllSessions);
 router.get("/:id", sessionController.getSessionDetail);
 router.post("/resend", sessionController.resendSessionEmail);

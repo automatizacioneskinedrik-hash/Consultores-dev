@@ -128,6 +128,27 @@ export const getSessionDetail = async (req, res) => {
   }
 };
 
+export const getSessionByPath = async (req, res) => {
+  try {
+    const objectPath = (req.query.objectPath || "").trim();
+    if (!objectPath) return res.json({ ok: true, found: false });
+
+    const snapshot = await db.collection("meetings_analysis")
+      .where("objectPath", "==", objectPath)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return res.json({ ok: true, found: false });
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    return res.json({ ok: true, found: true, report: { id: doc.id, ...data } });
+  } catch (err) {
+    console.error("Error fetching session by path:", err);
+    return res.status(500).json({ ok: false, error: "Error al buscar sesión" });
+  }
+};
+
 export const resendSessionEmail = async (req, res) => {
   try {
     const { sessionId, email } = req.body;
