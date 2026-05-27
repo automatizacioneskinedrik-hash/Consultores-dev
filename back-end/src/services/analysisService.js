@@ -59,7 +59,7 @@ async function transcribeChunks(chunkPaths) {
       batch.map(p => openai.audio.transcriptions.create({
         file: fs.createReadStream(p),
         model: "gpt-4o-transcribe-diarize",
-        response_format: "verbose_json",
+        response_format: "json",
       }))
     );
     batchResults.forEach((r, j) => { results[i + j] = r; });
@@ -131,10 +131,10 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       const transcription = await openai.audio.transcriptions.create({
         file: fs.createReadStream(finalAudioPath),
         model: "gpt-4o-transcribe-diarize",
-        response_format: "verbose_json",
+        response_format: "json",
       });
       transcriptionText = transcription.text;
-      totalSeconds = transcription.duration || 0;
+      totalSeconds = durationSec;
     }
 
     const minutes = Math.floor(totalSeconds / 60);
