@@ -58,9 +58,8 @@ async function transcribeChunks(chunkPaths) {
     const batchResults = await Promise.all(
       batch.map(p => openai.audio.transcriptions.create({
         file: fs.createReadStream(p),
-        model: "gpt-4o-transcribe-diarize",
-        response_format: "json",
-        chunking_strategy: "auto",
+        model: "whisper-1",
+        response_format: "verbose_json",
       }))
     );
     batchResults.forEach((r, j) => { results[i + j] = r; });
@@ -131,12 +130,11 @@ export async function processAudioAnalysis(objectPath, userEmail) {
 
       const transcription = await openai.audio.transcriptions.create({
         file: fs.createReadStream(finalAudioPath),
-        model: "gpt-4o-transcribe-diarize",
-        response_format: "json",
-        chunking_strategy: "auto",
+        model: "whisper-1",
+        response_format: "verbose_json",
       });
       transcriptionText = transcription.text;
-      totalSeconds = durationSec;
+      totalSeconds = transcription.duration || 0;
     }
 
     const minutes = Math.floor(totalSeconds / 60);
