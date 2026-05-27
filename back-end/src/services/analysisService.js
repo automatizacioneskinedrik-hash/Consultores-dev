@@ -58,7 +58,7 @@ async function transcribeChunks(chunkPaths) {
     const batchResults = await Promise.all(
       batch.map(p => openai.audio.transcriptions.create({
         file: fs.createReadStream(p),
-        model: "whisper-1",
+        model: "gpt-4o-transcribe-diarize",
         response_format: "verbose_json",
       }))
     );
@@ -130,7 +130,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
 
       const transcription = await openai.audio.transcriptions.create({
         file: fs.createReadStream(finalAudioPath),
-        model: "whisper-1",
+        model: "gpt-4o-transcribe-diarize",
         response_format: "verbose_json",
       });
       transcriptionText = transcription.text;
