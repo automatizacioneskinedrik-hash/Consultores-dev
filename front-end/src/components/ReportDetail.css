@@ -42,23 +42,24 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #040025;
-  color: white;
-  border: none;
-  padding: 9px 15px;
+  background: white;
+  color: #040025;
+  border: 1.5px solid #040025;
+  padding: 8px 15px;
   border-radius: 10px;
   font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.4px;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(4, 0, 37, 0.22);
+  transition: background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(4, 0, 37, 0.08);
 }
 
 .exportTXTBtn:hover {
-  background: #1a1550;
+  background: #040025;
+  color: white;
   transform: translateY(-1px);
-  box-shadow: 0 5px 14px rgba(4, 0, 37, 0.32);
+  box-shadow: 0 5px 14px rgba(4, 0, 37, 0.22);
 }
 
 .exportPDFBtn {
