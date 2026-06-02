@@ -62,12 +62,12 @@ export default function ReportDetail({ report, onClose }) {
           </div>
           <div className="headerActions">
             <button className="exportTXTBtn" onClick={handleExportTXT} title="Descargar transcripción en TXT">
-              <FileDown size={18} />
-              <span>Transcripción TXT</span>
+              <FileDown size={16} />
+              <span>TXT</span>
             </button>
             <button className="exportPDFBtn" onClick={handleExportPDF} title="Exportar a PDF">
-              <FileText size={18} />
-              <span>Exportar PDF</span>
+              <FileText size={16} />
+              <span>PDF</span>
             </button>
             <button className="closeReport" onClick={onClose} title="Cerrar">
               <X size={20} />
