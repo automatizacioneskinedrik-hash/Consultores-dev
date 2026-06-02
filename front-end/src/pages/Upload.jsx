@@ -419,9 +419,11 @@ export default function Upload() {
         <main className="mainContent">
           <div className="container">
             <h1 className="title">
-              Transforma tus reuniones en <span className="highlight">insights</span>
-              <br />
-              accionables
+              {todaySessions.length > 0 ? (
+                <>Buen trabajo! Sigue transformando tus reuniones en <span className="highlight">insights</span></>
+              ) : (
+                <>Transforma tus reuniones en <span className="highlight">insights</span><br />accionables</>
+              )}
             </h1>
 
             <div className="welcomeText">
