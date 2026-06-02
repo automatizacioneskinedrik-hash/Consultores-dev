@@ -1,4 +1,5 @@
 import { db } from "../config/firebase.js";
+import { bucket } from "../config/storage.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 import { USER_CACHE, CACHE_TTL } from "../middleware/auth.js";
 
@@ -146,6 +147,54 @@ export const getSessionByPath = async (req, res) => {
   } catch (err) {
     console.error("Error fetching session by path:", err);
     return res.status(500).json({ ok: false, error: "Error al buscar sesión" });
+  }
+};
+
+export const getAudioDownloadUrl = async (req, res) => {
+  try {
+    const objectPath = (req.query.objectPath || "").trim();
+    if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
+
+    const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+
+    const snapshot = await db.collection("meetings_analysis")
+      .where("objectPath", "==", objectPath)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return res.status(404).json({ ok: false, error: "Sesión no encontrada" });
+
+    const data = snapshot.docs[0].data();
+
+    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
+    if (!userSnapshot.empty) {
+      const userData = userSnapshot.docs[0].data();
+      if (userData.role !== "admin" && userData.role !== "superadmin" && normalizeEmailValue(data.userEmail) !== requesterEmail) {
+        return res.status(403).json({ ok: false, error: "No autorizado" });
+      }
+    }
+
+    if (!bucket) return res.status(503).json({ ok: false, error: "Almacenamiento no configurado" });
+
+    const file = bucket.file(objectPath);
+    const [exists] = await file.exists();
+    if (!exists) return res.status(404).json({ ok: false, error: "Audio no encontrado en almacenamiento" });
+
+    const ext = objectPath.split(".").pop() || "mp3";
+    const clientName = (data.analysis?.nombre_cliente || "audio").replace(/\s+/g, "_");
+    const filename = `Sesion_${clientName}.${ext}`;
+
+    const [url] = await file.getSignedUrl({
+      version: "v4",
+      action: "read",
+      expires: Date.now() + 15 * 60 * 1000,
+      promptSaveAs: filename,
+    });
+
+    return res.json({ ok: true, url, filename });
+  } catch (err) {
+    console.error("Error generando URL de descarga de audio:", err);
+    return res.status(500).json({ ok: false, error: "Error al generar enlace de descarga" });
   }
 };
 
