@@ -1,9 +1,13 @@
-import React, { useRef } from "react";
-import { FileText, FileDown, X } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { FileText, FileDown, Headphones, X } from "lucide-react";
+import { getUser } from "../utils/user";
 import "./ReportDetail.css";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 export default function ReportDetail({ report, onClose }) {
   const reportRef = useRef(null);
+  const [audioLoading, setAudioLoading] = useState(false);
 
   if (!report) return null;
 
@@ -17,6 +21,28 @@ export default function ReportDetail({ report, onClose }) {
 
     // Restauramos el título original
     document.title = originalTitle;
+  };
+
+  const handleDownloadAudio = async () => {
+    if (!report.objectPath) return;
+    setAudioLoading(true);
+    try {
+      const user = getUser() || {};
+      const res = await fetch(
+        `${API_BASE_URL}/api/sessions/audio-download?objectPath=${encodeURIComponent(report.objectPath)}`,
+        { headers: { "X-Admin-Email": user.email || "", "X-Auth-Token": user.authToken || "" } }
+      );
+      const data = await res.json();
+      if (!data.ok || !data.url) throw new Error(data.error || "No se pudo obtener el enlace");
+      const a = document.createElement("a");
+      a.href = data.url;
+      a.download = data.filename || "audio.mp3";
+      a.click();
+    } catch (err) {
+      alert("No se pudo descargar el audio: " + err.message);
+    } finally {
+      setAudioLoading(false);
+    }
   };
 
   const handleExportTXT = () => {
@@ -61,6 +87,12 @@ export default function ReportDetail({ report, onClose }) {
             <span>{clienteNome} — {dateStr}</span>
           </div>
           <div className="headerActions">
+            {report.objectPath && (
+              <button className="exportAudioBtn" onClick={handleDownloadAudio} disabled={audioLoading} title="Descargar audio original">
+                <Headphones size={16} />
+                <span>{audioLoading ? "..." : "Audio"}</span>
+              </button>
+            )}
             <button className="exportTXTBtn" onClick={handleExportTXT} title="Descargar transcripción en TXT">
               <FileDown size={16} />
               <span>TXT</span>
