@@ -19,6 +19,8 @@ async function transcribeWithDiarization(filePath) {
     speaker_labels: true,
     speech_models: ["universal-2"],
     language_code: "es",
+    disfluencies: true,
+    filter_profanity: false,
   });
 
   if (transcript.status === "error") {
@@ -40,9 +42,22 @@ async function transcribeWithDiarization(filePath) {
   const consultorSpeaker = Object.entries(wordCounts)
     .sort((a, b) => b[1] - a[1])[0]?.[0] || utterances[0]?.speaker || "A";
 
+  const SILENCE_THRESHOLD_MS = 2000; // gaps < 2s son pausas naturales, no se marcan
+
   const formattedText = utterances.length > 0
     ? utterances
-        .map(u => `${u.speaker === consultorSpeaker ? "CONSULTOR" : "CLIENTE"}: ${u.text}`)
+        .map((u, i) => {
+          const label = u.speaker === consultorSpeaker ? "CONSULTOR" : "CLIENTE";
+          let silenceMarker = "";
+          if (i > 0) {
+            const gapMs = u.start - utterances[i - 1].end;
+            if (gapMs >= SILENCE_THRESHOLD_MS) {
+              const gapSec = Math.round(gapMs / 1000);
+              silenceMarker = `[SILENCIO ${gapSec}s]\n`;
+            }
+          }
+          return `${silenceMarker}${label}: ${u.text}`;
+        })
         .join("\n")
     : (transcript.text || "");
 
