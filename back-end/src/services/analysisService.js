@@ -19,7 +19,6 @@ async function transcribeWithDiarization(filePath) {
     speaker_labels: true,
     speech_models: ["universal-2"],
     language_code: "es",
-    disfluencies: true,
     filter_profanity: false,
   });
 
