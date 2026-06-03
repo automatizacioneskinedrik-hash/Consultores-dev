@@ -60,9 +60,17 @@ export const getAllSessions = async (req, res) => {
       query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
     }
 
-    const snapshot = await query.get();
+    // Seleccionar solo los campos necesarios para la tabla — excluye transcription y campos pesados
+    const [snapshot, usersSnapshot] = await Promise.all([
+      query.select(
+        "userEmail", "createdAt", "generalScore",
+        "analysis.nombre_cliente",
+        "analysis.participacion.duracion_total",
+        "analysis.scorecard"
+      ).get(),
+      db.collection("users").get(),
+    ]);
 
-    const usersSnapshot = await db.collection("users").get();
     const userNamesMap = {};
     usersSnapshot.forEach(u => {
       const uData = u.data();
@@ -74,7 +82,6 @@ export const getAllSessions = async (req, res) => {
       const sc = data.analysis?.scorecard || {};
       const email = normalizeEmailValue(data.userEmail);
 
-      // Usar el score persistido al momento del análisis; si no existe (registros antiguos), calcularlo
       const generalScore = data.generalScore ?? Math.round(
         ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
       );
@@ -88,7 +95,6 @@ export const getAllSessions = async (req, res) => {
         duration: data.analysis?.participacion?.duracion_total || "00:00",
         score: generalScore,
         status: "procesado",
-        report: data
       };
     });
 
@@ -122,7 +128,7 @@ export const getSessionDetail = async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permiso para ver este reporte" });
     }
 
-    return res.json({ ok: true, report: data });
+    return res.json({ ok: true, report: { id: doc.id, ...data } });
   } catch (err) {
     console.error("Error fetching report detail:", err);
     return res.status(500).json({ ok: false, error: "Error al obtener detalle" });

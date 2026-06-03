@@ -1,6 +1,13 @@
 import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
+const DASHBOARD_CACHE = new Map();
+const DASHBOARD_TTL_MS = 2 * 60 * 1000; // 2 minutos
+
+function dashboardCacheKey(consultantEmail, startMs, endMs) {
+  return `${consultantEmail || "all"}:${startMs ?? ""}:${endMs ?? ""}`;
+}
+
 function clampPercent(value) {
   if (value == null || Number.isNaN(value)) return null;
   const n = Number(value);
@@ -146,8 +153,9 @@ export const getConsultantAvailableDates = async (req, res) => {
     for (;;) {
       let query = db
         .collection("meetings_analysis")
+        .where("userEmail", "==", consultantEmail)
         .orderBy("createdAt", "asc")
-        .select("createdAt", "userEmail")
+        .select("createdAt")
         .limit(batchSize);
 
       if (lastDoc) query = query.startAfter(lastDoc);
@@ -155,14 +163,8 @@ export const getConsultantAvailableDates = async (req, res) => {
       const snapshot = await query.get();
 
       for (const doc of snapshot.docs) {
-        const data = doc.data();
-        const email = normalizeEmailValue(data.userEmail);
-        if (email !== consultantEmail) continue;
-
-        const ms = toMillis(data.createdAt);
-        if (!Number.isFinite(ms)) continue;
-
-        dateSet.add(new Date(ms).toISOString().slice(0, 10));
+        const ms = toMillis(doc.data().createdAt);
+        if (Number.isFinite(ms)) dateSet.add(new Date(ms).toISOString().slice(0, 10));
       }
 
       if (snapshot.size < batchSize) break;
@@ -213,6 +215,12 @@ export const getExecutiveDashboardData = async (req, res) => {
     const consultantEmail = normalizeEmailValue(req.query.consultantEmail);
     const startMs = req.query.startMs != null ? Number(req.query.startMs) : null;
     const endMs = req.query.endMs != null ? Number(req.query.endMs) : null;
+
+    const cacheKey = dashboardCacheKey(consultantEmail, startMs, endMs);
+    const hit = DASHBOARD_CACHE.get(cacheKey);
+    if (hit && Date.now() - hit.ts < DASHBOARD_TTL_MS) {
+      return res.json(hit.data);
+    }
 
     const [userNamesMap, docs] = await Promise.all([
       loadUserNamesMap(),
@@ -355,7 +363,7 @@ export const getExecutiveDashboardData = async (req, res) => {
         ? userNamesMap[consultantEmail] || formatConsultantLabel(consultantEmail)
         : "Todos";
 
-    return res.json({
+    const responseData = {
       ok: true,
       kpis,
       series,
@@ -366,7 +374,10 @@ export const getExecutiveDashboardData = async (req, res) => {
         bucket,
         totalDocsScanned: docs.length,
       },
-    });
+    };
+
+    DASHBOARD_CACHE.set(cacheKey, { ts: Date.now(), data: responseData });
+    return res.json(responseData);
   } catch (err) {
     console.error("Error building executive dashboard:", err);
     return res.status(500).json({ ok: false, error: "Error al construir el dashboard" });

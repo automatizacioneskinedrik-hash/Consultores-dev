@@ -44,9 +44,21 @@ export default function History() {
     fetchHistory();
   }, []);
 
-  const handleOpenDetail = (session) => {
+  const handleOpenDetail = async (session) => {
     setSelectedReportId(session.id);
-    setSelectedReportData(session.report);
+    setSelectedReportData(null);
+    setIsDetailLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/${session.id}`, {
+        headers: { "X-Admin-Email": user.email, "X-Auth-Token": user.authToken },
+      });
+      const data = await res.json();
+      if (data.ok) setSelectedReportData(data.report);
+    } catch (err) {
+      console.error("Error loading session detail:", err);
+    } finally {
+      setIsDetailLoading(false);
+    }
   };
 
   const filteredSessions = sessions.filter(s => 
@@ -157,14 +169,19 @@ export default function History() {
         )}
       </div>
 
-      {selectedReportId && (
-        <ReportDetail 
-          report={selectedReportData} 
-          loading={isDetailLoading} 
+      {selectedReportId && isDetailLoading && (
+        <div className="detailLoadingOverlay">
+          <div className="historySpinner"></div>
+          <span>Cargando reporte...</span>
+        </div>
+      )}
+      {selectedReportId && selectedReportData && (
+        <ReportDetail
+          report={selectedReportData}
           onClose={() => {
             setSelectedReportId(null);
             setSelectedReportData(null);
-          }} 
+          }}
         />
       )}
     </div>

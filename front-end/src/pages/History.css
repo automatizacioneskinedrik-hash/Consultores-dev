@@ -232,6 +232,22 @@ body.sidebar-collapsed .historyContent {
   to { transform: rotate(360deg); }
 }
 
+.detailLoadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 0, 37, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 @media (max-width: 1024px) {
   .historyContent {
     padding: 30px;
