@@ -51,7 +51,7 @@ I. FASES DE LA SESIÓN (para codigo_fase en puntos_mejora):
 J. MOMENTO DEL PRECIO:
    - Detecta la primera vez que el CONSULTOR menciona una cifra económica (euros, dólares, valor, costo, inversión, beca, cuota, importe, precio, matrícula).
    - Determina en qué fase ocurre (F2/F3/F4/F5). Si nunca se menciona, usa "No mencionado".
-   - precio_sin_diagnostico_previo = true si el precio aparece ANTES de que el consultor haya hecho al menos una pregunta sobre presupuesto o capacidad de inversión del cliente. Si hizo esa pregunta antes, es false.
+   - precio_sin_diagnostico_previo = true si el precio aparece ANTES de que el consultor haya explorado la situación financiera del cliente con al menos UNA pregunta. Se considera exploración financiera válida cualquiera de estas: preguntas directas sobre presupuesto o rango de inversión disponible, preguntas sobre ingresos actuales o satisfacción con la remuneración presente ("¿estás ganando lo que mereces?", "¿cómo está tu situación económica?"), o preguntas sobre capacidad de pago. Si el consultor realizó alguna de estas ANTES del precio, precio_sin_diagnostico_previo = false.
    - En "descripcion" escribe una línea concisa: cuándo apareció y si hubo diagnóstico previo.
 K. TIPO DE COMPROMISO DE CIERRE:
    - Analiza cómo termina la llamada y clasifica en UNA de estas categorías:
@@ -62,7 +62,7 @@ K. TIPO DE COMPROMISO DE CIERRE:
 L. PREGUNTAS DE DESCUBRIMIENTO (F2-Diagnóstico):
    - Cuenta SOLO las preguntas abiertas del CONSULTOR realizadas ANTES de mencionar el precio. No cuentes preguntas del cliente ni preguntas de cierre.
    - pregunto_decisor = true si el consultor preguntó explícitamente quién toma la decisión de inversión o si el cliente debe consultarlo con alguien (pareja, empresa, familia).
-   - pregunto_presupuesto = true si el consultor preguntó por rango de inversión, presupuesto disponible o capacidad económica ANTES del precio.
+   - pregunto_presupuesto = true si el consultor exploró la situación financiera del cliente ANTES del precio mediante preguntas sobre: presupuesto disponible, rango de inversión, ingresos actuales, satisfacción con la remuneración presente, o capacidad económica en sentido amplio.
    - temas_cubiertos: lista los temas que exploró — incluye solo los que realmente aparecen: "necesidad", "presupuesto", "decisor", "plazo", "motivacion", "situacion_actual".
 O. FASES ALCANZADAS:
    - Revisa la transcripción e identifica qué fases de la metodología KINEDRIK estuvieron claramente presentes:
