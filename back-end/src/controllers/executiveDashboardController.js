@@ -123,7 +123,8 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.tipo_compromiso_cierre",
     "analysis.preguntas_descubrimiento",
     "analysis.objeciones",
-    "monologo_mas_largo_seg"
+    "monologo_mas_largo_seg",
+    "muletillas_por_minuto"
   );
 
   const batchSize = 800;
@@ -253,6 +254,8 @@ export const getExecutiveDashboardData = async (req, res) => {
       preguntasN: 0,
       monologoSum: 0,
       monologoN: 0,
+      muletillasPorMinutoSum: 0,
+      muletillasPorMinutoN: 0,
       compromisoMap: { firme: 0, condicionado: 0, aplazado: 0, sin_compromiso: 0 },
       objecionesMap: {},
     };
@@ -371,6 +374,13 @@ export const getExecutiveDashboardData = async (req, res) => {
           if (cat) totals.objecionesMap[cat] = (totals.objecionesMap[cat] || 0) + 1;
         }
       }
+
+      // muletillas por minuto
+      const mpm = data.muletillas_por_minuto;
+      if (typeof mpm === "number" && Number.isFinite(mpm)) {
+        totals.muletillasPorMinutoSum += mpm;
+        totals.muletillasPorMinutoN += 1;
+      }
     }
 
     const series = [...seriesAgg.values()]
@@ -410,6 +420,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       pctSinDiagnostico: totals.sinDiagnosticoTotal > 0 ? (totals.sinDiagnosticoN / totals.sinDiagnosticoTotal) * 100 : null,
       avgPreguntasDescubrimiento: totals.preguntasN > 0 ? totals.preguntasSum / totals.preguntasN : null,
       avgMonologoSeg: totals.monologoN > 0 ? totals.monologoSum / totals.monologoN : null,
+      avgMuletillasPorMinuto: totals.muletillasPorMinutoN > 0 ? totals.muletillasPorMinutoSum / totals.muletillasPorMinutoN : null,
     };
 
     const distributions = {

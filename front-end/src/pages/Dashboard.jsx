@@ -136,6 +136,20 @@ const KPI_DEFS_COMERCIAL = [
     icon: <ClockCircleOutlined />,
     getIconStyle: () => ({ color: "#2885FF", background: "rgba(40,133,255,0.1)" }),
   },
+  {
+    key: "avgMuletillasPorMinuto",
+    label: "Muletillas / minuto",
+    legend: "Promedio de muletillas por minuto hablado por el consultor. Referencia óptima: menos de 1.",
+    icon: <WarningOutlined />,
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 2
+          ? { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
+          : Number(val) >= 1
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#16a34a", background: "rgba(22,163,74,0.1)" },
+  },
 ];
 
 const COMPROMISO_LABELS = {
@@ -804,6 +818,7 @@ export default function Dashboard() {
       pctSinDiagnostico: k.pctSinDiagnostico != null ? formatFixed(k.pctSinDiagnostico, 1) : "—",
       avgPreguntasDescubrimiento: k.avgPreguntasDescubrimiento != null ? formatFixed(k.avgPreguntasDescubrimiento, 1) : "—",
       avgMonologoSeg: k.avgMonologoSeg != null ? formatDurationSeconds(k.avgMonologoSeg) : "—",
+      avgMuletillasPorMinuto: k.avgMuletillasPorMinuto != null ? formatFixed(k.avgMuletillasPorMinuto, 1) : "—",
     };
   }, [dashboardData.kpis]);
 
@@ -952,7 +967,7 @@ export default function Dashboard() {
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
                   {KPI_DEFS_COMERCIAL.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={8}>
+                    <Col key={kpi.key} xs={24} sm={12} lg={6}>
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}

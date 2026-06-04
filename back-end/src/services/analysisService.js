@@ -66,10 +66,12 @@ async function transcribeWithDiarization(filePath) {
 
   // Monólogo más largo del consultor (turno ininterrumpido en segundos)
   let monologo_mas_largo_seg = 0;
+  let consultorMinutos = 0;
   for (const u of utterances) {
     if (u.speaker === consultorSpeaker) {
       const durSeg = ((u.end || 0) - (u.start || 0)) / 1000;
       if (durSeg > monologo_mas_largo_seg) monologo_mas_largo_seg = durSeg;
+      consultorMinutos += durSeg / 60;
     }
   }
   monologo_mas_largo_seg = Math.round(monologo_mas_largo_seg);
@@ -80,6 +82,7 @@ async function transcribeWithDiarization(filePath) {
     consultorPct,
     clientePct: 100 - consultorPct,
     monologo_mas_largo_seg,
+    consultorMinutos,
   };
 }
 
@@ -110,7 +113,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     console.log("Archivo descargado:", tempFilePath);
 
     console.log("Transcribiendo con AssemblyAI (diarización activada)...");
-    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg } =
+    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg, consultorMinutos } =
       await transcribeWithDiarization(tempFilePath);
     console.log(`Transcripción completada. Duración: ${durationSec}s`);
 
@@ -148,6 +151,11 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
     );
 
+    const muletillasCount = typeof sc.muletillas?.count === "number" ? sc.muletillas.count : 0;
+    const muletillas_por_minuto = consultorMinutos > 0
+      ? Math.round((muletillasCount / consultorMinutos) * 10) / 10
+      : null;
+
     const now = new Date();
     const analysisData = {
       userEmail,
@@ -156,6 +164,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       analysis,
       generalScore,
       monologo_mas_largo_seg,
+      muletillas_por_minuto,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 

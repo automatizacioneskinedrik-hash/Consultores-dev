@@ -40,6 +40,7 @@ G. SCORE DE MULETILLAS (LÓGICA INVERTIDA - MUY IMPORTANTE):
      * Score 21-50: Lista las detectadas con frecuencia, sin juzgar. Ej: "Muletillas identificadas: 'o sea' (7 veces), 'básicamente' (4 veces), 'ehhh' (5 veces)."
      * Score 51-100: Lista completa y sí señala que la frecuencia es alta y puede afectar la percepción del cliente.
      * REGLA DE ORO: El contexto y el score deben ser SIEMPRE coherentes. Si score > 0, DEBES mencionar las muletillas reales que encontraste en la transcripción.
+   - En el campo "count" escribe el número TOTAL de ocurrencias sumadas de todas las muletillas detectadas (ej: si "vale" aparece 3 veces y "o sea" 7 veces, count = 10). Si no hay muletillas, count = 0.
 H. PARTICIPACIÓN: Calcula los porcentajes contando las palabras de cada hablante. consultor_pct = palabras_consultor / (palabras_consultor + palabras_cliente) * 100, redondeado al entero más cercano. Los dos valores deben sumar exactamente 100%.
 I. FASES DE LA SESIÓN (para codigo_fase en puntos_mejora):
    - F1-Apertura: Inicio de la llamada, presentación, generación de rapport y agenda.
@@ -86,7 +87,7 @@ SALIDA REQUERIDA (JSON EXACTO):
     "duracion_total": "${durationStr}"
   },
   "scorecard": {
-    "muletillas": { "score": Number (0=sin muletillas/excelente, 100=muchas muletillas/pésimo), "contexto": "OBLIGATORIO: Si score=0 escribe 'No se detectaron muletillas. Excelente fluidez verbal.' Si score>0 (aunque sea bajo), DEBES listar las muletillas detectadas con su frecuencia. NUNCA escribas que no hay muletillas si el score es mayor a 0." },
+    "muletillas": { "score": Number (0=sin muletillas/excelente, 100=muchas muletillas/pésimo), "count": Number (total de ocurrencias sumadas de todas las muletillas; 0 si ninguna), "contexto": "OBLIGATORIO: Si score=0 escribe 'No se detectaron muletillas. Excelente fluidez verbal.' Si score>0 (aunque sea bajo), DEBES listar las muletillas detectadas con su frecuencia. NUNCA escribas que no hay muletillas si el score es mayor a 0." },
     "cierre_negociacion": { "score": Number (0=muy malo, 100=excelente), "contexto": "String" },
     "manejo_objeciones": { "score": Number (0=muy malo, 100=excelente), "contexto": "String" },
     "propuesta_valor": { "score": Number (0=muy malo, 100=excelente), "contexto": "String" }
