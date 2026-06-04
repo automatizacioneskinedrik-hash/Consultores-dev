@@ -118,9 +118,11 @@ const KPI_DEFS_COMERCIAL = [
     getIconStyle: (val) =>
       val == null || val === "—"
         ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
-        : Number(val) >= 50
-          ? { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
-          : { color: "#d97706", background: "rgba(217,119,6,0.1)" },
+        : Number(val) <= 30
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) <= 70
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
   },
   {
     key: "avgPreguntasDescubrimiento",
