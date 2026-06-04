@@ -13,6 +13,20 @@ import { normalizeEmailValue } from "../utils/helpers.js";
 
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 
+const PRICE_REGEX = /\d[\d.,]*\s*(?:€|\$|euros?|d[oó]lares?|usd)\b/i;
+
+function detectCedioPalabraTrasPrice(utterances, consultorSpeaker) {
+  for (let i = 0; i < utterances.length; i++) {
+    const u = utterances[i];
+    if (u.speaker === consultorSpeaker && PRICE_REGEX.test(u.text)) {
+      const next = utterances[i + 1];
+      if (!next) return null; // llamada termina en ese turno
+      return next.speaker !== consultorSpeaker; // true = cliente habló primero
+    }
+  }
+  return null; // precio nunca mencionado
+}
+
 async function transcribeWithDiarization(filePath) {
   const transcript = await assemblyai.transcripts.transcribe({
     audio: filePath,
@@ -83,6 +97,8 @@ async function transcribeWithDiarization(filePath) {
     clientePct: 100 - consultorPct,
     monologo_mas_largo_seg,
     consultorMinutos,
+    utterances,
+    consultorSpeaker,
   };
 }
 
@@ -113,7 +129,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     console.log("Archivo descargado:", tempFilePath);
 
     console.log("Transcribiendo con AssemblyAI (diarización activada)...");
-    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg, consultorMinutos } =
+    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg, consultorMinutos, utterances, consultorSpeaker } =
       await transcribeWithDiarization(tempFilePath);
     console.log(`Transcripción completada. Duración: ${durationSec}s`);
 
@@ -156,6 +172,8 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       ? Math.round((muletillasCount / consultorMinutos) * 10) / 10
       : null;
 
+    const cedio_palabra_tras_precio = detectCedioPalabraTrasPrice(utterances, consultorSpeaker);
+
     const now = new Date();
     const analysisData = {
       userEmail,
@@ -165,6 +183,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       generalScore,
       monologo_mas_largo_seg,
       muletillas_por_minuto,
+      cedio_palabra_tras_precio,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 

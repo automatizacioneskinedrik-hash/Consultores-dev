@@ -121,8 +121,8 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.probabilidades.proximidad_cierre",
     "analysis.fases_alcanzadas",
     "analysis.adherencia_guion",
-    "analysis.silencio_tras_precio",
     "analysis.momento_precio",
+    "cedio_palabra_tras_precio",
     "analysis.tipo_compromiso_cierre",
     "analysis.preguntas_descubrimiento",
     "analysis.objeciones",
@@ -399,8 +399,8 @@ export const getExecutiveDashboardData = async (req, res) => {
         totals.adherenciaN += 1;
       }
 
-      // silencio tras el precio
-      const cedioPalabra = data.analysis?.silencio_tras_precio?.cedio_palabra;
+      // cedió palabra tras precio (calculado desde AssemblyAI, no desde GPT)
+      const cedioPalabra = data.cedio_palabra_tras_precio;
       if (cedioPalabra === true || cedioPalabra === false) {
         totals.cedioPalabraTotal += 1;
         if (cedioPalabra === true) totals.cedioPalabraT += 1;

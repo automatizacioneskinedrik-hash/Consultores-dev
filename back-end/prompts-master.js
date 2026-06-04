@@ -64,14 +64,6 @@ L. PREGUNTAS DE DESCUBRIMIENTO (F2-Diagnóstico):
    - pregunto_decisor = true si el consultor preguntó explícitamente quién toma la decisión de inversión o si el cliente debe consultarlo con alguien (pareja, empresa, familia).
    - pregunto_presupuesto = true si el consultor preguntó por rango de inversión, presupuesto disponible o capacidad económica ANTES del precio.
    - temas_cubiertos: lista los temas que exploró — incluye solo los que realmente aparecen: "necesidad", "presupuesto", "decisor", "plazo", "motivacion", "situacion_actual".
-N. SILENCIO TRAS EL PRECIO:
-   - Localiza el turno del CONSULTOR donde aparece POR PRIMERA VEZ una cifra económica (igual que en la regla J).
-   - Evalúa ÚNICAMENTE ese primer turno. Ignora completamente todas las menciones posteriores de precio, descuentos o becas.
-   - Observa el turno INMEDIATAMENTE siguiente a ese primer turno con precio:
-     * cedio_palabra = true si el turno siguiente es del CLIENTE (correcto — el consultor calló y dejó que el cliente respondiera).
-     * cedio_palabra = false si el turno siguiente es del propio CONSULTOR (encadenó más frases sin dejar hablar al cliente).
-     * cedio_palabra = null si el precio nunca se mencionó o si la llamada termina exactamente en ese turno.
-   - En "descripcion" escribe en 1 línea qué cifra apareció, en qué fase, y si el turno siguiente fue del cliente o del consultor.
 O. FASES ALCANZADAS:
    - Revisa la transcripción e identifica qué fases de la metodología KINEDRIK estuvieron claramente presentes:
      * F1: hubo apertura, presentación o generación de rapport al inicio.
@@ -137,10 +129,6 @@ SALIDA REQUERIDA (JSON EXACTO):
   "adherencia_guion": {
     "score": "Number (0-100)",
     "orden_correcto": "true / false",
-    "descripcion": "String (1 línea)"
-  },
-  "silencio_tras_precio": {
-    "cedio_palabra": "true / false / null",
     "descripcion": "String (1 línea)"
   },
   "momento_precio": {
