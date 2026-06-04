@@ -41,13 +41,38 @@ G. SCORE DE MULETILLAS (LÓGICA INVERTIDA - MUY IMPORTANTE):
      * Score 51-100: Lista completa y sí señala que la frecuencia es alta y puede afectar la percepción del cliente.
      * REGLA DE ORO: El contexto y el score deben ser SIEMPRE coherentes. Si score > 0, DEBES mencionar las muletillas reales que encontraste en la transcripción.
    - En el campo "count" escribe el número TOTAL de ocurrencias sumadas de todas las muletillas detectadas (ej: si "vale" aparece 3 veces y "o sea" 7 veces, count = 10). Si no hay muletillas, count = 0.
-H. PARTICIPACIÓN: Calcula los porcentajes contando las palabras de cada hablante. consultor_pct = palabras_consultor / (palabras_consultor + palabras_cliente) * 100, redondeado al entero más cercano. Los dos valores deben sumar exactamente 100%.
+H. PARTICIPACIÓN Y RATIO DE HABLA:
+   - Calcula los porcentajes contando las palabras de cada hablante. consultor_pct = palabras_consultor / (palabras_consultor + palabras_cliente) * 100, redondeado al entero más cercano. Los dos valores deben sumar exactamente 100%.
+   - RATIO IDEAL según la metodología KINEDRIK: consultor 35–45%, cliente 55–65%. El objetivo es que el cliente hable más.
+   - Si el consultor habla más del 65%: es un punto de mejora OBLIGATORIO en F2-Diagnóstico. Título sugerido: "El consultor habla más de lo que escucha". Indica cuánto habló el consultor y recuérdale que el silencio y las preguntas son su principal herramienta en diagnóstico.
+   - Si el consultor habla más del 75%: el punto de mejora es GRAVE. Además de F2, puede afectar F4 si la presentación fue monologada.
+Q. SCORE DE CIERRE Y NEGOCIACIÓN — CRITERIOS F05:
+   - El score de "cierre_negociacion" evalúa si el consultor siguió el orden correcto de F05 según la metodología KINEDRIK:
+     * CHECKPOINT 1 — Decisión de fondo ANTES del precio: el consultor debe obtener un SÍ emocional ("¿quieres hacer ese cambio?") ANTES de mostrar cifras. Si presenta el precio sin este SÍ previo, penaliza fuerte.
+     * CHECKPOINT 2 — Beca con fecha real: si hay beca o descuento, debe presentarse con fecha concreta y sin inventar condiciones. Si usa urgencia falsa o fechas vagas, penaliza.
+     * CHECKPOINT 3 — Plan de pago de mayor a menor: primero pago único, luego cuotas, luego reserva mínima. Si ofrece directamente la opción más barata sin intentar las anteriores, penaliza.
+   - Además: si el consultor cede ante la primera objeción sin validar, anclar al dolor y devolver la pelota con pregunta, baja el score significativamente.
+   - Score alto (70-100): siguió el orden correcto, manejó objeciones con estructura, obtuvo SÍ antes del precio.
+   - Score medio (40-69): algún checkpoint omitido o mal ejecutado.
+   - Score bajo (0-39): presentó precio sin SÍ previo, cedió ante objeciones, o usó urgencia artificial.
+R. SCORE DE PROPUESTA DE VALOR — CRITERIOS F04:
+   - El score de "propuesta_valor" evalúa si el consultor presentó el programa conectando cada elemento con el dolor específico del cliente (verbalizados en F02/F03), o si hizo una presentación genérica monologada.
+   - PENALIZA cuando:
+     * El consultor lista módulos o temario sin conectarlos con lo que el cliente dijo que necesitaba.
+     * La presentación supera los 3-4 minutos sin que el cliente intervenga (monólogo de propuesta).
+     * No usa las palabras exactas del cliente para conectar la solución con su dolor.
+     * Presenta todas las certificaciones, títulos y precios de golpe sin dejar espacio de reacción.
+   - PREMIA cuando:
+     * Dice explícitamente "esto resuelve lo que me dijiste sobre [dolor del cliente]".
+     * Hace pausas y verifica comprensión con preguntas cortas.
+     * Usa "menos es más": presenta 2-3 elementos clave, no el catálogo completo.
+   - Si el consultor habla más del 80% del tiempo en F4, el score de propuesta_valor no puede superar 50.
 I. FASES DE LA SESIÓN (para codigo_fase en puntos_mejora):
-   - F1-Apertura: Inicio de la llamada, presentación, generación de rapport y agenda.
-   - F2-Diagnóstico: Indagación de necesidades, situación actual, dolores y presupuesto del cliente.
-   - F3-Visión: Presentación de la transformación/resultado esperado, pregunta de valor, construcción de deseo.
-   - F4-Propuesta: Presentación del programa, precio e inversión.
-   - F5-Cierre: Manejo de objeciones, negociación, compromiso de pago y siguientes pasos.
+   - F1-Apertura: Marcar el marco y la intención. El consultor establece liderazgo, presenta la agenda y logra que el cliente hable desde el primer minuto. Objetivo: cliente habla, consultor escucha.
+   - F2-Diagnóstico: Explorar los 6 aspectos del perfil profesional del cliente (evolución de rol, actualización tecnológica, proyección, impacto económico, red profesional, seguridad profesional) mediante preguntas abiertas. El consultor indaga, NO propone soluciones. El silencio es su aliado.
+   - F3-Visión: Construir la visión deseada usando las palabras EXACTAS del cliente. Presentar el GAP con el radar. El cliente debe nombrar su propio problema antes de que el consultor lo nombre.
+   - F4-Propuesta: Presentar el programa como vehículo que cierra el GAP, conectando cada elemento con el dolor específico del cliente. Máximo 4 elementos. Nunca listar módulos sin conectarlos al dolor.
+   - F5-Cierre: Cerrar el círculo con palabras del cliente → obtener SÍ de decisión de fondo → presentar precio → gestionar objeciones con estructura (validar, anclar al dolor, devolver la pelota).
 J. MOMENTO DEL PRECIO:
    - Detecta la primera vez que el CONSULTOR menciona una cifra económica (euros, dólares, valor, costo, inversión, beca, cuota, importe, precio, matrícula).
    - Determina en qué fase ocurre (F2/F3/F4/F5). Si nunca se menciona, usa "No mencionado".
