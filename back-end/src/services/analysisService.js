@@ -64,11 +64,22 @@ async function transcribeWithDiarization(filePath) {
   const consultorWords = wordCounts[consultorSpeaker] || 0;
   const consultorPct = Math.round((consultorWords / totalWords) * 100);
 
+  // Monólogo más largo del consultor (turno ininterrumpido en segundos)
+  let monologo_mas_largo_seg = 0;
+  for (const u of utterances) {
+    if (u.speaker === consultorSpeaker) {
+      const durSeg = ((u.end || 0) - (u.start || 0)) / 1000;
+      if (durSeg > monologo_mas_largo_seg) monologo_mas_largo_seg = durSeg;
+    }
+  }
+  monologo_mas_largo_seg = Math.round(monologo_mas_largo_seg);
+
   return {
     transcriptionText: formattedText,
     durationSec: transcript.audio_duration || 0,
     consultorPct,
     clientePct: 100 - consultorPct,
+    monologo_mas_largo_seg,
   };
 }
 
@@ -99,7 +110,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     console.log("Archivo descargado:", tempFilePath);
 
     console.log("Transcribiendo con AssemblyAI (diarización activada)...");
-    const { transcriptionText, durationSec, consultorPct, clientePct } =
+    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg } =
       await transcribeWithDiarization(tempFilePath);
     console.log(`Transcripción completada. Duración: ${durationSec}s`);
 
@@ -144,6 +155,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       transcription: transcriptionText,
       analysis,
       generalScore,
+      monologo_mas_largo_seg,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 

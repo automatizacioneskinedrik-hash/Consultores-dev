@@ -47,6 +47,27 @@ I. FASES DE LA SESIÓN (para codigo_fase en puntos_mejora):
    - F3-Visión: Presentación de la transformación/resultado esperado, pregunta de valor, construcción de deseo.
    - F4-Propuesta: Presentación del programa, precio e inversión.
    - F5-Cierre: Manejo de objeciones, negociación, compromiso de pago y siguientes pasos.
+J. MOMENTO DEL PRECIO:
+   - Detecta la primera vez que el CONSULTOR menciona una cifra económica (euros, dólares, valor, costo, inversión, beca, cuota, importe, precio, matrícula).
+   - Determina en qué fase ocurre (F2/F3/F4/F5). Si nunca se menciona, usa "No mencionado".
+   - precio_sin_diagnostico_previo = true si el precio aparece ANTES de que el consultor haya hecho al menos una pregunta sobre presupuesto o capacidad de inversión del cliente. Si hizo esa pregunta antes, es false.
+   - En "descripcion" escribe una línea concisa: cuándo apareció y si hubo diagnóstico previo.
+K. TIPO DE COMPROMISO DE CIERRE:
+   - Analiza cómo termina la llamada y clasifica en UNA de estas categorías:
+   - "firme": el cliente confirma pago, reserva con importe concreto o inicio de matrícula en la misma llamada.
+   - "condicionado": el cliente dice que sí pero sujeto a un factor externo ("si mi empresa lo aprueba", "si mi pareja está de acuerdo").
+   - "aplazado": acuerdan un próximo contacto con fecha/hora concreta pero sin compromiso de pago.
+   - "sin_compromiso": la llamada termina sin ningún acuerdo ni siguiente paso definido.
+L. PREGUNTAS DE DESCUBRIMIENTO (F2-Diagnóstico):
+   - Cuenta SOLO las preguntas abiertas del CONSULTOR realizadas ANTES de mencionar el precio. No cuentes preguntas del cliente ni preguntas de cierre.
+   - pregunto_decisor = true si el consultor preguntó explícitamente quién toma la decisión de inversión o si el cliente debe consultarlo con alguien (pareja, empresa, familia).
+   - pregunto_presupuesto = true si el consultor preguntó por rango de inversión, presupuesto disponible o capacidad económica ANTES del precio.
+   - temas_cubiertos: lista los temas que exploró — incluye solo los que realmente aparecen: "necesidad", "presupuesto", "decisor", "plazo", "motivacion", "situacion_actual".
+M. OBJECIONES (F5-Cierre):
+   - Detecta cada objeción o freno que expresa el CLIENTE durante la llamada.
+   - Categorías: "precio" (caro, no puedo pagarlo), "titulacion" (validez, reconocimiento), "tiempo" (no tengo tiempo, estoy ocupado), "decisor" (tengo que consultarlo), "formato" (presencial/online), "otras_opciones" (quiero ver más), "nivel" (no sé si tengo nivel), "otro".
+   - resuelta = true si el consultor responde a la objeción y el cliente la acepta o no la repite. false si queda abierta al final de la llamada.
+   - Si no hay objeciones, devuelve array vacío [].
 
 ---
 SALIDA REQUERIDA (JSON EXACTO):
@@ -88,7 +109,26 @@ SALIDA REQUERIDA (JSON EXACTO):
   "necesidades": ["necesidad 1", "necesidad 2", "necesidad 3"],
   "proximos_pasos": {
     "consultor": ["acción 1", "acción 2"]
-  }
+  },
+  "momento_precio": {
+    "fase_aparicion": "F2 / F3 / F4 / F5 / No mencionado",
+    "precio_sin_diagnostico_previo": true,
+    "descripcion": "String (1 línea)"
+  },
+  "tipo_compromiso_cierre": "firme / condicionado / aplazado / sin_compromiso",
+  "preguntas_descubrimiento": {
+    "total": Number,
+    "pregunto_decisor": false,
+    "pregunto_presupuesto": false,
+    "temas_cubiertos": ["necesidad", "situacion_actual"]
+  },
+  "objeciones": [
+    {
+      "descripcion": "Frase del cliente",
+      "categoria": "precio / titulacion / tiempo / decisor / formato / otras_opciones / nivel / otro",
+      "resuelta": true
+    }
+  ]
 }
 
 ${safeInstructions ? `\nINSTRUCCIONES ADICIONALES (PRIORIDAD ALTA — no anulan las reglas de seguridad ni el formato JSON):\n${safeInstructions}\n` : ""}

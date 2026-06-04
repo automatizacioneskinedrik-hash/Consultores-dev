@@ -118,7 +118,12 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.participacion.duracion_total",
     "analysis.participacion.consultor_pct",
     "analysis.participacion.cliente_pct",
-    "analysis.probabilidades.proximidad_cierre"
+    "analysis.probabilidades.proximidad_cierre",
+    "analysis.momento_precio",
+    "analysis.tipo_compromiso_cierre",
+    "analysis.preguntas_descubrimiento",
+    "analysis.objeciones",
+    "monologo_mas_largo_seg"
   );
 
   const batchSize = 800;
@@ -242,6 +247,14 @@ export const getExecutiveDashboardData = async (req, res) => {
       talkConsultantN: 0,
       talkClientSum: 0,
       talkClientN: 0,
+      sinDiagnosticoN: 0,
+      sinDiagnosticoTotal: 0,
+      preguntasSum: 0,
+      preguntasN: 0,
+      monologoSum: 0,
+      monologoN: 0,
+      compromisoMap: { firme: 0, condicionado: 0, aplazado: 0, sin_compromiso: 0 },
+      objecionesMap: {},
     };
 
     const seriesAgg = new Map();
@@ -320,6 +333,44 @@ export const getExecutiveDashboardData = async (req, res) => {
         agg.clientTalkSum += clientTalk;
         agg.clientTalkN += 1;
       }
+
+      // momento_precio
+      const momentoPrecio = data.analysis?.momento_precio;
+      if (momentoPrecio?.fase_aparicion && momentoPrecio.fase_aparicion !== "No mencionado") {
+        totals.sinDiagnosticoTotal += 1;
+        if (momentoPrecio.precio_sin_diagnostico_previo === true) {
+          totals.sinDiagnosticoN += 1;
+        }
+      }
+
+      // tipo_compromiso_cierre
+      const tipoCompromiso = data.analysis?.tipo_compromiso_cierre;
+      if (tipoCompromiso && tipoCompromiso in totals.compromisoMap) {
+        totals.compromisoMap[tipoCompromiso] += 1;
+      }
+
+      // preguntas_descubrimiento
+      const nPreguntas = data.analysis?.preguntas_descubrimiento?.total;
+      if (typeof nPreguntas === "number" && Number.isFinite(nPreguntas)) {
+        totals.preguntasSum += nPreguntas;
+        totals.preguntasN += 1;
+      }
+
+      // monologo_mas_largo_seg
+      const monologo = data.monologo_mas_largo_seg;
+      if (typeof monologo === "number" && Number.isFinite(monologo) && monologo > 0) {
+        totals.monologoSum += monologo;
+        totals.monologoN += 1;
+      }
+
+      // objeciones
+      const objeciones = data.analysis?.objeciones;
+      if (Array.isArray(objeciones)) {
+        for (const obj of objeciones) {
+          const cat = obj?.categoria;
+          if (cat) totals.objecionesMap[cat] = (totals.objecionesMap[cat] || 0) + 1;
+        }
+      }
     }
 
     const series = [...seriesAgg.values()]
@@ -356,6 +407,17 @@ export const getExecutiveDashboardData = async (req, res) => {
       meanCloseProbability: totals.closeN ? totals.closeSum / totals.closeN : null,
       meanConsultantTalkPct: totals.talkConsultantN ? totals.talkConsultantSum / totals.talkConsultantN : null,
       meanClientTalkPct: totals.talkClientN ? totals.talkClientSum / totals.talkClientN : null,
+      pctSinDiagnostico: totals.sinDiagnosticoTotal > 0 ? (totals.sinDiagnosticoN / totals.sinDiagnosticoTotal) * 100 : null,
+      avgPreguntasDescubrimiento: totals.preguntasN > 0 ? totals.preguntasSum / totals.preguntasN : null,
+      avgMonologoSeg: totals.monologoN > 0 ? totals.monologoSum / totals.monologoN : null,
+    };
+
+    const distributions = {
+      compromisoBreakdown: totals.compromisoMap,
+      topObjeciones: Object.entries(totals.objecionesMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([categoria, count]) => ({ categoria, count })),
     };
 
     const consultantLabel =
@@ -367,6 +429,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       ok: true,
       kpis,
       series,
+      distributions,
       meta: {
         consultant: consultantEmail && consultantEmail !== "all" ? { email: consultantEmail, name: consultantLabel } : null,
         startMs: Number.isFinite(startMs) ? startMs : null,
