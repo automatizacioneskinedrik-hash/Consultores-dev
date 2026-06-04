@@ -383,11 +383,12 @@ export const getExecutiveDashboardData = async (req, res) => {
         }
       }
 
-      // fases alcanzadas
+      // fases alcanzadas — normaliza "F1-Apertura" → "F1" por si GPT usa formato largo
       const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
       if (Array.isArray(fasesAlcanzadas)) {
         for (const f of fasesAlcanzadas) {
-          if (f in totals.fasesMap) totals.fasesMap[f] += 1;
+          const code = String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase();
+          if (code && code in totals.fasesMap) totals.fasesMap[code] += 1;
         }
       }
 

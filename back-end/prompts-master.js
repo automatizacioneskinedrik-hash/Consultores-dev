@@ -78,7 +78,7 @@ O. FASES ALCANZADAS:
      * F3: el consultor presentó la transformación esperada, el resultado o hizo una pregunta de valor.
      * F4: el consultor presentó el programa o mencionó precio, inversión, beca o cuota.
      * F5: hubo manejo de objeciones, negociación o intento de compromiso de pago.
-   - Devuelve en "fases_alcanzadas" solo los códigos de las fases que estuvieron presentes. Ejemplo: ["F1", "F2", "F4", "F5"].
+   - Devuelve en "fases_alcanzadas" SOLO los códigos cortos de las fases presentes. Usa EXACTAMENTE estos valores: "F1", "F2", "F3", "F4", "F5" (sin nombres adicionales). Ejemplo: ["F1", "F2", "F4", "F5"].
    - F1 casi siempre está; omítela solo si la llamada empieza directamente en medio de la conversación sin ninguna presentación.
 P. ADHERENCIA AL GUION COMERCIAL:
    - Evalúa en qué medida la llamada siguió el guion de las 5 fases en el orden correcto (F1→F2→F3→F4→F5).
