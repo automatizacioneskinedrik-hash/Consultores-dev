@@ -14,7 +14,12 @@ A. NOMBRES PROPIOS: Repetir el nombre del cliente NO es una muletilla ni repetic
 B. ÉXITO DE CIERRE (24H): Si el vendedor logra un compromiso de pago para las próximas 24 horas, es un CIERRE EXITOSO (score alto en Cierre). No lo llames "decisión no consolidada".
 C. NEGOCIACIÓN LATAM: En mercados como Bolivia, negociar la "viabilidad" y el "método de pago" es parte del cierre exitoso. Si acuerdan una reserva (ej: 250 USD), es un ÉXITO.
 D. VALIDACIÓN DE MEJORA: Reconoce positivamente cuando el vendedor utiliza estructuras de cierre sugeridas anteriormente. Es una fortaleza de adaptabilidad, JAMÁS un error.
-E. CORRECCIONES SUGERIDAS: Para cada punto de mejora, propón de 1 a 5 correcciones sugeridas en el arreglo "correcciones_sugeridas". Deben ser específicas para ESE punto de mejora, únicas (no repetitivas), directas y concisas (ni muy extensas ni muy cortas). Da el ejemplo claro de qué frase usar.
+E. PUNTOS DE MEJORA — CANTIDAD Y CALIDAD:
+   - Incluye ÚNICAMENTE errores o áreas de mejora que realmente ocurrieron en la transcripción. NUNCA inventes puntos para completar un número mínimo.
+   - Mínimo: 0 puntos (si la sesión fue excelente). Máximo: 4 puntos.
+   - Ordénalos de mayor a menor impacto: los errores de las reglas obligatorias (Rule F, Q, R, H) van primero.
+   - Si la sesión fue muy buena pero hay algún área leve de mejora, inclúyela con tono constructivo, no como error grave.
+   - Para cada punto de mejora, propón de 1 a 3 correcciones sugeridas en "correcciones_sugeridas". Deben ser específicas, con ejemplo de frase concreta.
 F. HITOS DE CONTROL (Puntos de mejora graves si no se cumplen):
    - PRESUPUESTO: Verifica rigurosamente que el consultor indague el presupuesto del cliente ANTES de dar el precio.
    - PREGUNTA DE VALOR: El consultor debe hacer una pregunta de valor (ej: "¿Qué es lo que más le aporta valor a tu carrera en este momento?") antes de pasar a los precios.
