@@ -65,12 +65,13 @@ L. PREGUNTAS DE DESCUBRIMIENTO (F2-Diagnóstico):
    - pregunto_presupuesto = true si el consultor preguntó por rango de inversión, presupuesto disponible o capacidad económica ANTES del precio.
    - temas_cubiertos: lista los temas que exploró — incluye solo los que realmente aparecen: "necesidad", "presupuesto", "decisor", "plazo", "motivacion", "situacion_actual".
 N. SILENCIO TRAS EL PRECIO:
-   - Localiza el turno del CONSULTOR donde aparece por primera vez una cifra económica (igual que en la regla J).
-   - Observa el SIGUIENTE turno en la transcripción:
-     * cedio_palabra = true si el siguiente turno es del CLIENTE (correcto — el consultor calló y dejó que el cliente respondiera).
-     * cedio_palabra = false si el siguiente turno es del propio CONSULTOR, especialmente si agrega justificaciones, presión o relleno ("es muy fácil", "¿sí o no?", "no te preocupes", "¿lo ves?").
-     * cedio_palabra = null si el precio no se mencionó o si la llamada termina en ese turno sin turno siguiente.
-   - En "descripcion" escribe una línea concisa describiendo qué ocurrió inmediatamente después del precio.
+   - Localiza el turno del CONSULTOR donde aparece POR PRIMERA VEZ una cifra económica (igual que en la regla J).
+   - Evalúa ÚNICAMENTE ese primer turno. Ignora completamente todas las menciones posteriores de precio, descuentos o becas.
+   - Observa el turno INMEDIATAMENTE siguiente a ese primer turno con precio:
+     * cedio_palabra = true si el turno siguiente es del CLIENTE (correcto — el consultor calló y dejó que el cliente respondiera).
+     * cedio_palabra = false si el turno siguiente es del propio CONSULTOR (encadenó más frases sin dejar hablar al cliente).
+     * cedio_palabra = null si el precio nunca se mencionó o si la llamada termina exactamente en ese turno.
+   - En "descripcion" escribe en 1 línea qué cifra apareció, en qué fase, y si el turno siguiente fue del cliente o del consultor.
 O. FASES ALCANZADAS:
    - Revisa la transcripción e identifica qué fases de la metodología KINEDRIK estuvieron claramente presentes:
      * F1: hubo apertura, presentación o generación de rapport al inicio.
