@@ -64,6 +64,27 @@ L. PREGUNTAS DE DESCUBRIMIENTO (F2-Diagnóstico):
    - pregunto_decisor = true si el consultor preguntó explícitamente quién toma la decisión de inversión o si el cliente debe consultarlo con alguien (pareja, empresa, familia).
    - pregunto_presupuesto = true si el consultor preguntó por rango de inversión, presupuesto disponible o capacidad económica ANTES del precio.
    - temas_cubiertos: lista los temas que exploró — incluye solo los que realmente aparecen: "necesidad", "presupuesto", "decisor", "plazo", "motivacion", "situacion_actual".
+N. SILENCIO TRAS EL PRECIO:
+   - Localiza el turno del CONSULTOR donde aparece por primera vez una cifra económica (igual que en la regla J).
+   - Observa el SIGUIENTE turno en la transcripción:
+     * cedio_palabra = true si el siguiente turno es del CLIENTE (correcto — el consultor calló y dejó que el cliente respondiera).
+     * cedio_palabra = false si el siguiente turno es del propio CONSULTOR, especialmente si agrega justificaciones, presión o relleno ("es muy fácil", "¿sí o no?", "no te preocupes", "¿lo ves?").
+     * cedio_palabra = null si el precio no se mencionó o si la llamada termina en ese turno sin turno siguiente.
+   - En "descripcion" escribe una línea concisa describiendo qué ocurrió inmediatamente después del precio.
+O. FASES ALCANZADAS:
+   - Revisa la transcripción e identifica qué fases de la metodología KINEDRIK estuvieron claramente presentes:
+     * F1: hubo apertura, presentación o generación de rapport al inicio.
+     * F2: el consultor indagó necesidades, situación actual, objetivos o presupuesto del cliente.
+     * F3: el consultor presentó la transformación esperada, el resultado o hizo una pregunta de valor.
+     * F4: el consultor presentó el programa o mencionó precio, inversión, beca o cuota.
+     * F5: hubo manejo de objeciones, negociación o intento de compromiso de pago.
+   - Devuelve en "fases_alcanzadas" solo los códigos de las fases que estuvieron presentes. Ejemplo: ["F1", "F2", "F4", "F5"].
+   - F1 casi siempre está; omítela solo si la llamada empieza directamente en medio de la conversación sin ninguna presentación.
+P. ADHERENCIA AL GUION COMERCIAL:
+   - Evalúa en qué medida la llamada siguió el guion de las 5 fases en el orden correcto (F1→F2→F3→F4→F5).
+   - score (0-100): parte de 100, resta 15 puntos por cada fase omitida y 10 puntos adicionales si alguna fase apareció en orden invertido (p. ej. F4 antes de F2). Mínimo 0.
+   - orden_correcto = true si las fases que sí aparecieron respetan el orden F1→F2→F3→F4→F5 (no es necesario que estén todas, solo que las presentes no estén invertidas).
+   - En "descripcion" escribe en 1 línea el principal desvío detectado, o "Guion seguido correctamente" si no hubo desvíos.
 M. OBJECIONES (F5-Cierre):
    - Detecta cada objeción o freno que expresa el CLIENTE durante la llamada.
    - Categorías: "precio" (caro, no puedo pagarlo), "titulacion" (validez, reconocimiento), "tiempo" (no tengo tiempo, estoy ocupado), "decisor" (tengo que consultarlo), "formato" (presencial/online), "otras_opciones" (quiero ver más), "nivel" (no sé si tengo nivel), "otro".
@@ -110,6 +131,16 @@ SALIDA REQUERIDA (JSON EXACTO):
   "necesidades": ["necesidad 1", "necesidad 2", "necesidad 3"],
   "proximos_pasos": {
     "consultor": ["acción 1", "acción 2"]
+  },
+  "fases_alcanzadas": ["F1", "F2", "F3", "F4", "F5"],
+  "adherencia_guion": {
+    "score": "Number (0-100)",
+    "orden_correcto": "true / false",
+    "descripcion": "String (1 línea)"
+  },
+  "silencio_tras_precio": {
+    "cedio_palabra": "true / false / null",
+    "descripcion": "String (1 línea)"
   },
   "momento_precio": {
     "fase_aparicion": "F2 / F3 / F4 / F5 / No mencionado",

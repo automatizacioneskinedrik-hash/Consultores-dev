@@ -119,6 +119,9 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.participacion.consultor_pct",
     "analysis.participacion.cliente_pct",
     "analysis.probabilidades.proximidad_cierre",
+    "analysis.fases_alcanzadas",
+    "analysis.adherencia_guion",
+    "analysis.silencio_tras_precio",
     "analysis.momento_precio",
     "analysis.tipo_compromiso_cierre",
     "analysis.preguntas_descubrimiento",
@@ -256,6 +259,11 @@ export const getExecutiveDashboardData = async (req, res) => {
       monologoN: 0,
       muletillasPorMinutoSum: 0,
       muletillasPorMinutoN: 0,
+      cedioPalabraT: 0,
+      cedioPalabraTotal: 0,
+      fasesMap: { F1: 0, F2: 0, F3: 0, F4: 0, F5: 0 },
+      adherenciaSum: 0,
+      adherenciaN: 0,
       compromisoMap: { firme: 0, condicionado: 0, aplazado: 0, sin_compromiso: 0 },
       objecionesMap: {},
     };
@@ -375,6 +383,28 @@ export const getExecutiveDashboardData = async (req, res) => {
         }
       }
 
+      // fases alcanzadas
+      const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
+      if (Array.isArray(fasesAlcanzadas)) {
+        for (const f of fasesAlcanzadas) {
+          if (f in totals.fasesMap) totals.fasesMap[f] += 1;
+        }
+      }
+
+      // adherencia al guion
+      const adherenciaScore = data.analysis?.adherencia_guion?.score;
+      if (typeof adherenciaScore === "number" && Number.isFinite(adherenciaScore)) {
+        totals.adherenciaSum += adherenciaScore;
+        totals.adherenciaN += 1;
+      }
+
+      // silencio tras el precio
+      const cedioPalabra = data.analysis?.silencio_tras_precio?.cedio_palabra;
+      if (cedioPalabra === true || cedioPalabra === false) {
+        totals.cedioPalabraTotal += 1;
+        if (cedioPalabra === true) totals.cedioPalabraT += 1;
+      }
+
       // muletillas por minuto
       const mpm = data.muletillas_por_minuto;
       if (typeof mpm === "number" && Number.isFinite(mpm)) {
@@ -421,6 +451,8 @@ export const getExecutiveDashboardData = async (req, res) => {
       avgPreguntasDescubrimiento: totals.preguntasN > 0 ? totals.preguntasSum / totals.preguntasN : null,
       avgMonologoSeg: totals.monologoN > 0 ? totals.monologoSum / totals.monologoN : null,
       avgMuletillasPorMinuto: totals.muletillasPorMinutoN > 0 ? totals.muletillasPorMinutoSum / totals.muletillasPorMinutoN : null,
+      avgAdherenciaScore: totals.adherenciaN > 0 ? totals.adherenciaSum / totals.adherenciaN : null,
+      pctCedioPalabra: totals.cedioPalabraTotal > 0 ? (totals.cedioPalabraT / totals.cedioPalabraTotal) * 100 : null,
     };
 
     const distributions = {
@@ -429,6 +461,11 @@ export const getExecutiveDashboardData = async (req, res) => {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 6)
         .map(([categoria, count]) => ({ categoria, count })),
+      fasesDistribucion: Object.entries(totals.fasesMap).map(([fase, count]) => ({
+        fase,
+        count,
+        pct: totals.calls > 0 ? Math.round((count / totals.calls) * 100) : 0,
+      })),
     };
 
     const consultantLabel =

@@ -164,6 +164,14 @@ const COMPROMISO_COLORS = {
   aplazado: "#2885FF",
   sin_compromiso: "#dc2626",
 };
+const FASE_LABELS = {
+  F1: "F1 · Apertura",
+  F2: "F2 · Diagnóstico",
+  F3: "F3 · Visión",
+  F4: "F4 · Propuesta",
+  F5: "F5 · Cierre",
+};
+
 const OBJECION_LABELS = {
   precio: "Precio",
   titulacion: "Titulación",
@@ -573,6 +581,48 @@ function DashboardCompromisoCard({ data, loading }) {
   );
 }
 
+function DashboardFasesCard({ data, loading }) {
+  return (
+    <Card className="dashboardPanel" title="Avance por fase del guion">
+      <div className="dashboardChartWrap">
+        {loading ? (
+          <div className="dashboardChartState"><Spin /></div>
+        ) : !data?.length ? (
+          <div className="dashboardChartState">
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin datos para los filtros seleccionados" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} layout="vertical" margin={{ left: 106, right: 48, top: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(4,0,37,0.08)" />
+              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+              <YAxis
+                type="category"
+                dataKey="fase"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(v) => FASE_LABELS[v] || v}
+                width={104}
+              />
+              <Tooltip
+                formatter={(value) => [`${value}%`, "% de llamadas"]}
+                labelFormatter={(label) => FASE_LABELS[label] || label}
+              />
+              <Bar dataKey="pct" name="% llamadas" fill="#0040A4" radius={[0, 6, 6, 0]} barSize={18}>
+                <LabelList
+                  dataKey="pct"
+                  position="right"
+                  formatter={(v) => `${v}%`}
+                  style={{ fontSize: 12, fontWeight: 700, fill: "#0040A4" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 function DashboardObjecionesCard({ data, loading }) {
   return (
     <Card className="dashboardPanel" title="Objeciones más frecuentes">
@@ -819,6 +869,8 @@ export default function Dashboard() {
       avgPreguntasDescubrimiento: k.avgPreguntasDescubrimiento != null ? formatFixed(k.avgPreguntasDescubrimiento, 1) : "—",
       avgMonologoSeg: k.avgMonologoSeg != null ? formatDurationSeconds(k.avgMonologoSeg) : "—",
       avgMuletillasPorMinuto: k.avgMuletillasPorMinuto != null ? formatFixed(k.avgMuletillasPorMinuto, 1) : "—",
+      pctCedioPalabra: k.pctCedioPalabra != null ? formatFixed(k.pctCedioPalabra, 1) : "—",
+      avgAdherenciaScore: k.avgAdherenciaScore != null ? formatFixed(k.avgAdherenciaScore, 1) : "—",
     };
   }, [dashboardData.kpis]);
 
@@ -1004,9 +1056,58 @@ export default function Dashboard() {
 
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
+                  <Col xs={24} sm={12} xl={6}>
+                    <DashboardKpiCard
+                      label="Cedió palabra tras precio"
+                      legend="% de llamadas donde el consultor guardó silencio después de dar el precio y dejó hablar al cliente."
+                      icon={<CheckCircleOutlined />}
+                      iconStyle={
+                        kpiValuesComercial.pctCedioPalabra === "—"
+                          ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+                          : Number(kpiValuesComercial.pctCedioPalabra) >= 70
+                            ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+                            : Number(kpiValuesComercial.pctCedioPalabra) >= 40
+                              ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+                              : { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
+                      }
+                      value={kpiValuesComercial.pctCedioPalabra}
+                      suffix={kpiValuesComercial.pctCedioPalabra !== "—" ? "%" : null}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} xl={6}>
+                    <DashboardKpiCard
+                      label="Adherencia al guion"
+                      legend="Score promedio (0-100) de seguimiento del guion en orden correcto. Penaliza fases omitidas e invertidas."
+                      icon={<StarOutlined />}
+                      iconStyle={
+                        kpiValuesComercial.avgAdherenciaScore === "—"
+                          ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+                          : Number(kpiValuesComercial.avgAdherenciaScore) >= 80
+                            ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+                            : Number(kpiValuesComercial.avgAdherenciaScore) >= 50
+                              ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+                              : { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
+                      }
+                      value={kpiValuesComercial.avgAdherenciaScore}
+                      suffix={kpiValuesComercial.avgAdherenciaScore !== "—" ? "%" : null}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
                   <Col xs={24} xl={12}>
                     <DashboardCompromisoCard
                       data={dashboardData.distributions?.compromisoBreakdown}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                </Row>
+              </section>
+
+              <section className="dashboardSection">
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} xl={12}>
+                    <DashboardFasesCard
+                      data={dashboardData.distributions?.fasesDistribucion}
                       loading={dashboardLoading}
                     />
                   </Col>
