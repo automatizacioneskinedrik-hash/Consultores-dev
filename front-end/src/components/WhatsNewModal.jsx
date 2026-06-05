@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, History, Zap, MessageSquare, FileText } from 'lucide-react';
+import { X, BarChart2, Download } from 'lucide-react';
 import './WhatsNewModal.css';
 
-const VERSION = '1.2';
+const VERSION = '1.3';
 
 export default function WhatsNewModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,54 +22,58 @@ export default function WhatsNewModal() {
   if (!isOpen) return null;
 
   return (
-    <div className="whatsNewOverlay">
+    <div className="whatsNewOverlay" onClick={(e) => e.target === e.currentTarget && handleClose()}>
       <div className="whatsNewCard">
-        <button className="closeWhatsNew" onClick={handleClose}>
-          <X size={20} />
+        <button className="closeWhatsNew" onClick={handleClose} aria-label="Cerrar">
+          <X size={18} />
         </button>
 
-        <div className="whatsNewVersion">Novedades v1.2</div>
-        
-        <h1 className="whatsNewTitle">¡Bienvenido a Kinedriꓘ Speech v1.2!</h1>
-        <p className="whatsNewSubtitle">Hemos evolucionado para llevar tus ventas al siguiente nivel.</p>
+        <div className="whatsNewHeader">
+          <div className="whatsNewVersion">Actualización v1.3</div>
+          <h1 className="whatsNewTitle">Nuevas funcionalidades disponibles</h1>
+          <p className="whatsNewSubtitle">
+            Esta versión incorpora mejoras orientadas a reducir la fricción operativa
+            y facilitar el acceso a la información de cada sesión analizada.
+          </p>
+        </div>
 
-        <div className="whatsNewGrid">
+        <div className="whatsNewFeatures">
           <div className="wnFeature">
-            <div className="wnIcon history">
-              <History size={20} />
+            <div className="wnIconWrap analysis">
+              <BarChart2 size={22} />
             </div>
-            <h3>¡Historial en Tiempo Real!</h3>
-            <p>Consulta al instante <b>fecha, duración y score</b> de tus sesiones. Ahora puedes acceder a tus reportes y resúmenes completos en cualquier momento.</p>
+            <div className="wnFeatureBody">
+              <h3>Visualización inmediata del análisis</h3>
+              <p>
+                Al finalizar la carga de un audio, la plataforma redirige automáticamente
+                al informe completo de la sesión: KPIs, score general, áreas de mejora
+                y resumen ejecutivo, sin pasos adicionales.
+              </p>
+            </div>
           </div>
 
           <div className="wnFeature">
-            <div className="wnIcon prompt">
-              <Zap size={20} />
+            <div className="wnIconWrap download">
+              <Download size={22} />
             </div>
-            <h3>¡Máxima Flexibilidad!</h3>
-            <p>Hemos evolucionado: ahora los puntos de mejora son dinámicos <b>(de 0 a 5)</b>. Recibe un feedback positivo y adaptado a la realidad de tu llamada para potenciar tu éxito.</p>
-          </div>
-
-          <div className="wnFeature">
-            <div className="wnIcon muletillas">
-              <MessageSquare size={20} />
+            <div className="wnFeatureBody">
+              <h3>Descarga de grabaciones desde el historial</h3>
+              <p>
+                Cada registro en el historial de llamadas ahora incluye una opción
+                de descarga directa del audio original, facilitando la revisión,
+                la auditoría interna y el proceso de retroalimentación entre
+                formadores y consultores.
+              </p>
             </div>
-            <h3>Radar de Muletillas</h3>
-            <p>Detectamos los vicios del lenguaje y te decimos exactamente <b>qué palabras repetir menos</b> para que tu oratoria brille.</p>
-          </div>
-
-          <div className="wnFeature">
-            <div className="wnIcon reports">
-              <FileText size={20} />
-            </div>
-            <h3>Resumen Web Activo</h3>
-            <p>¡Adiós a los correos perdidos! Ahora puedes visualizar el resumen completo y detallado directamente dentro del aplicativo web.</p>
           </div>
         </div>
 
-        <button className="whatsNewBtn" onClick={handleClose}>
-          ¡Sigue transformando diálogos en decisiones!
-        </button>
+        <div className="whatsNewFooter">
+          <span className="whatsNewFooterNote">KINEDRIꓘ Speech · v1.3</span>
+          <button className="whatsNewBtn" onClick={handleClose}>
+            Continuar a la plataforma
+          </button>
+        </div>
       </div>
     </div>
   );
