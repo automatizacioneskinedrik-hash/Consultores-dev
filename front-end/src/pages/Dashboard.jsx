@@ -5,7 +5,6 @@ import {
   ClockCircleOutlined,
   PercentageOutlined,
   PhoneOutlined,
-  QuestionCircleOutlined,
   ReloadOutlined,
   StarOutlined,
   WarningOutlined,
@@ -125,20 +124,6 @@ const KPI_DEFS_COMERCIAL = [
             : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
   },
   {
-    key: "avgPreguntasDescubrimiento",
-    label: "Preguntas de descubrimiento",
-    legend: "Promedio de preguntas abiertas del consultor antes de dar el precio.",
-    icon: <QuestionCircleOutlined />,
-    getIconStyle: () => ({ color: "#0040A4", background: "rgba(0,64,164,0.1)" }),
-  },
-  {
-    key: "avgMonologoSeg",
-    label: "Monólogo más largo",
-    legend: "Promedio del turno ininterrumpido más largo del consultor en la sesión.",
-    icon: <ClockCircleOutlined />,
-    getIconStyle: () => ({ color: "#2885FF", background: "rgba(40,133,255,0.1)" }),
-  },
-  {
     key: "avgMuletillasPorMinuto",
     label: "Muletillas / minuto",
     legend: "Promedio de muletillas por minuto hablado por el consultor. Referencia óptima: menos de 1.",
@@ -151,6 +136,36 @@ const KPI_DEFS_COMERCIAL = [
           : Number(val) >= 1
             ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
             : { color: "#16a34a", background: "rgba(22,163,74,0.1)" },
+  },
+  {
+    key: "pctCedioPalabra",
+    label: "Cedió palabra tras precio",
+    legend: "% de llamadas donde el consultor guardó silencio después de dar el precio y dejó hablar al cliente.",
+    icon: <CheckCircleOutlined />,
+    suffix: "%",
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 70
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) >= 40
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
+  },
+  {
+    key: "avgAdherenciaScore",
+    label: "Adherencia al guion",
+    legend: "Score promedio (0-100) de seguimiento del guion en orden correcto. Penaliza fases omitidas e invertidas.",
+    icon: <StarOutlined />,
+    suffix: "%",
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 80
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) >= 50
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
   },
 ];
 
@@ -1058,62 +1073,19 @@ export default function Dashboard() {
 
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} xl={6}>
-                    <DashboardKpiCard
-                      label="Cedió palabra tras precio"
-                      legend="% de llamadas donde el consultor guardó silencio después de dar el precio y dejó hablar al cliente."
-                      icon={<CheckCircleOutlined />}
-                      iconStyle={
-                        kpiValuesComercial.pctCedioPalabra === "—"
-                          ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
-                          : Number(kpiValuesComercial.pctCedioPalabra) >= 70
-                            ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
-                            : Number(kpiValuesComercial.pctCedioPalabra) >= 40
-                              ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
-                              : { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
-                      }
-                      value={kpiValuesComercial.pctCedioPalabra}
-                      suffix={kpiValuesComercial.pctCedioPalabra !== "—" ? "%" : null}
-                      loading={dashboardLoading}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} xl={6}>
-                    <DashboardKpiCard
-                      label="Adherencia al guion"
-                      legend="Score promedio (0-100) de seguimiento del guion en orden correcto. Penaliza fases omitidas e invertidas."
-                      icon={<StarOutlined />}
-                      iconStyle={
-                        kpiValuesComercial.avgAdherenciaScore === "—"
-                          ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
-                          : Number(kpiValuesComercial.avgAdherenciaScore) >= 80
-                            ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
-                            : Number(kpiValuesComercial.avgAdherenciaScore) >= 50
-                              ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
-                              : { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
-                      }
-                      value={kpiValuesComercial.avgAdherenciaScore}
-                      suffix={kpiValuesComercial.avgAdherenciaScore !== "—" ? "%" : null}
-                      loading={dashboardLoading}
-                    />
-                  </Col>
-                  <Col xs={24} xl={12}>
+                  <Col xs={24} xl={8}>
                     <DashboardCompromisoCard
                       data={dashboardData.distributions?.compromisoBreakdown}
                       loading={dashboardLoading}
                     />
                   </Col>
-                </Row>
-              </section>
-
-              <section className="dashboardSection">
-                <Row gutter={[16, 16]}>
-                  <Col xs={24} xl={12}>
+                  <Col xs={24} xl={8}>
                     <DashboardFasesCard
                       data={dashboardData.distributions?.fasesDistribucion}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} xl={12}>
+                  <Col xs={24} xl={8}>
                     <DashboardObjecionesCard
                       data={dashboardData.distributions?.topObjeciones}
                       loading={dashboardLoading}
