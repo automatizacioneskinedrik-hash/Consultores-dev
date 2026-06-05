@@ -1,179 +1,245 @@
 .whatsNewOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(8px);
+  inset: 0;
+  background: rgba(4, 0, 37, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 20px;
-  animation: fadeInModal 0.4s ease-out;
+  padding: 24px;
+  animation: wnFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .whatsNewCard {
-  background: white;
+  background: linear-gradient(160deg, #0e1a3a 0%, #040025 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   width: 100%;
-  max-width: 680px;
+  max-width: 580px;
   max-height: 90vh;
-  border-radius: 28px;
-  padding: 48px;
+  border-radius: 24px;
+  padding: 44px 40px 36px;
   position: relative;
-  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(0, 64, 164, 0.2),
+    0 40px 80px -16px rgba(4, 0, 37, 0.7);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
+  gap: 28px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  animation: wnSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .whatsNewCard::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 
 .whatsNewCard::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+/* ── Header ── */
+
+.whatsNewHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .whatsNewVersion {
-  background: #EEF2FF;
-  color: #4F46E5;
-  font-size: 11px;
+  display: inline-flex;
+  align-self: flex-start;
+  background: rgba(40, 133, 255, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(40, 133, 255, 0.22);
+  font-size: 10.5px;
   font-weight: 800;
   padding: 4px 12px;
   border-radius: 100px;
   text-transform: uppercase;
-  margin-bottom: 24px;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
 }
 
 .whatsNewTitle {
-  font-size: 32px;
+  font-size: 26px;
   font-weight: 850;
-  color: #1E293B;
-  margin-bottom: 12px;
-  line-height: 1.2;
+  color: #ffffff;
+  line-height: 1.25;
+  margin: 0;
 }
 
 .whatsNewSubtitle {
-  font-size: 16px;
-  color: #64748B;
-  margin-bottom: 32px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  margin: 0;
 }
 
-.whatsNewGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  width: 100%;
-  margin-bottom: 32px;
+/* ── Feature cards ── */
+
+.whatsNewFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .wnFeature {
-  background: #F8FAFC;
-  padding: 20px;
-  border-radius: 20px;
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  text-align: left;
-  transition: transform 0.2s ease;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 20px 22px;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .wnFeature:hover {
-  transform: translateY(-4px);
-  background: #F1F5F9;
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(40, 133, 255, 0.2);
 }
 
-.wnIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+.wnIconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.wnIcon.history { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4); }
-.wnIcon.prompt { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); color: white; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4); }
-.wnIcon.muletillas { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); }
-.wnIcon.reports { background: linear-gradient(135deg, #334155 0%, #0f172a 100%); color: white; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.4); }
-
-.wnFeature h3 {
-  font-size: 16px;
-  font-weight: 850;
-  color: #0F172A;
-  margin-bottom: 8px;
+.wnIconWrap.analysis {
+  background: rgba(0, 64, 164, 0.35);
+  border: 1px solid rgba(40, 133, 255, 0.3);
+  color: #60a5fa;
 }
 
-.wnFeature p {
-  font-size: 13.5px;
-  color: #475569;
-  line-height: 1.6;
+.wnIconWrap.download {
+  background: rgba(0, 64, 164, 0.35);
+  border: 1px solid rgba(40, 133, 255, 0.3);
+  color: #60a5fa;
+}
+
+.wnFeatureBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wnFeatureBody h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.wnFeatureBody p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.48);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ── Footer ── */
+
+.whatsNewFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.whatsNewFooterNote {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .whatsNewBtn {
-  background: #0056D2;
+  background: #0040A4;
   color: white;
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
-  font-weight: 700;
-  font-size: 16px;
+  padding: 11px 24px;
+  border-radius: 10px;
+  font-weight: 750;
+  font-size: 14px;
   cursor: pointer;
   border: none;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
+  white-space: nowrap;
 }
 
 .whatsNewBtn:hover {
-  background: #0044A7;
-  transform: scale(1.02);
+  background: #0051cc;
 }
+
+/* ── Close button ── */
 
 .closeWhatsNew {
   position: absolute;
-  top: 24px;
-  right: 24px;
-  background: none;
-  border: none;
-  color: #94A3B8;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
-  padding: 8px;
+  padding: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-@keyframes fadeInModal {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+.closeWhatsNew:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
 }
 
-@media (max-width: 768px) {
+/* ── Animations ── */
+
+@keyframes wnFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wnSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 640px) {
   .whatsNewCard {
-    padding: 32px 24px;
-    max-width: 90%;
+    padding: 32px 24px 28px;
+    max-width: 100%;
+    border-radius: 20px;
   }
-  .whatsNewTitle {
-    font-size: 26px;
-  }
-  .whatsNewGrid {
-    gap: 12px;
-  }
-  .wnFeature {
-    padding: 16px;
-  }
-}
 
-@media (max-width: 580px) {
-  .whatsNewGrid { 
-    grid-template-columns: 1fr; 
-  }
   .whatsNewTitle {
     font-size: 22px;
+  }
+
+  .whatsNewFooter {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .whatsNewBtn {
+    text-align: center;
+  }
+
+  .whatsNewFooterNote {
+    text-align: center;
   }
 }
