@@ -5,6 +5,7 @@ import {
   ClockCircleOutlined,
   PercentageOutlined,
   PhoneOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
   StarOutlined,
   WarningOutlined,
@@ -124,6 +125,20 @@ const KPI_DEFS_COMERCIAL = [
             : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
   },
   {
+    key: "avgPreguntasDescubrimiento",
+    label: "Preguntas de descubrimiento",
+    legend: "Promedio de preguntas abiertas del consultor antes de dar el precio.",
+    icon: <QuestionCircleOutlined />,
+    getIconStyle: () => ({ color: "#0040A4", background: "rgba(0,64,164,0.1)" }),
+  },
+  {
+    key: "avgMonologoSeg",
+    label: "Monólogo más largo",
+    legend: "Promedio del turno ininterrumpido más largo del consultor en la sesión.",
+    icon: <ClockCircleOutlined />,
+    getIconStyle: () => ({ color: "#2885FF", background: "rgba(40,133,255,0.1)" }),
+  },
+  {
     key: "avgMuletillasPorMinuto",
     label: "Muletillas / minuto",
     legend: "Promedio de muletillas por minuto hablado por el consultor. Referencia óptima: menos de 1.",
@@ -155,7 +170,7 @@ const KPI_DEFS_COMERCIAL = [
   {
     key: "avgAdherenciaScore",
     label: "Adherencia al guion",
-    legend: "Score promedio (0-100) de seguimiento del guion en orden correcto. Penaliza fases omitidas e invertidas.",
+    legend: "Mide si las fases se ejecutaron en la secuencia correcta (F1→F5), no cuántas se alcanzaron. Complementa 'Avance por fase': alta cobertura con orden incorrecto baja este score.",
     icon: <StarOutlined />,
     suffix: "%",
     getIconStyle: (val) =>
@@ -610,7 +625,7 @@ function DashboardFasesCard({ data, loading }) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data} layout="vertical" margin={{ left: 106, right: 48, top: 8, bottom: 8 }}>
+            <BarChart data={data} layout="vertical" margin={{ left: 4, right: 52, top: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(4,0,37,0.08)" />
               <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
               <YAxis
@@ -618,7 +633,7 @@ function DashboardFasesCard({ data, loading }) {
                 dataKey="fase"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v) => FASE_LABELS[v] || v}
-                width={104}
+                width={110}
               />
               <Tooltip
                 formatter={(value) => [`${value}%`, "% de llamadas"]}
@@ -652,7 +667,7 @@ function DashboardObjecionesCard({ data, loading }) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={data} layout="vertical" margin={{ left: 90, right: 40, top: 8, bottom: 8 }}>
+            <BarChart data={data} layout="vertical" margin={{ left: 4, right: 44, top: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(4,0,37,0.08)" />
               <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} />
               <YAxis
@@ -660,7 +675,7 @@ function DashboardObjecionesCard({ data, loading }) {
                 dataKey="categoria"
                 tick={{ fontSize: 12 }}
                 tickFormatter={(v) => OBJECION_LABELS[v] || v}
-                width={88}
+                width={92}
               />
               <Tooltip
                 formatter={(value) => [value, "Menciones"]}
@@ -996,9 +1011,9 @@ export default function Dashboard() {
           ) : (
             <>
               <section className="dashboardSection">
-                <Row gutter={[16, 16]}>
+                <Row gutter={[16, 16]} className="dashboardKpiRow5">
                   {KPI_DEFS.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={6}>
+                    <Col key={kpi.key} xs={24} sm={12}>
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}
@@ -1018,6 +1033,19 @@ export default function Dashboard() {
                       />
                     </Col>
                   ))}
+                  {KPI_DEFS_COMERCIAL.map((kpi) => (
+                    <Col key={kpi.key} xs={24} sm={12}>
+                      <DashboardKpiCard
+                        label={kpi.label}
+                        legend={kpi.legend}
+                        icon={kpi.icon}
+                        iconStyle={kpi.getIconStyle(kpiValuesComercial[kpi.key])}
+                        value={kpiValuesComercial[kpi.key]}
+                        suffix={kpiValuesComercial[kpi.key] !== "—" ? (kpi.suffix || null) : null}
+                        loading={dashboardLoading}
+                      />
+                    </Col>
+                  ))}
                 </Row>
                 {dashboardError ? (
                   <div className="dashboardError" role="alert">
@@ -1031,24 +1059,6 @@ export default function Dashboard() {
                     </Button>
                   </div>
                 ) : null}
-              </section>
-
-              <section className="dashboardSection">
-                <Row gutter={[16, 16]}>
-                  {KPI_DEFS_COMERCIAL.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={6}>
-                      <DashboardKpiCard
-                        label={kpi.label}
-                        legend={kpi.legend}
-                        icon={kpi.icon}
-                        iconStyle={kpi.getIconStyle(kpiValuesComercial[kpi.key])}
-                        value={kpiValuesComercial[kpi.key]}
-                        suffix={kpiValuesComercial[kpi.key] !== "—" ? (kpi.suffix || null) : null}
-                        loading={dashboardLoading}
-                      />
-                    </Col>
-                  ))}
-                </Row>
               </section>
 
               <section className="dashboardSection">
