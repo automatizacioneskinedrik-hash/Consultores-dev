@@ -608,30 +608,33 @@ body.sidebar-collapsed .appShell {
 }
 
 .recentTitle {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--navy);
-  margin-bottom: 16px;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.45);
+  margin-bottom: 14px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  text-align: center;
+  letter-spacing: 1.4px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .recentList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .sessionCard {
   display: flex;
   align-items: center;
   background: white;
-  padding: 16px 20px;
+  padding: 18px 24px;
   border-radius: 16px;
   border: 1px solid #E2E8F0;
+  border-left: 3px solid #0040A4;
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   animation: cardSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  gap: 16px;
 }
 
 .sessionCard:nth-child(1) { animation-delay: 0.06s; }
@@ -645,31 +648,34 @@ body.sidebar-collapsed .appShell {
 
 .sessionCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-  border-color: #cbd5e1;
+  box-shadow: 0 6px 20px rgba(0, 64, 164, 0.08);
+  border-color: #0040A4;
 }
 
 .sessionIcon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: #DCFCE7;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
   flex-shrink: 0;
 }
 
 .sessionInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .sessionName {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--navy);
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sessionDate {

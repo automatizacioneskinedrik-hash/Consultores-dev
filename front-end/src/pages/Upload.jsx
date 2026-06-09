@@ -418,22 +418,22 @@ export default function Upload() {
       <div className="appShell">
         <main className="mainContent">
           <div className="container">
-            <h1 className="title">
-              {todaySessions.length > 0 ? (
-                <>Buen trabajo! Sigue transformando tus reuniones en <span className="highlight">insights</span></>
-              ) : (
-                <>Transforma tus reuniones en <span className="highlight">insights</span><br />accionables</>
-              )}
-            </h1>
-
-            <div className="welcomeText">
-              <p className="subtitle highlightText">
-                <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
-              </p>
-              <p className="subtitleText">
-                Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
-              </p>
-            </div>
+            {todaySessions.length === 0 && (
+              <>
+                <h1 className="title">
+                  Transforma tus reuniones en <span className="highlight">insights</span>
+                  <br />accionables
+                </h1>
+                <div className="welcomeText">
+                  <p className="subtitle highlightText">
+                    <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
+                  </p>
+                  <p className="subtitleText">
+                    Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
+                  </p>
+                </div>
+              </>
+            )}
 
             {isOffline && (
               <div className="offlineWarning">
