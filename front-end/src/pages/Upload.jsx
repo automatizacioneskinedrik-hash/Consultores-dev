@@ -527,11 +527,7 @@ export default function Upload() {
             {successStep === 2 ? (
               <div className="analyzingWidget">
                 <div className="spinnerGlow"></div>
-                <p className="analyzingStatus">Analizando tu sesión...</p>
-                <div className="analyzingTipWrap">
-                  <span className="analyzingTipLabel">Consejo KINEDRIK</span>
-                  <div className="analyzingText">{analysisText}</div>
-                </div>
+                <div className="analyzingText">{analysisText}</div>
               </div>
             ) : (
               <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
