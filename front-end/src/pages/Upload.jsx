@@ -131,18 +131,48 @@ export default function Upload() {
 
   useEffect(() => {
     if (successStep === 2) {
-      const texts = [
-        "Identificando patrones del cliente...",
-        "Analizando muletillas...",
-        "Extrayendo puntos de mejora y validación de fases...",
-        "Calculando score de la sesión...",
-        "Elaborando el reporte avanzado..."
+      const tips = [
+        "El lead debe hablar el 55–65% del tiempo. Tu ratio ideal: 35–45%.",
+        "Menos es más. Cuanta menos información des, más autoridad proyectas.",
+        "Si el problema lo verbaliza el lead, es suyo. Si lo dices tú, es venta.",
+        "Usa sus palabras exactas, no las tuyas. El lead debe escucharse a sí mismo.",
+        "El silencio es tu aliado — si el lead no verbaliza su dolor, no buscará solución.",
+        "El lead debe ver su propio GAP antes de que tú lo nombres.",
+        "Ante una objeción: valida sin ceder, ancla al dolor, devuelve con una pregunta.",
+        "Después de presentar el precio, haz silencio. El que habla primero, pierde.",
+        "La decisión de fondo siempre antes del precio. Sin un SÍ claro, hablar de dinero es prematuro.",
+        "No sigas vendiendo después del SÍ. Cierra y calla.",
+        "No vendemos formación. Vendemos puntos de inflexión.",
+        "No memorices las frases — interiorízalas. La autenticidad se percibe antes que el guion.",
+        "Cada pregunta que no hagas es información que el lead no te dará voluntariamente.",
+        "El diagnóstico no termina hasta que el lead ha verbalizado su dolor con sus propias palabras.",
+        "La urgencia no se crea, se descubre. Tu trabajo es que el lead calcule el costo de no actuar.",
+        "Las muletillas fragmentan tu autoridad. Cada 'este...' o 'o sea...' resta credibilidad.",
+        "El radar no lo expliques — déjalo leer. 3–5 segundos de silencio valen más que 2 minutos de explicación.",
+        "Cierra el círculo con sus palabras primero. Luego la decisión. Luego el precio. Siempre en ese orden.",
+        "Si el lead pregunta el precio antes de tiempo, no lo des. Reconecta con su dolor primero.",
+        "La F1 bien ejecutada reduce a la mitad el trabajo en F5. El rapport es tu base estructural.",
+        "Ante un 'lo tengo que pensar': '¿Qué es lo que necesitas pensar?' devuelve la conversación.",
+        "No preguntes '¿Tienes preguntas?' — pregunta '¿Qué es lo que más te resuena de esto?'",
+        "Un monólogo de más de 2 minutos borra la confianza que tardaste 10 minutos en construir.",
+        "El objetivo de F2 no es informar — es hacer que el lead se escuche a sí mismo.",
+        "La objeción de precio casi siempre es una objeción de valor. Vuelve al GAP, no al descuento.",
+        "Si el lead no verbaliza el impacto de su problema, el cierre siempre será difícil.",
+        "Presenta una solución, no un catálogo. El exceso de opciones paraliza la decisión.",
+        "El buen consultor no convence — hace que el lead se convenza a sí mismo.",
+        "Confirma cada fase antes de avanzar. Un 'sí' de cabeza no es un compromiso verbal.",
+        "Baja el ritmo en los momentos clave. Tu velocidad al hablar comunica tanto como tus palabras.",
       ];
+      const shuffled = [...tips];
+      for (let j = shuffled.length - 1; j > 0; j--) {
+        const k = Math.floor(Math.random() * (j + 1));
+        [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+      }
       let i = 0;
-      setAnalysisText(texts[0]);
+      setAnalysisText(shuffled[0]);
       const interval = setInterval(() => {
-        i = (i + 1) % texts.length;
-        setAnalysisText(texts[i]);
+        i = (i + 1) % shuffled.length;
+        setAnalysisText(shuffled[i]);
       }, 3500);
       return () => clearInterval(interval);
     }
@@ -464,7 +494,11 @@ export default function Upload() {
             {successStep === 2 ? (
               <div className="analyzingWidget">
                 <div className="spinnerGlow"></div>
-                <div className="analyzingText">{analysisText}</div>
+                <p className="analyzingStatus">Analizando tu sesión...</p>
+                <div className="analyzingTipWrap">
+                  <span className="analyzingTipLabel">Consejo KINEDRIK</span>
+                  <div className="analyzingText">{analysisText}</div>
+                </div>
               </div>
             ) : (
               <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>

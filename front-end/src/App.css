@@ -593,11 +593,47 @@ body.sidebar-collapsed .appShell {
   to { transform: rotate(360deg); }
 }
 
-.analyzingText {
-  font-size: 16px;
+.analyzingStatus {
+  font-size: 13px;
   font-weight: 700;
+  color: rgba(4, 0, 37, 0.45);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin: 0 0 20px 0;
+}
+
+.analyzingTipWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 24px;
+  border-radius: 14px;
+  background: rgba(0, 64, 164, 0.04);
+  border: 1px solid rgba(0, 64, 164, 0.1);
+  max-width: 480px;
+  width: 100%;
+}
+
+.analyzingTipLabel {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #0040A4;
+  background: rgba(0, 64, 164, 0.08);
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(0, 64, 164, 0.18);
+}
+
+.analyzingText {
+  font-size: 15px;
+  font-weight: 650;
   color: var(--navy);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.2px;
+  line-height: 1.55;
+  text-align: center;
   animation: fadeInOut 3.5s ease-in-out infinite;
 }
 
