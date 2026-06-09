@@ -634,7 +634,7 @@ body.sidebar-collapsed .appShell {
   letter-spacing: 0.2px;
   line-height: 1.55;
   text-align: center;
-  animation: fadeInOut 3.5s ease-in-out infinite;
+  animation: fadeInOut 8s ease-in-out infinite;
 }
 
 @keyframes fadeInOut {

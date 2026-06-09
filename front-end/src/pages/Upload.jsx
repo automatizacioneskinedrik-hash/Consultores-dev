@@ -84,13 +84,21 @@ export default function Upload() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [successStep, setSuccessStep] = useState(0); // 0: none, 1: upload success message, 2: pending email, 3: email sent message
+  const [successStep, setSuccessStep] = useState(() =>
+    sessionStorage.getItem('kinedrik_upload_step') === '2' ? 2 : 0
+  );
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [currentObjectPath, setCurrentObjectPath] = useState("");
   const [reportData, setReportData] = useState(null);
-  const [pollingObjectPath, setPollingObjectPath] = useState("");
+  const [pollingObjectPath, setPollingObjectPath] = useState(() =>
+    sessionStorage.getItem('kinedrik_upload_step') === '2'
+      ? sessionStorage.getItem('kinedrik_upload_path') || ''
+      : ''
+  );
   const [analysisText, setAnalysisText] = useState("Procesando información...");
-  const [isLargeFile, setIsLargeFile] = useState(false);
+  const [isLargeFile, setIsLargeFile] = useState(() =>
+    sessionStorage.getItem('kinedrik_upload_large') === 'true'
+  );
   const [recentSessions, setRecentSessions] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [sessionLoading, setSessionLoading] = useState(null);
@@ -168,12 +176,22 @@ export default function Upload() {
         const k = Math.floor(Math.random() * (j + 1));
         [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
       }
+      const reshuffle = (arr) => {
+        for (let j = arr.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [arr[j], arr[k]] = [arr[k], arr[j]];
+        }
+      };
       let i = 0;
       setAnalysisText(shuffled[0]);
       const interval = setInterval(() => {
-        i = (i + 1) % shuffled.length;
+        i++;
+        if (i >= shuffled.length) {
+          i = 0;
+          reshuffle(shuffled);
+        }
         setAnalysisText(shuffled[i]);
-      }, 3500);
+      }, 8000);
       return () => clearInterval(interval);
     }
   }, [successStep]);
@@ -190,6 +208,9 @@ export default function Upload() {
         const data = await res.json();
         if (data.ok && data.found && data.report) {
           clearInterval(pollingRef.current);
+          sessionStorage.removeItem('kinedrik_upload_step');
+          sessionStorage.removeItem('kinedrik_upload_path');
+          sessionStorage.removeItem('kinedrik_upload_large');
           setPollingObjectPath("");
           setSuccessStep(0);
           setIsLargeFile(false);
@@ -350,6 +371,9 @@ export default function Upload() {
       }
 
       if (completeData.report) {
+        sessionStorage.removeItem('kinedrik_upload_step');
+        sessionStorage.removeItem('kinedrik_upload_path');
+        sessionStorage.removeItem('kinedrik_upload_large');
         setSuccessStep(0);
         setReportData(completeData.report);
         setFileMeta(null);
@@ -364,6 +388,9 @@ export default function Upload() {
       }
     } catch (err) {
       console.error(err);
+      sessionStorage.removeItem('kinedrik_upload_step');
+      sessionStorage.removeItem('kinedrik_upload_path');
+      sessionStorage.removeItem('kinedrik_upload_large');
       setErrorMsg("El análisis de tu audio fue enviado al servidor. Recibirás tu reporte por correo en unos minutos.");
       setSuccessStep(0);
     }
@@ -386,6 +413,9 @@ export default function Upload() {
     if (successStep === 1) {
       // ~30 MB ≈ 45 min at typical voice recording bitrates — must match backend threshold
       const large = fileMeta && fileMeta.size > 30 * 1024 * 1024;
+      sessionStorage.setItem('kinedrik_upload_step', '2');
+      sessionStorage.setItem('kinedrik_upload_path', currentObjectPath);
+      sessionStorage.setItem('kinedrik_upload_large', String(large));
       if (large) {
         setIsLargeFile(true);
         setShowSuccessModal(false);
@@ -398,6 +428,9 @@ export default function Upload() {
         startEmailProcess();
       }
     } else if (successStep === 3) {
+      sessionStorage.removeItem('kinedrik_upload_step');
+      sessionStorage.removeItem('kinedrik_upload_path');
+      sessionStorage.removeItem('kinedrik_upload_large');
       setShowSuccessModal(false);
       setSuccessStep(0);
       setIsLargeFile(false);
