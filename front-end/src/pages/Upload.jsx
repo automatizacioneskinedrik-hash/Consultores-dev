@@ -437,22 +437,20 @@ export default function Upload() {
       <div className="appShell">
         <main className="mainContent">
           <div className="container">
-            {todaySessions.length === 0 && (
-              <>
-                <h1 className="title">
-                  Transforma tus reuniones en <span className="highlight">insights</span>
-                  <br />accionables
-                </h1>
-                <div className="welcomeText">
-                  <p className="subtitle highlightText">
-                    <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
-                  </p>
-                  <p className="subtitleText">
-                    Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
-                  </p>
-                </div>
-              </>
-            )}
+            <div className={`uploadIntro${todaySessions.length > 0 ? " uploadIntroHidden" : ""}`}>
+              <h1 className="title">
+                Transforma tus reuniones en <span className="highlight">insights</span>
+                <br />accionables
+              </h1>
+              <div className="welcomeText">
+                <p className="subtitle highlightText">
+                  <strong>Gracias por ser parte del equipo de consultores de venta.</strong>
+                </p>
+                <p className="subtitleText">
+                  Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
+                </p>
+              </div>
+            </div>
 
             {isOffline && (
               <div className="offlineWarning">
