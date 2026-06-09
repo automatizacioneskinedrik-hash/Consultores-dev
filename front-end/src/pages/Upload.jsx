@@ -93,6 +93,7 @@ export default function Upload() {
   const [isLargeFile, setIsLargeFile] = useState(false);
   const [recentSessions, setRecentSessions] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [sessionLoading, setSessionLoading] = useState(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -397,6 +398,24 @@ export default function Upload() {
     setReportData(null);
   };
 
+  const handleOpenSession = async (session) => {
+    setSessionLoading(session.id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/${session.id}`, {
+        headers: {
+          "X-Admin-Email": user?.email || "",
+          "X-Auth-Token": user?.authToken || "",
+        },
+      });
+      const data = await res.json();
+      if (data.ok) setReportData(data.report);
+    } catch {
+      // red inestable, ignorar
+    } finally {
+      setSessionLoading(null);
+    }
+  };
+
   const onDrop = (e) => {
     e.preventDefault();
     handleFile(e.dataTransfer.files[0]);
@@ -501,11 +520,25 @@ export default function Upload() {
                 <h3 className="recentTitle">Tus sesiones del día de hoy</h3>
                 <div className="recentList">
                   {todaySessions.map((session) => (
-                    <div key={session.id} className="sessionCard">
+                    <div
+                      key={session.id}
+                      className="sessionCard"
+                      onClick={() => handleOpenSession(session)}
+                      style={{ cursor: sessionLoading === session.id ? "wait" : "pointer" }}
+                    >
                       <div className="sessionIcon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+                        {sessionLoading === session.id ? (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0040A4" strokeWidth="2.5" strokeLinecap="round">
+                            <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+                            <path d="M12 3a9 9 0 0 1 9 9" strokeOpacity="1">
+                              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
+                            </path>
+                          </svg>
+                        ) : (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
                       </div>
                       <div className="sessionInfo">
                         <div className="sessionName">{session.filename}</div>
