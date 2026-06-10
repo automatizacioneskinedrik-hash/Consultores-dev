@@ -140,6 +140,201 @@ body.sidebar-collapsed .appShell {
   text-align: center;
 }
 
+/* ── WhatsApp follow-up panel ── */
+
+.uploadBody {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100%;
+}
+
+.uploadBody .container {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+
+.waPanel {
+  width: 272px;
+  flex-shrink: 0;
+  background: white;
+  border-left: 1px solid rgba(4, 0, 37, 0.07);
+  min-height: 100vh;
+  padding: 28px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.waPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.65);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.waPanelCount {
+  margin-left: auto;
+  background: rgba(37, 211, 102, 0.12);
+  color: #16a34a;
+  border: 1px solid rgba(37, 211, 102, 0.25);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.waCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.waCard {
+  background: #f8fafc;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.waCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.waCardAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2885ff 0%, #0040a4 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.waCardMeta {
+  min-width: 0;
+}
+
+.waCardName {
+  font-size: 13px;
+  font-weight: 800;
+  color: #040025;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.waCardDate {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.waCardMsg {
+  width: 100%;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(4, 0, 37, 0.75);
+  line-height: 1.5;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 10px;
+  padding: 8px 10px;
+  resize: none;
+  background: white;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.waCardMsg:focus {
+  outline: none;
+  border-color: rgba(0, 64, 164, 0.35);
+}
+
+.waCardPhone {
+  display: flex;
+  gap: 6px;
+}
+
+.waCardCountry {
+  flex-shrink: 0;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(4, 0, 37, 0.8);
+  padding: 6px 4px;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 90px;
+}
+
+.waCardNumber {
+  flex: 1;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(4, 0, 37, 0.85);
+  padding: 6px 10px;
+  font-family: inherit;
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+
+.waCardNumber:focus {
+  outline: none;
+  border-color: rgba(0, 64, 164, 0.35);
+}
+
+.waCardNumber::placeholder {
+  color: #cbd5e1;
+}
+
+.waCardBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 750;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, opacity 0.18s ease;
+}
+
+.waCardBtn:hover:not(:disabled) {
+  background: #1db954;
+}
+
+.waCardBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Upload intro collapse animation */
 .uploadIntro {
   max-height: 420px;

@@ -9,6 +9,7 @@ import uploadRoutes from "./src/routes/uploadRoutes.js";
 import sessionRoutes from "./src/routes/sessionRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import promptRoutes from "./src/routes/promptRoutes.js";
+import followUpRoutes from "./src/routes/followUpRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -46,6 +47,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptRoutes);
+app.use("/api/followups", followUpRoutes);
 
 // Manejo de errores global
 app.use((err, req, res, next) => {

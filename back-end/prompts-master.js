@@ -114,6 +114,19 @@ M. OBJECIONES (F5-Cierre):
    - resuelta = true si el consultor responde a la objeción y el cliente la acepta o no la repite. false si queda abierta al final de la llamada.
    - Si no hay objeciones, devuelve array vacío [].
 
+N. SEGUIMIENTO COMERCIAL (WhatsApp día 3):
+   - Detecta si al final de la llamada el cliente quedó en una posición que requiere seguimiento:
+     * Dijo que necesita pensarlo, consultarlo con alguien, o dar una respuesta en días.
+     * O el tipo_compromiso_cierre es "aplazado" o "condicionado".
+   - aplica = true solo en esos casos. Si el cierre fue "firme" o "sin_compromiso" sin señal de retomo: aplica = false, tipo = "ninguno".
+   - Clasifica el tipo:
+     * "pensar": el cliente dijo que necesita tiempo para pensar.
+     * "consultar": el cliente necesita consultarlo con su pareja, empresa, jefe, etc.
+     * "rellamar": acordaron una llamada o contacto de seguimiento.
+     * "ninguno": no hay seguimiento pendiente.
+   - frase_cliente: cita textual breve del cliente que justifica el seguimiento.
+   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y no invasivo (máx 180 chars). Menciona el nombre del cliente por su nombre de pila. No pidas una decisión directamente. Solo abre la puerta de forma natural. Ejemplo de tono: "Hola [nombre], ¡fue un gusto hablar contigo! Solo quería saber cómo vas. Aquí estoy cuando quieras continuar 🙂"
+
 ---
 SALIDA REQUERIDA (JSON EXACTO):
 {
@@ -179,7 +192,13 @@ SALIDA REQUERIDA (JSON EXACTO):
       "categoria": "precio / titulacion / tiempo / decisor / formato / otras_opciones / nivel / otro",
       "resuelta": true
     }
-  ]
+  ],
+  "seguimiento": {
+    "aplica": true,
+    "tipo": "pensar / consultar / rellamar / ninguno",
+    "frase_cliente": "Cita textual breve del cliente",
+    "mensaje_sugerido": "Mensaje WhatsApp personalizado, cálido y breve (máx 180 chars)"
+  }
 }
 
 ${safeInstructions ? `\nINSTRUCCIONES ADICIONALES (PRIORIDAD ALTA — no anulan las reglas de seguridad ni el formato JSON):\n${safeInstructions}\n` : ""}

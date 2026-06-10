@@ -189,6 +189,27 @@ export async function processAudioAnalysis(objectPath, userEmail) {
 
     const docRef = await db.collection("meetings_analysis").add(analysisData);
 
+    if (analysis.seguimiento?.aplica === true) {
+      const fechaEnvio = new Date();
+      fechaEnvio.setDate(fechaEnvio.getDate() + 3);
+      fechaEnvio.setHours(0, 0, 0, 0);
+      await db.collection("followUps").add({
+        consultorEmail: normalizeEmailValue(userEmail),
+        sessionId: docRef.id,
+        clienteNombre: analysis.nombre_cliente || "Cliente",
+        tipoSeguimiento: analysis.seguimiento.tipo || "pensar",
+        fraseCliente: analysis.seguimiento.frase_cliente || "",
+        mensajeSugerido: analysis.seguimiento.mensaje_sugerido || "",
+        telefono: "",
+        codigoPais: "+57",
+        fechaSesion: admin.firestore.FieldValue.serverTimestamp(),
+        fechaEnvio,
+        enviado: false,
+        fechaEnviado: null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
     if (transporter && userEmail && userEmail !== "anonymous") {
       const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
       let consultantName = userEmail.split("@")[0];
