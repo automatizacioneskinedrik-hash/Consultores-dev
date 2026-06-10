@@ -67,31 +67,79 @@ function MicIcon() {
 }
 
 const PAIS_CODES = [
-  { code: "+57",  flag: "🇨🇴", label: "CO" },
-  { code: "+34",  flag: "🇪🇸", label: "ES" },
-  { code: "+52",  flag: "🇲🇽", label: "MX" },
-  { code: "+54",  flag: "🇦🇷", label: "AR" },
-  { code: "+51",  flag: "🇵🇪", label: "PE" },
-  { code: "+56",  flag: "🇨🇱", label: "CL" },
-  { code: "+58",  flag: "🇻🇪", label: "VE" },
-  { code: "+593", flag: "🇪🇨", label: "EC" },
-  { code: "+591", flag: "🇧🇴", label: "BO" },
-  { code: "+595", flag: "🇵🇾", label: "PY" },
-  { code: "+598", flag: "🇺🇾", label: "UY" },
-  { code: "+1",   flag: "🇺🇸", label: "US" },
+  { code: "+57",  flag: "🇨🇴", label: "Colombia" },
+  { code: "+34",  flag: "🇪🇸", label: "España" },
+  { code: "+52",  flag: "🇲🇽", label: "México" },
+  { code: "+54",  flag: "🇦🇷", label: "Argentina" },
+  { code: "+51",  flag: "🇵🇪", label: "Perú" },
+  { code: "+56",  flag: "🇨🇱", label: "Chile" },
+  { code: "+58",  flag: "🇻🇪", label: "Venezuela" },
+  { code: "+593", flag: "🇪🇨", label: "Ecuador" },
+  { code: "+591", flag: "🇧🇴", label: "Bolivia" },
+  { code: "+595", flag: "🇵🇾", label: "Paraguay" },
+  { code: "+598", flag: "🇺🇾", label: "Uruguay" },
+  { code: "+1",   flag: "🇺🇸", label: "EE.UU." },
 ];
+
+function CountrySelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = PAIS_CODES.find((p) => p.code === value) || PAIS_CODES[0];
+
+  useEffect(() => {
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  return (
+    <div className="waCountryWrap" ref={ref}>
+      <button type="button" className="waCountryBtn" onClick={() => setOpen((o) => !o)}>
+        <span>{selected.flag}</span>
+        <span>{selected.code}</span>
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="waCountryDropdown">
+          {PAIS_CODES.map((p) => (
+            <button
+              type="button"
+              key={p.code}
+              className={`waCountryOption${value === p.code ? " active" : ""}`}
+              onClick={() => { onChange(p.code); setOpen(false); }}
+            >
+              <span className="waCountryOptionFlag">{p.flag}</span>
+              <span className="waCountryOptionName">{p.label}</span>
+              <span className="waCountryOptionCode">{p.code}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function WaCard({ followUp, onSent }) {
   const [codigo, setCodigo] = useState(followUp.codigoPais || "+57");
   const [telefono, setTelefono] = useState(followUp.telefono || "");
   const [mensaje, setMensaje] = useState(followUp.mensajeSugerido || "");
   const [sending, setSending] = useState(false);
+  const msgRef = useRef(null);
 
-  const fechaTs = followUp.fechaSesion
-    ? new Date(followUp.fechaSesion)
-    : null;
+  useEffect(() => {
+    if (msgRef.current) {
+      msgRef.current.style.height = "auto";
+      msgRef.current.style.height = msgRef.current.scrollHeight + "px";
+    }
+  }, [mensaje]);
+
+  const fechaTs = followUp.fechaSesion ? new Date(followUp.fechaSesion) : null;
   const fechaLabel = fechaTs
-    ? fechaTs.toLocaleDateString("es-ES", { day: "2-digit", month: "short" })
+    ? fechaTs.toLocaleDateString("es-ES", { day: "2-digit", month: "short" }) +
+      " · " +
+      fechaTs.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
     : "";
 
   const handleSend = async () => {
@@ -106,33 +154,19 @@ function WaCard({ followUp, onSent }) {
   return (
     <div className="waCard">
       <div className="waCardHeader">
-        <div className="waCardAvatar">
-          {(followUp.clienteNombre?.[0] || "?").toUpperCase()}
-        </div>
-        <div className="waCardMeta">
-          <div className="waCardName">{followUp.clienteNombre}</div>
-          {fechaLabel && <div className="waCardDate">Sesión {fechaLabel}</div>}
-        </div>
+        <div className="waCardName">{followUp.clienteNombre}</div>
+        {fechaLabel && <div className="waCardDate">{fechaLabel}</div>}
       </div>
       <textarea
+        ref={msgRef}
         className="waCardMsg"
         value={mensaje}
         onChange={(e) => setMensaje(e.target.value)}
-        rows={3}
         placeholder="Mensaje de seguimiento..."
+        style={{ overflow: "hidden", resize: "none" }}
       />
       <div className="waCardPhone">
-        <select
-          className="waCardCountry"
-          value={codigo}
-          onChange={(e) => setCodigo(e.target.value)}
-        >
-          {PAIS_CODES.map((p) => (
-            <option key={p.code} value={p.code}>
-              {p.flag} {p.code}
-            </option>
-          ))}
-        </select>
+        <CountrySelect value={codigo} onChange={setCodigo} />
         <input
           className="waCardNumber"
           type="tel"
