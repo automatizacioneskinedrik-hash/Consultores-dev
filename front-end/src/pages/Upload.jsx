@@ -67,18 +67,42 @@ function MicIcon() {
 }
 
 const PAIS_CODES = [
-  { code: "+57",  flag: "🇨🇴", label: "Colombia" },
-  { code: "+34",  flag: "🇪🇸", label: "España" },
-  { code: "+52",  flag: "🇲🇽", label: "México" },
-  { code: "+54",  flag: "🇦🇷", label: "Argentina" },
-  { code: "+51",  flag: "🇵🇪", label: "Perú" },
-  { code: "+56",  flag: "🇨🇱", label: "Chile" },
-  { code: "+58",  flag: "🇻🇪", label: "Venezuela" },
-  { code: "+593", flag: "🇪🇨", label: "Ecuador" },
-  { code: "+591", flag: "🇧🇴", label: "Bolivia" },
-  { code: "+595", flag: "🇵🇾", label: "Paraguay" },
-  { code: "+598", flag: "🇺🇾", label: "Uruguay" },
-  { code: "+1",   flag: "🇺🇸", label: "EE.UU." },
+  { code: "+57",  iso: "co", label: "Colombia" },
+  { code: "+34",  iso: "es", label: "España" },
+  { code: "+52",  iso: "mx", label: "México" },
+  { code: "+54",  iso: "ar", label: "Argentina" },
+  { code: "+51",  iso: "pe", label: "Perú" },
+  { code: "+56",  iso: "cl", label: "Chile" },
+  { code: "+58",  iso: "ve", label: "Venezuela" },
+  { code: "+593", iso: "ec", label: "Ecuador" },
+  { code: "+591", iso: "bo", label: "Bolivia" },
+  { code: "+595", iso: "py", label: "Paraguay" },
+  { code: "+598", iso: "uy", label: "Uruguay" },
+  { code: "+53",  iso: "cu", label: "Cuba" },
+  { code: "+502", iso: "gt", label: "Guatemala" },
+  { code: "+504", iso: "hn", label: "Honduras" },
+  { code: "+503", iso: "sv", label: "El Salvador" },
+  { code: "+505", iso: "ni", label: "Nicaragua" },
+  { code: "+506", iso: "cr", label: "Costa Rica" },
+  { code: "+507", iso: "pa", label: "Panamá" },
+  { code: "+1809",iso: "do", label: "Rep. Dominicana" },
+  { code: "+1787",iso: "pr", label: "Puerto Rico" },
+  { code: "+55",  iso: "br", label: "Brasil" },
+  { code: "+351", iso: "pt", label: "Portugal" },
+  { code: "+1",   iso: "us", label: "EE.UU." },
+  { code: "+1",   iso: "ca", label: "Canadá" },
+  { code: "+44",  iso: "gb", label: "Reino Unido" },
+  { code: "+33",  iso: "fr", label: "Francia" },
+  { code: "+49",  iso: "de", label: "Alemania" },
+  { code: "+39",  iso: "it", label: "Italia" },
+  { code: "+31",  iso: "nl", label: "Países Bajos" },
+  { code: "+32",  iso: "be", label: "Bélgica" },
+  { code: "+41",  iso: "ch", label: "Suiza" },
+  { code: "+61",  iso: "au", label: "Australia" },
+  { code: "+81",  iso: "jp", label: "Japón" },
+  { code: "+86",  iso: "cn", label: "China" },
+  { code: "+91",  iso: "in", label: "India" },
+  { code: "+971", iso: "ae", label: "Emiratos Árabes" },
 ];
 
 function CountrySelect({ value, onChange }) {
@@ -95,7 +119,7 @@ function CountrySelect({ value, onChange }) {
   return (
     <div className="waCountryWrap" ref={ref}>
       <button type="button" className="waCountryBtn" onClick={() => setOpen((o) => !o)}>
-        <span>{selected.flag}</span>
+        <img src={`https://flagcdn.com/16x12/${selected.iso}.png`} width="16" height="12" alt={selected.label} className="waCountryFlag" />
         <span>{selected.code}</span>
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="6 9 12 15 18 9" />
@@ -103,14 +127,14 @@ function CountrySelect({ value, onChange }) {
       </button>
       {open && (
         <div className="waCountryDropdown">
-          {PAIS_CODES.map((p) => (
+          {PAIS_CODES.map((p, i) => (
             <button
               type="button"
-              key={p.code}
-              className={`waCountryOption${value === p.code ? " active" : ""}`}
+              key={`${p.iso}-${i}`}
+              className={`waCountryOption${value === p.code && selected.iso === p.iso ? " active" : ""}`}
               onClick={() => { onChange(p.code); setOpen(false); }}
             >
-              <span className="waCountryOptionFlag">{p.flag}</span>
+              <img src={`https://flagcdn.com/16x12/${p.iso}.png`} width="16" height="12" alt={p.label} className="waCountryOptionFlag" />
               <span className="waCountryOptionName">{p.label}</span>
               <span className="waCountryOptionCode">{p.code}</span>
             </button>
@@ -643,7 +667,7 @@ export default function Upload() {
   return (
     <>
       <Sidebar />
-      <div className="appShell">
+      <div className={`appShell${followUps.length > 0 ? " waPanelActive" : ""}`}>
         <main className="mainContent">
           <div className="uploadBody">
           <div className="container">
