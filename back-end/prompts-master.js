@@ -125,7 +125,7 @@ N. SEGUIMIENTO COMERCIAL (WhatsApp día 3):
      * "rellamar": acordaron una llamada o contacto de seguimiento.
      * "ninguno": no hay seguimiento pendiente.
    - frase_cliente: cita textual breve del cliente que justifica el seguimiento.
-   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y no invasivo (máx 180 chars). Menciona el nombre del cliente por su nombre de pila. No pidas una decisión directamente. Solo abre la puerta de forma natural. Ejemplo de tono: "Hola [nombre], ¡fue un gusto hablar contigo! Solo quería saber cómo vas. Aquí estoy cuando quieras continuar 🙂"
+   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y motivador (máx 180 chars). Escríbelo como si hubieran pasado 3 días desde la reunión. Menciona el nombre de pila del cliente. Conecta brevemente con el dolor o aspiración que expresó en la sesión (usa sus propias palabras si puedes). Invita a retomar con energía positiva que motive a tomar acción, sin presionar directamente. El tono debe transmitir que este es su momento y que el programa es el vehículo para lograrlo. Ejemplo de tono: "Hola [nombre], llevo días pensando en lo que me contaste. Creo que este es tu momento de dar ese salto. ¿Lo retomamos? 🚀"
 
 ---
 SALIDA REQUERIDA (JSON EXACTO):

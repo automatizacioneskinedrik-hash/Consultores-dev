@@ -250,7 +250,7 @@ export default function Upload() {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [sessionLoading, setSessionLoading] = useState(null);
   const [followUps, setFollowUps] = useState([]);
-  const [waOpen, setWaOpen] = useState(true);
+  const [waOpen, setWaOpen] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
