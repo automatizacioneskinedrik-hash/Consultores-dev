@@ -197,7 +197,7 @@ body.sidebar-collapsed .appShell {
   width: 52px;
   height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   border: none;
   background: none;
@@ -219,28 +219,6 @@ body.sidebar-collapsed .appShell {
   position: absolute;
   top: -7px;
   right: -9px;
-}
-
-.waPanelToggleBtn {
-  margin-left: auto;
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: rgba(4, 0, 37, 0.35);
-  border-radius: 6px;
-  padding: 0;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.waPanelToggleBtn:hover {
-  background: rgba(4, 0, 37, 0.06);
-  color: rgba(4, 0, 37, 0.7);
 }
 
 .waPanelHeader {
