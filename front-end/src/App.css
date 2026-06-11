@@ -164,16 +164,83 @@ body.sidebar-collapsed .appShell {
   width: 272px;
   background: white;
   border-left: 1px solid rgba(4, 0, 37, 0.07);
-  padding: 28px 16px 40px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.04);
 }
 
+.waPanel.waPanelCollapsed {
+  width: 52px;
+}
+
+.waPanelInner {
+  width: 272px;
+  height: 100%;
+  padding: 28px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
 .waPanelActive {
   padding-right: 272px;
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waPanelCollapsedShell {
+  padding-right: 52px;
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waPanelCollapsedBtn {
+  width: 52px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s ease;
+}
+
+.waPanelCollapsedBtn:hover {
+  background: rgba(37, 211, 102, 0.06);
+}
+
+.waPanelCollapsedIcon {
+  position: relative;
+  display: inline-flex;
+}
+
+.waPanelCollapsedIcon .waPanelCount {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+}
+
+.waPanelToggleBtn {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: rgba(4, 0, 37, 0.35);
+  border-radius: 6px;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.waPanelToggleBtn:hover {
+  background: rgba(4, 0, 37, 0.06);
+  color: rgba(4, 0, 37, 0.7);
 }
 
 .waPanelHeader {
@@ -189,7 +256,6 @@ body.sidebar-collapsed .appShell {
 }
 
 .waPanelCount {
-  margin-left: auto;
   background: rgba(37, 211, 102, 0.12);
   color: #16a34a;
   border: 1px solid rgba(37, 211, 102, 0.25);
