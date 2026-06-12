@@ -50,7 +50,7 @@ steps:
       - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID}
       - --set-env-vars=BQ_DATASET=${_BQ_DATASET}
       - --set-env-vars=BQ_TABLE=${_BQ_TABLE}
-      - --set-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}:latest,ASSEMBLYAI_API_KEY=${_ASSEMBLYAI_API_KEY_SECRET}:latest,EMAIL_HOST=${_EMAIL_HOST_SECRET}:latest,EMAIL_PORT=${_EMAIL_PORT_SECRET}:latest,EMAIL_USER=${_EMAIL_USER_SECRET}:latest,EMAIL_PASS=${_EMAIL_PASS_SECRET}:latest,EMAIL_FROM=${_EMAIL_FROM_SECRET}:latest
+      - --set-secrets=OPENAI_API_KEY=${_OPENAI_API_KEY_SECRET}:latest,EMAIL_HOST=${_EMAIL_HOST_SECRET}:latest,EMAIL_PORT=${_EMAIL_PORT_SECRET}:latest,EMAIL_USER=${_EMAIL_USER_SECRET}:latest,EMAIL_PASS=${_EMAIL_PASS_SECRET}:latest,EMAIL_FROM=${_EMAIL_FROM_SECRET}:latest,ASSEMBLYAI_API_KEY=${_ASSEMBLYAI_API_KEY_SECRET}:latest
 
   - id: build-frontend
     name: gcr.io/cloud-builders/docker
