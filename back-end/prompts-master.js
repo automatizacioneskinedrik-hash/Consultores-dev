@@ -114,18 +114,15 @@ M. OBJECIONES (F5-Cierre):
    - resuelta = true si el consultor responde a la objeción y el cliente la acepta o no la repite. false si queda abierta al final de la llamada.
    - Si no hay objeciones, devuelve array vacío [].
 
-N. SEGUIMIENTO COMERCIAL (WhatsApp día 3):
-   - Detecta si al final de la llamada el cliente quedó en una posición que requiere seguimiento:
-     * Dijo que necesita pensarlo, consultarlo con alguien, o dar una respuesta en días.
-     * O el tipo_compromiso_cierre es "aplazado" o "condicionado".
-   - aplica = true solo en esos casos. Si el cierre fue "firme" o "sin_compromiso" sin señal de retomo: aplica = false, tipo = "ninguno".
-   - Clasifica el tipo:
+N. SEGUIMIENTO COMERCIAL (WhatsApp 24 horas):
+   - aplica = true SIEMPRE, independientemente del resultado de la llamada.
+   - Clasifica el tipo según la posición final del cliente:
      * "pensar": el cliente dijo que necesita tiempo para pensar.
      * "consultar": el cliente necesita consultarlo con su pareja, empresa, jefe, etc.
      * "rellamar": acordaron una llamada o contacto de seguimiento.
-     * "ninguno": no hay seguimiento pendiente.
-   - frase_cliente: cita textual breve del cliente que justifica el seguimiento.
-   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y motivador (máx 180 chars). Escríbelo como si hubieran pasado 3 días desde la reunión. Menciona el nombre de pila del cliente. Conecta brevemente con el dolor o aspiración que expresó en la sesión (usa sus propias palabras si puedes). Invita a retomar con energía positiva que motive a tomar acción, sin presionar directamente. El tono debe transmitir que este es su momento y que el programa es el vehículo para lograrlo. Ejemplo de tono: "Hola [nombre], llevo días pensando en lo que me contaste. Creo que este es tu momento de dar ese salto. ¿Lo retomamos? 🚀"
+     * "general": el cliente cerró sin señal específica de seguimiento (incluyendo cierres firmes).
+   - frase_cliente: cita textual breve del cliente que refleje su principal dolor, necesidad o aspiración expresada en la sesión. Si cerró la venta, usa la frase que mejor captura su motivación principal.
+   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y personalizado (máx 180 chars). Escríbelo como si hubiera pasado 1 día desde la reunión. Menciona el nombre de pila del cliente. Conecta directamente con el dolor o necesidad específica que expresó en la sesión (usa sus propias palabras). Si aún no tomó decisión: motiva suavemente a avanzar sin presionar. Si cerró la venta: refuerza su decisión con una frase alentadora que genere expectativa positiva. El tono debe ser cercano, humano y genuino. Ejemplo: "Hola [nombre], ayer me quedé pensando en lo que me contaste sobre [dolor]. Creo que estás más cerca de ese cambio de lo que crees. 💪"
 
 ---
 SALIDA REQUERIDA (JSON EXACTO):

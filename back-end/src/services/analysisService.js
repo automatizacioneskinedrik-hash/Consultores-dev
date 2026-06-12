@@ -189,9 +189,9 @@ export async function processAudioAnalysis(objectPath, userEmail) {
 
     const docRef = await db.collection("meetings_analysis").add(analysisData);
 
-    if (analysis.seguimiento?.aplica === true) {
+    if (analysis.seguimiento) {
       const fechaEnvio = new Date();
-      fechaEnvio.setDate(fechaEnvio.getDate() + 3);
+      fechaEnvio.setDate(fechaEnvio.getDate() + 1);
       fechaEnvio.setHours(0, 0, 0, 0);
       await db.collection("followUps").add({
         consultorEmail: normalizeEmailValue(userEmail),

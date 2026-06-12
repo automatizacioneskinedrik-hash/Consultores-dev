@@ -161,13 +161,13 @@ body.sidebar-collapsed .appShell {
   right: 0;
   top: 0;
   height: 100vh;
-  width: 272px;
-  background: white;
-  border-left: 1px solid rgba(4, 0, 37, 0.07);
+  width: 404px;
+  background: linear-gradient(180deg, #040025 0%, #08003c 100%);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.04);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.25);
 }
 
 .waPanel.waPanelCollapsed {
@@ -175,7 +175,7 @@ body.sidebar-collapsed .appShell {
 }
 
 .waPanelInner {
-  width: 272px;
+  width: 404px;
   height: 100%;
   padding: 28px 16px 40px;
   display: flex;
@@ -184,7 +184,7 @@ body.sidebar-collapsed .appShell {
 }
 
 .waPanelActive {
-  padding-right: 272px;
+  padding-right: 404px;
   transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -207,7 +207,7 @@ body.sidebar-collapsed .appShell {
 }
 
 .waPanelCollapsedBtn:hover {
-  background: rgba(37, 211, 102, 0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .waPanelCollapsedIcon {
@@ -228,15 +228,15 @@ body.sidebar-collapsed .appShell {
   margin-bottom: 20px;
   font-size: 12px;
   font-weight: 900;
-  color: rgba(4, 0, 37, 0.65);
+  color: rgba(255, 255, 255, 0.75);
   letter-spacing: 0.8px;
   text-transform: uppercase;
 }
 
 .waPanelCount {
-  background: rgba(37, 211, 102, 0.12);
-  color: #16a34a;
-  border: 1px solid rgba(37, 211, 102, 0.25);
+  background: #ef4444;
+  color: white;
+  border: none;
   font-size: 11px;
   font-weight: 900;
   width: 20px;
