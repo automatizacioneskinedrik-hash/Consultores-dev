@@ -128,7 +128,7 @@ body.sidebar-collapsed .appShell {
 .mainContent {
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   position: relative;
   padding: 40px 0 60px 0;
@@ -138,6 +138,357 @@ body.sidebar-collapsed .appShell {
   width: min(1100px, 94%);
   margin: 0 auto;
   text-align: center;
+}
+
+/* ── WhatsApp follow-up panel ── */
+
+.uploadBody {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100%;
+}
+
+.uploadBody .container {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+
+.waPanel {
+  position: fixed;
+  right: 0;
+  top: 0;
+  height: 100vh;
+  width: 404px;
+  background: var(--off);
+  border-left: 1px solid rgba(4, 0, 37, 0.07);
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.06);
+}
+
+.waPanel.waPanelCollapsed {
+  width: 52px;
+}
+
+.waPanelInner {
+  width: 404px;
+  height: 100%;
+  padding: 28px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.waPanelActive {
+  padding-right: 404px;
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waPanelCollapsedShell {
+  padding-right: 52px;
+  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waPanelCollapsedBtn {
+  width: 52px;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s ease;
+}
+
+.waPanelCollapsedBtn:hover {
+  background: rgba(4, 0, 37, 0.05);
+}
+
+.waPanelCollapsedIcon {
+  position: relative;
+  display: inline-flex;
+}
+
+.waPanelCollapsedIcon .waPanelCount {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+}
+
+.waPanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.65);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.waPanelCount {
+  background: #ef4444;
+  color: white;
+  border: none;
+  font-size: 11px;
+  font-weight: 900;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.waCardDismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #040025;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.waCardDismiss:hover {
+  background: #040025;
+  color: white;
+}
+
+.waCardList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.waCard {
+  background: #f8fafc;
+  border: 1px solid rgba(4, 0, 37, 0.08);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.waCardHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.waCardName {
+  font-size: 13px;
+  font-weight: 800;
+  color: #040025;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.waCardDate {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.waCardMsg {
+  width: 100%;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(4, 0, 37, 0.75);
+  line-height: 1.5;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 10px;
+  padding: 8px 10px;
+  resize: none;
+  background: white;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+  min-height: 56px;
+}
+
+.waCardMsg:focus {
+  outline: none;
+  border-color: rgba(0, 64, 164, 0.35);
+}
+
+.waCardPhone {
+  display: flex;
+  gap: 6px;
+}
+
+/* Custom country dropdown */
+.waCountryWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.waCountryBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(4, 0, 37, 0.8);
+  padding: 6px 8px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease;
+}
+
+.waCountryBtn:hover {
+  border-color: rgba(0, 64, 164, 0.3);
+}
+
+.waCountryDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 999;
+  background: white;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  min-width: 190px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.waCountryOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.waCountryOption:hover {
+  background: rgba(0, 64, 164, 0.05);
+}
+
+.waCountryOption.active {
+  background: rgba(0, 64, 164, 0.08);
+}
+
+.waCountryFlag,
+.waCountryOptionFlag {
+  flex-shrink: 0;
+  border-radius: 2px;
+  display: block;
+}
+
+.waCountryOptionName {
+  flex: 1;
+  font-weight: 600;
+  color: rgba(4, 0, 37, 0.8);
+  font-size: 12px;
+}
+
+.waCountryOptionCode {
+  font-weight: 700;
+  color: #0040a4;
+  font-size: 12px;
+}
+
+.waCardNumber {
+  flex: 1;
+  border: 1px solid rgba(4, 0, 37, 0.1);
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(4, 0, 37, 0.85);
+  padding: 6px 10px;
+  font-family: inherit;
+  min-width: 0;
+  transition: border-color 0.15s ease;
+}
+
+.waCardNumber:focus {
+  outline: none;
+  border-color: rgba(0, 64, 164, 0.35);
+}
+
+.waCardNumber::placeholder {
+  color: #cbd5e1;
+}
+
+.waCardBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 750;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, opacity 0.18s ease;
+}
+
+.waCardBtn:hover:not(:disabled) {
+  background: #1db954;
+}
+
+.waCardBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Upload intro collapse animation */
+.uploadIntro {
+  max-height: 420px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.4s ease,
+              margin-bottom 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0;
+}
+
+.uploadIntroHidden {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
 }
 
 /* TITLES */
@@ -576,11 +927,15 @@ body.sidebar-collapsed .appShell {
 }
 
 .analyzingText {
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--navy);
-  letter-spacing: 0.5px;
-  animation: fadeInOut 3.5s ease-in-out infinite;
+  color: rgba(4, 0, 37, 0.45);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  text-align: center;
+  max-width: 420px;
+  line-height: 1.5;
+  animation: fadeInOut 8s ease-in-out infinite;
 }
 
 @keyframes fadeInOut {
@@ -589,65 +944,93 @@ body.sidebar-collapsed .appShell {
 }
 
 /* RECENT SESSIONS */
+@keyframes sessionsFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardSlideIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .recentSessionsContainer {
   width: 720px;
   max-width: 100%;
   margin: 20px auto 40px auto;
   text-align: left;
+  animation: sessionsFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .recentTitle {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--navy);
-  margin-bottom: 16px;
+  font-size: 11px;
+  font-weight: 900;
+  color: rgba(4, 0, 37, 0.45);
+  margin-bottom: 14px;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.4px;
+  text-align: left;
+  padding-left: 4px;
 }
 
 .recentList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .sessionCard {
   display: flex;
   align-items: center;
   background: white;
-  padding: 16px 20px;
+  padding: 18px 24px;
   border-radius: 16px;
   border: 1px solid #E2E8F0;
-  transition: all 0.2s;
+  border-left: 3px solid #0040A4;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  animation: cardSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  gap: 16px;
 }
+
+.sessionCard:nth-child(1) { animation-delay: 0.06s; }
+.sessionCard:nth-child(2) { animation-delay: 0.14s; }
+.sessionCard:nth-child(3) { animation-delay: 0.22s; }
+.sessionCard:nth-child(4) { animation-delay: 0.30s; }
+.sessionCard:nth-child(5) { animation-delay: 0.38s; }
+.sessionCard:nth-child(6) { animation-delay: 0.46s; }
+.sessionCard:nth-child(7) { animation-delay: 0.54s; }
+.sessionCard:nth-child(8) { animation-delay: 0.62s; }
 
 .sessionCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-  border-color: #cbd5e1;
+  box-shadow: 0 6px 20px rgba(0, 64, 164, 0.08);
+  border-color: #0040A4;
 }
 
 .sessionIcon {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: #DCFCE7;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
   flex-shrink: 0;
 }
 
 .sessionInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .sessionName {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--navy);
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sessionDate {

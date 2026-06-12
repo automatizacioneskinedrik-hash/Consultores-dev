@@ -5,6 +5,7 @@ import {
   ClockCircleOutlined,
   PercentageOutlined,
   PhoneOutlined,
+  QuestionCircleOutlined,
   ReloadOutlined,
   StarOutlined,
   WarningOutlined,
@@ -12,7 +13,10 @@ import {
 import {
   Area,
   AreaChart,
+  Bar,
+  BarChart,
   CartesianGrid,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -103,6 +107,113 @@ const CHART_TABS = [
 ];
 
 const DONUT_COLORS = ["#0040A4", "#2885FF"];
+
+const KPI_DEFS_COMERCIAL = [
+  {
+    key: "pctSinDiagnostico",
+    label: "Sin diagnóstico previo",
+    legend: "% de llamadas donde el precio apareció sin preguntar el presupuesto al cliente.",
+    icon: <WarningOutlined />,
+    suffix: "%",
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) <= 30
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) <= 70
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
+  },
+  {
+    key: "avgPreguntasDescubrimiento",
+    label: "Preguntas de descubrimiento",
+    legend: "Promedio de preguntas abiertas del consultor antes de dar el precio.",
+    icon: <QuestionCircleOutlined />,
+    getIconStyle: () => ({ color: "#0040A4", background: "rgba(0,64,164,0.1)" }),
+  },
+  {
+    key: "avgMonologoSeg",
+    label: "Monólogo más largo",
+    legend: "Promedio del turno ininterrumpido más largo del consultor en la sesión.",
+    icon: <ClockCircleOutlined />,
+    getIconStyle: () => ({ color: "#2885FF", background: "rgba(40,133,255,0.1)" }),
+  },
+  {
+    key: "avgMuletillasPorMinuto",
+    label: "Muletillas / minuto",
+    legend: "Promedio de muletillas por minuto hablado por el consultor. Referencia óptima: menos de 1.",
+    icon: <WarningOutlined />,
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 2
+          ? { color: "#dc2626", background: "rgba(220,38,38,0.1)" }
+          : Number(val) >= 1
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#16a34a", background: "rgba(22,163,74,0.1)" },
+  },
+  {
+    key: "pctCedioPalabra",
+    label: "Cedió palabra tras precio",
+    legend: "% de llamadas donde el consultor guardó silencio después de dar el precio y dejó hablar al cliente.",
+    icon: <CheckCircleOutlined />,
+    suffix: "%",
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 70
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) >= 40
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
+  },
+  {
+    key: "avgAdherenciaScore",
+    label: "Adherencia al guion",
+    legend: "Mide si las fases se ejecutaron en la secuencia correcta (F1→F5), no cuántas se alcanzaron. Complementa 'Avance por fase': alta cobertura con orden incorrecto baja este score.",
+    icon: <StarOutlined />,
+    suffix: "%",
+    getIconStyle: (val) =>
+      val == null || val === "—"
+        ? { color: "#94a3b8", background: "rgba(148,163,184,0.1)" }
+        : Number(val) >= 80
+          ? { color: "#16a34a", background: "rgba(22,163,74,0.1)" }
+          : Number(val) >= 50
+            ? { color: "#d97706", background: "rgba(217,119,6,0.1)" }
+            : { color: "#dc2626", background: "rgba(220,38,38,0.1)" },
+  },
+];
+
+const COMPROMISO_LABELS = {
+  firme: "Firme",
+  condicionado: "Condicionado",
+  aplazado: "Aplazado",
+  sin_compromiso: "Sin compromiso",
+};
+const COMPROMISO_COLORS = {
+  firme: "#16a34a",
+  condicionado: "#d97706",
+  aplazado: "#2885FF",
+  sin_compromiso: "#dc2626",
+};
+const FASE_LABELS = {
+  F1: "F1 · Apertura",
+  F2: "F2 · Diagnóstico",
+  F3: "F3 · Visión",
+  F4: "F4 · Propuesta",
+  F5: "F5 · Cierre",
+};
+
+const OBJECION_LABELS = {
+  precio: "Precio",
+  titulacion: "Titulación",
+  tiempo: "Tiempo",
+  decisor: "Decisor",
+  formato: "Formato",
+  otras_opciones: "Otras opciones",
+  nivel: "Nivel",
+  otro: "Otro",
+};
 
 const NUMBER_FORMAT = new Intl.NumberFormat("es-CO");
 
@@ -353,7 +464,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
             />
           </div>
         ) : (
-          <ResponsiveContainer key={activeKey} width="100%" height="100%">
+          <ResponsiveContainer key={activeKey} width="100%" height={280}>
             <AreaChart data={data} margin={{ top: 24, right: 16, left: 6, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -456,6 +567,135 @@ function DashboardTalkBarCard({ consultantPct, clientPct, loading }) {
   );
 }
 
+function DashboardCompromisoCard({ data, loading }) {
+  const bars = useMemo(() => {
+    if (!data) return null;
+    const total = Object.values(data).reduce((a, b) => a + b, 0);
+    if (total === 0) return null;
+    return Object.entries(data).map(([key, count]) => ({
+      key,
+      name: COMPROMISO_LABELS[key] || key,
+      count,
+      pct: (count / total) * 100,
+      color: COMPROMISO_COLORS[key] || "#94a3b8",
+    }));
+  }, [data]);
+
+  return (
+    <Card className="dashboardPanel dashboardTalkCard" title="Tipo de compromiso de cierre">
+      <div className="dashboardTalkWrap">
+        {loading ? (
+          <div className="dashboardChartState"><Spin /></div>
+        ) : !bars ? (
+          <div className="dashboardChartState">
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin datos para los filtros seleccionados" />
+          </div>
+        ) : (
+          <div className="dashboardTalkBars">
+            {bars.map((bar) => (
+              <div key={bar.key} className="dashboardTalkBarRow">
+                <div className="dashboardTalkBarLabel">{bar.name}</div>
+                <div className="dashboardTalkBarTrack">
+                  <div
+                    className="dashboardTalkBarFill"
+                    style={{ width: `${bar.pct}%`, background: bar.color }}
+                  />
+                </div>
+                <div className="dashboardTalkBarValue" style={{ color: bar.color }}>
+                  {bar.count}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DashboardFasesCard({ data, loading }) {
+  return (
+    <Card className="dashboardPanel" title="Avance por fase del guion">
+      <div className="dashboardChartWrap">
+        {loading ? (
+          <div className="dashboardChartState"><Spin /></div>
+        ) : !data?.length ? (
+          <div className="dashboardChartState">
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin datos para los filtros seleccionados" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data} layout="vertical" margin={{ left: 4, right: 52, top: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(4,0,37,0.08)" />
+              <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} tickFormatter={(v) => `${v}%`} />
+              <YAxis
+                type="category"
+                dataKey="fase"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(v) => FASE_LABELS[v] || v}
+                width={110}
+              />
+              <Tooltip
+                formatter={(value) => [`${value}%`, "% de llamadas"]}
+                labelFormatter={(label) => FASE_LABELS[label] || label}
+              />
+              <Bar dataKey="pct" name="% llamadas" fill="#0040A4" radius={[0, 6, 6, 0]} barSize={18}>
+                <LabelList
+                  dataKey="pct"
+                  position="right"
+                  formatter={(v) => `${v}%`}
+                  style={{ fontSize: 12, fontWeight: 700, fill: "#0040A4" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function DashboardObjecionesCard({ data, loading }) {
+  return (
+    <Card className="dashboardPanel" title="Objeciones más frecuentes">
+      <div className="dashboardChartWrap">
+        {loading ? (
+          <div className="dashboardChartState"><Spin /></div>
+        ) : !data?.length ? (
+          <div className="dashboardChartState">
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin datos para los filtros seleccionados" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={data} layout="vertical" margin={{ left: 4, right: 44, top: 8, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(4,0,37,0.08)" />
+              <XAxis type="number" tick={{ fontSize: 12 }} allowDecimals={false} />
+              <YAxis
+                type="category"
+                dataKey="categoria"
+                tick={{ fontSize: 12 }}
+                tickFormatter={(v) => OBJECION_LABELS[v] || v}
+                width={92}
+              />
+              <Tooltip
+                formatter={(value) => [value, "Menciones"]}
+                labelFormatter={(label) => OBJECION_LABELS[label] || label}
+              />
+              <Bar dataKey="count" name="Menciones" fill="#2885FF" radius={[0, 6, 6, 0]} barSize={18}>
+                <LabelList
+                  dataKey="count"
+                  position="right"
+                  style={{ fontSize: 12, fontWeight: 700, fill: "#0040A4" }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export default function Dashboard() {
   const user = useMemo(() => getUser() || {}, []);
   const email = String(user.email || "").toLowerCase();
@@ -493,6 +733,7 @@ export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState(() => ({
     kpis: null,
     series: [],
+    distributions: null,
     meta: null,
   }));
 
@@ -625,6 +866,7 @@ export default function Dashboard() {
         setDashboardData({
           kpis: data.kpis || null,
           series: Array.isArray(data.series) ? data.series : [],
+          distributions: data.distributions || null,
           meta: data.meta || null,
         });
       } catch (err) {
@@ -649,6 +891,18 @@ export default function Dashboard() {
       meanScore: formatFixed(k.meanScore, 1),
       expectedDurationSec: formatDurationSeconds(k.expectedDurationSec),
       meanCloseProbability: formatFixed(k.meanCloseProbability, 1),
+    };
+  }, [dashboardData.kpis]);
+
+  const kpiValuesComercial = useMemo(() => {
+    const k = dashboardData.kpis || {};
+    return {
+      pctSinDiagnostico: k.pctSinDiagnostico != null ? formatFixed(k.pctSinDiagnostico, 1) : "—",
+      avgPreguntasDescubrimiento: k.avgPreguntasDescubrimiento != null ? formatFixed(k.avgPreguntasDescubrimiento, 1) : "—",
+      avgMonologoSeg: k.avgMonologoSeg != null ? formatDurationSeconds(k.avgMonologoSeg) : "—",
+      avgMuletillasPorMinuto: k.avgMuletillasPorMinuto != null ? formatFixed(k.avgMuletillasPorMinuto, 1) : "—",
+      pctCedioPalabra: k.pctCedioPalabra != null ? formatFixed(k.pctCedioPalabra, 1) : "—",
+      avgAdherenciaScore: k.avgAdherenciaScore != null ? formatFixed(k.avgAdherenciaScore, 1) : "—",
     };
   }, [dashboardData.kpis]);
 
@@ -757,9 +1011,9 @@ export default function Dashboard() {
           ) : (
             <>
               <section className="dashboardSection">
-                <Row gutter={[16, 16]}>
+                <Row gutter={[16, 16]} className="dashboardKpiRow5">
                   {KPI_DEFS.map((kpi) => (
-                    <Col key={kpi.key} xs={24} sm={12} lg={6}>
+                    <Col key={kpi.key} xs={24} sm={12}>
                       <DashboardKpiCard
                         label={kpi.label}
                         legend={kpi.legend}
@@ -775,6 +1029,19 @@ export default function Dashboard() {
                         }
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}
+                        loading={dashboardLoading}
+                      />
+                    </Col>
+                  ))}
+                  {KPI_DEFS_COMERCIAL.map((kpi) => (
+                    <Col key={kpi.key} xs={24} sm={12}>
+                      <DashboardKpiCard
+                        label={kpi.label}
+                        legend={kpi.legend}
+                        icon={kpi.icon}
+                        iconStyle={kpi.getIconStyle(kpiValuesComercial[kpi.key])}
+                        value={kpiValuesComercial[kpi.key]}
+                        suffix={kpiValuesComercial[kpi.key] !== "—" ? (kpi.suffix || null) : null}
                         loading={dashboardLoading}
                       />
                     </Col>
@@ -808,6 +1075,29 @@ export default function Dashboard() {
                     <DashboardTalkBarCard
                       consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
                       clientPct={dashboardData.kpis?.meanClientTalkPct}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                </Row>
+              </section>
+
+              <section className="dashboardSection">
+                <Row gutter={[16, 16]}>
+                  <Col xs={24} xl={8}>
+                    <DashboardCompromisoCard
+                      data={dashboardData.distributions?.compromisoBreakdown}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                  <Col xs={24} xl={8}>
+                    <DashboardFasesCard
+                      data={dashboardData.distributions?.fasesDistribucion}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                  <Col xs={24} xl={8}>
+                    <DashboardObjecionesCard
+                      data={dashboardData.distributions?.topObjeciones}
                       loading={dashboardLoading}
                     />
                   </Col>

@@ -2,7 +2,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs-extra";
 import os from "os";
-import ffmpeg from "fluent-ffmpeg";
+import { AssemblyAI } from "assemblyai";
 import admin, { db } from "../config/firebase.js";
 import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
@@ -11,68 +11,101 @@ import { getSystemPrompt } from "../../prompts-master.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
-const CHUNK_DURATION_SEC = 10 * 60;   // 10 min por chunk
-const WHISPER_CONCURRENCY = 3;         // máximo 3 chunks en paralelo
-const LONG_AUDIO_THRESHOLD_SEC = 15 * 60; // chunking si > 15 min
-const WHISPER_LIMIT_BYTES = 25 * 1024 * 1024;
+const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 
-function getAudioDurationSec(filePath) {
-  return new Promise((resolve) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) {
-        console.warn("ffprobe failed, using size-based fallback:", err.message);
-        resolve(0);
-      } else {
-        resolve(metadata?.format?.duration || 0);
-      }
-    });
-  });
-}
+const PRICE_REGEX = /\d[\d.,]*\s*(?:€|\$|euros?|d[oó]lares?|usd)\b/i;
 
-async function splitIntoChunks(inputPath, chunkDir) {
-  const outputPattern = path.join(chunkDir, "chunk_%03d.mp3");
-  await new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-      .outputOptions([
-        "-f", "segment",
-        "-segment_time", String(CHUNK_DURATION_SEC),
-        "-reset_timestamps", "1",
-        "-c:a", "libmp3lame",
-        "-b:a", "32k",
-      ])
-      .output(outputPattern)
-      .on("end", resolve)
-      .on("error", reject)
-      .run();
-  });
-  const files = (await fs.readdir(chunkDir))
-    .filter(f => /^chunk_\d+\.mp3$/.test(f))
-    .sort();
-  return files.map(f => path.join(chunkDir, f));
-}
-
-async function transcribeChunks(chunkPaths) {
-  const results = new Array(chunkPaths.length);
-  for (let i = 0; i < chunkPaths.length; i += WHISPER_CONCURRENCY) {
-    const batch = chunkPaths.slice(i, i + WHISPER_CONCURRENCY);
-    const batchResults = await Promise.all(
-      batch.map(p => openai.audio.transcriptions.create({
-        file: fs.createReadStream(p),
-        model: "whisper-1",
-        response_format: "verbose_json",
-      }))
-    );
-    batchResults.forEach((r, j) => { results[i + j] = r; });
-    console.log(`Chunks ${i + 1}–${Math.min(i + WHISPER_CONCURRENCY, chunkPaths.length)} / ${chunkPaths.length} transcritos`);
+function detectCedioPalabraTrasPrice(utterances, consultorSpeaker) {
+  for (let i = 0; i < utterances.length; i++) {
+    const u = utterances[i];
+    if (u.speaker === consultorSpeaker && PRICE_REGEX.test(u.text)) {
+      const next = utterances[i + 1];
+      if (!next) return null; // llamada termina en ese turno
+      return next.speaker !== consultorSpeaker; // true = cliente habló primero
+    }
   }
-  return results;
+  return null; // precio nunca mencionado
+}
+
+async function transcribeWithDiarization(filePath) {
+  const transcript = await assemblyai.transcripts.transcribe({
+    audio: filePath,
+    speaker_labels: true,
+    speech_models: ["universal-2"],
+    language_detection: true,
+    filter_profanity: false,
+  });
+
+  if (transcript.status === "error") {
+    throw new Error(`AssemblyAI error: ${transcript.error}`);
+  }
+
+  const utterances = transcript.utterances || [];
+
+  // Calcular palabras por hablante primero
+  const wordCounts = {};
+  for (const u of utterances) {
+    const wc = u.text.split(/\s+/).filter(Boolean).length;
+    wordCounts[u.speaker] = (wordCounts[u.speaker] || 0) + wc;
+  }
+
+  // En una llamada de ventas el CONSULTOR siempre habla más que el cliente.
+  // Usamos el hablante con más palabras como CONSULTOR en lugar del orden de aparición,
+  // porque el cliente/prospecto suele hablar primero con un saludo corto.
+  const consultorSpeaker = Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])[0]?.[0] || utterances[0]?.speaker || "A";
+
+  const SILENCE_THRESHOLD_MS = 2000; // gaps < 2s son pausas naturales, no se marcan
+
+  const formattedText = utterances.length > 0
+    ? utterances
+        .map((u, i) => {
+          const label = u.speaker === consultorSpeaker ? "CONSULTOR" : "CLIENTE";
+          let silenceMarker = "";
+          if (i > 0) {
+            const gapMs = u.start - utterances[i - 1].end;
+            if (gapMs >= SILENCE_THRESHOLD_MS) {
+              const gapSec = Math.round(gapMs / 1000);
+              silenceMarker = `[SILENCIO ${gapSec}s]\n`;
+            }
+          }
+          return `${silenceMarker}${label}: ${u.text}`;
+        })
+        .join("\n")
+    : (transcript.text || "");
+
+  const totalWords = Object.values(wordCounts).reduce((a, b) => a + b, 0) || 1;
+  const consultorWords = wordCounts[consultorSpeaker] || 0;
+  const consultorPct = Math.round((consultorWords / totalWords) * 100);
+
+  // Monólogo más largo del consultor (turno ininterrumpido en segundos)
+  let monologo_mas_largo_seg = 0;
+  let consultorMinutos = 0;
+  for (const u of utterances) {
+    if (u.speaker === consultorSpeaker) {
+      const durSeg = ((u.end || 0) - (u.start || 0)) / 1000;
+      if (durSeg > monologo_mas_largo_seg) monologo_mas_largo_seg = durSeg;
+      consultorMinutos += durSeg / 60;
+    }
+  }
+  monologo_mas_largo_seg = Math.round(monologo_mas_largo_seg);
+
+  return {
+    transcriptionText: formattedText,
+    durationSec: transcript.audio_duration || 0,
+    consultorPct,
+    clientePct: 100 - consultorPct,
+    monologo_mas_largo_seg,
+    consultorMinutos,
+    utterances,
+    consultorSpeaker,
+  };
 }
 
 export async function processAudioAnalysis(objectPath, userEmail) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
 
   // GUARDIA ANTI-DUPLICADOS: si este audio ya fue analizado, no re-procesar.
-  // Esto garantiza que el mismo audio siempre tenga el mismo score, duración y resultados.
   const existingSnap = await db.collection("meetings_analysis")
     .where("objectPath", "==", objectPath)
     .limit(1)
@@ -83,62 +116,25 @@ export async function processAudioAnalysis(objectPath, userEmail) {
   }
 
   const tempFilePath = path.join(os.tmpdir(), `audio_${uuidv4()}${path.extname(objectPath)}`);
-  let filesToClean = [tempFilePath];
 
   try {
     if (!openai) {
       throw new Error("OPENAI_API_KEY no configurada en el entorno");
     }
-
-    await bucket.file(objectPath).download({ destination: tempFilePath });
-    console.log("File downloaded to temp path:", tempFilePath);
-
-    const durationSec = await getAudioDurationSec(tempFilePath);
-    const isLongAudio = durationSec > LONG_AUDIO_THRESHOLD_SEC;
-
-    let transcriptionText;
-    let totalSeconds;
-
-    if (isLongAudio) {
-      const durationMin = Math.round(durationSec / 60);
-      console.log(`Audio largo (${durationMin} min). Dividiendo en chunks de ${CHUNK_DURATION_SEC / 60} min...`);
-
-      const chunkDir = path.join(os.tmpdir(), `chunks_${uuidv4()}`);
-      await fs.ensureDir(chunkDir);
-      filesToClean.push(chunkDir);
-
-      const chunkPaths = await splitIntoChunks(tempFilePath, chunkDir);
-      console.log(`Dividido en ${chunkPaths.length} chunks. Transcribiendo (${WHISPER_CONCURRENCY} en paralelo)...`);
-
-      const chunkResults = await transcribeChunks(chunkPaths);
-      transcriptionText = chunkResults.map(r => r.text.trim()).join(" ");
-      totalSeconds = durationSec; // ffprobe es la fuente autoritativa de duración
-    } else {
-      let finalAudioPath = tempFilePath;
-      const stats = await fs.stat(tempFilePath);
-
-      if (stats.size > WHISPER_LIMIT_BYTES) {
-        console.log(`Archivo excede los 25MB (${stats.size} bytes). Comprimiendo...`);
-        const compressedPath = path.join(os.tmpdir(), `compressed_${uuidv4()}.mp3`);
-        await new Promise((resolve, reject) => {
-          ffmpeg(tempFilePath).audioBitrate("32k").format("mp3")
-            .on("end", resolve).on("error", reject).save(compressedPath);
-        });
-        finalAudioPath = compressedPath;
-        filesToClean.push(compressedPath);
-      }
-
-      const transcription = await openai.audio.transcriptions.create({
-        file: fs.createReadStream(finalAudioPath),
-        model: "whisper-1",
-        response_format: "verbose_json",
-      });
-      transcriptionText = transcription.text;
-      totalSeconds = transcription.duration || 0;
+    if (!process.env.ASSEMBLYAI_API_KEY) {
+      throw new Error("ASSEMBLYAI_API_KEY no configurada en el entorno");
     }
 
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = Math.floor(totalSeconds % 60);
+    await bucket.file(objectPath).download({ destination: tempFilePath });
+    console.log("Archivo descargado:", tempFilePath);
+
+    console.log("Transcribiendo con AssemblyAI (diarización activada)...");
+    const { transcriptionText, durationSec, consultorPct, clientePct, monologo_mas_largo_seg, consultorMinutos, utterances, consultorSpeaker } =
+      await transcribeWithDiarization(tempFilePath);
+    console.log(`Transcripción completada. Duración: ${durationSec}s`);
+
+    const minutes = Math.floor(durationSec / 60);
+    const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
     let additionalInstructions = "";
@@ -157,13 +153,26 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     });
 
     const analysis = JSON.parse(completion.choices[0].message.content);
-    analysis.participacion.duracion_total = durationStr;
 
-    // Calcular score general UNA SOLA VEZ aquí y persistirlo para que sea consistente en todas las vistas
+    // Sobrescribir participación con los valores reales calculados desde AssemblyAI
+    analysis.participacion = {
+      ...(analysis.participacion || {}),
+      consultor_pct: `${consultorPct}%`,
+      cliente_pct: `${clientePct}%`,
+      duracion_total: durationStr,
+    };
+
     const sc = analysis.scorecard || {};
     const generalScore = Math.round(
       ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
     );
+
+    const muletillasCount = typeof sc.muletillas?.count === "number" ? sc.muletillas.count : 0;
+    const muletillas_por_minuto = consultorMinutos > 0
+      ? Math.round((muletillasCount / consultorMinutos) * 10) / 10
+      : null;
+
+    const cedio_palabra_tras_precio = detectCedioPalabraTrasPrice(utterances, consultorSpeaker);
 
     const now = new Date();
     const analysisData = {
@@ -172,27 +181,49 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       transcription: transcriptionText,
       analysis,
       generalScore,
+      monologo_mas_largo_seg,
+      muletillas_por_minuto,
+      cedio_palabra_tras_precio,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
     const docRef = await db.collection("meetings_analysis").add(analysisData);
 
+    if (analysis.seguimiento) {
+      const fechaEnvio = new Date();
+      await db.collection("followUps").add({
+        consultorEmail: normalizeEmailValue(userEmail),
+        sessionId: docRef.id,
+        clienteNombre: analysis.nombre_cliente || "Cliente",
+        tipoSeguimiento: analysis.seguimiento.tipo || "pensar",
+        fraseCliente: analysis.seguimiento.frase_cliente || "",
+        mensajeSugerido: analysis.seguimiento.mensaje_sugerido || "",
+        telefono: "",
+        codigoPais: "+34",
+        fechaSesion: admin.firestore.FieldValue.serverTimestamp(),
+        fechaEnvio,
+        enviado: false,
+        fechaEnviado: null,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
     if (transporter && userEmail && userEmail !== "anonymous") {
       const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
-      let consultantName = userEmail.split('@')[0];
+      let consultantName = userEmail.split("@")[0];
       if (!userSnapshot.empty) {
         consultantName = userSnapshot.docs[0].data().name || consultantName;
       }
 
       const clienteNome = analysis.nombre_cliente || "Cliente";
-      const dateStr = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+      const dateStr = new Date().toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
       const emailConfig = await getEmailConfigFromFirestore();
 
       const mailOptions = {
         from: process.env.EMAIL_FROM || "Kinedriꓘ <no-reply@kinedrik.com>",
         to: normalizeEmailValue(userEmail),
         subject: `Reporte: Reunión con ${clienteNome} — ${dateStr}`,
-        html: generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome)
+        html: generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome),
       };
 
       if (emailConfig.ccEmails.length > 0) mailOptions.cc = emailConfig.ccEmails;
@@ -213,9 +244,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     console.error("Error processing analysis:", err);
     throw err;
   } finally {
-    for (const f of filesToClean) {
-      if (await fs.pathExists(f)) await fs.remove(f);
-    }
+    if (await fs.pathExists(tempFilePath)) await fs.remove(tempFilePath);
   }
 }
 
@@ -278,7 +307,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                       <tr>
                         <td align="center" style="padding:26px 20px;">
                           <div style="font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:1px; opacity:0.8; color:#FFFFFF; margin-bottom:14px;">Tiempo de Conexión</div>
-                          <div style="font-size:42px; line-height:1; font-weight:900; color:#FFFFFF; letter-spacing:-1px; margin-bottom:8px;">${minutes}:${seconds.toString().padStart(2, '0')}</div>
+                          <div style="font-size:42px; line-height:1; font-weight:900; color:#FFFFFF; letter-spacing:-1px; margin-bottom:8px;">${minutes}:${seconds.toString().padStart(2, "0")}</div>
                           <div style="font-size:10px; line-height:1.4; font-weight:600; color:#FFFFFF; opacity:0.75;">¡Minutos de puro valor!</div>
                         </td>
                       </tr>
@@ -292,11 +321,11 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:12px;">
                             <tr>
                               <td align="left">
-                                <div style="font-size:24px; font-weight:900; color:#BB8AFF;">${analysis.participacion.consultor_pct.replace('%', '')}%</div>
+                                <div style="font-size:24px; font-weight:900; color:#BB8AFF;">${analysis.participacion.consultor_pct.replace("%", "")}%</div>
                                 <div style="font-size:10px; font-weight:800; color:#94A3B8; text-transform:uppercase;">Tú</div>
                               </td>
                               <td align="right">
-                                <div style="font-size:24px; font-weight:900; color:#FF5900;">${analysis.participacion.cliente_pct.replace('%', '')}%</div>
+                                <div style="font-size:24px; font-weight:900; color:#FF5900;">${analysis.participacion.cliente_pct.replace("%", "")}%</div>
                                 <div style="font-size:10px; font-weight:800; color:#94A3B8; text-transform:uppercase;">${clienteNome}</div>
                               </td>
                             </tr>
@@ -321,7 +350,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                 <tr>
                   <td style="padding:26px 20px;">
                     <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#0040A4; margin-bottom:8px;">
-                      Interés del Cliente <span style="float:right; background-color:#E0E7FF; color:#4338CA; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_interes || 'Indeterminado'}</span>
+                      Interés del Cliente <span style="float:right; background-color:#E0E7FF; color:#4338CA; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_interes || "Indeterminado"}</span>
                     </div>
                     <div style="font-size:32px; font-weight:900; color:#1E293B; margin-bottom:8px;">${analysis.probabilidades?.interes_cliente || 0}%</div>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:10px; margin-bottom:24px;">
@@ -331,7 +360,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                       </tr>
                     </table>
                     <div style="font-size:11px; font-weight:900; text-transform:uppercase; color:#EA580C; margin-bottom:8px;">
-                      Proximidad al Cierre <span style="float:right; background-color:#FFEDD5; color:#C2410C; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_cierre || 'Indeterminado'}</span>
+                      Proximidad al Cierre <span style="float:right; background-color:#FFEDD5; color:#C2410C; padding:2px 8px; border-radius:12px; font-size:9px;">${analysis.probabilidades?.estado_cierre || "Indeterminado"}</span>
                     </div>
                     <div style="font-size:32px; font-weight:900; color:#1E293B; margin-bottom:8px;">${analysis.probabilidades?.proximidad_cierre || 0}%</div>
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F5F9; border-radius:10px;">
@@ -350,10 +379,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
               <div style="color:#0F172A; font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Scorecard de la Sesión</div>
               ${(() => {
                 const sc = analysis.scorecard || {};
-                // Normalize scores to "performance" (higher = better) for all metrics
-                // Muletillas is inverted: 0 = excellent, 100 = terrible → performance = 100 - score
                 const performanceMap = Object.fromEntries(
-                  Object.entries(sc).map(([k, d]) => [k, k === 'muletillas' ? 100 - (d.score || 0) : (d.score || 0)])
+                  Object.entries(sc).map(([k, d]) => [k, k === "muletillas" ? 100 - (d.score || 0) : (d.score || 0)])
                 );
                 const minPerformance = Math.min(...Object.values(performanceMap));
                 let hasBadgeGist = false;
@@ -362,9 +389,9 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                   const title = titles[key] || key;
                   const score = data.score || 0;
                   let color = "#EF4444";
-                  if (key === 'muletillas') color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
+                  if (key === "muletillas") color = score <= 30 ? "#22C55E" : score <= 60 ? "#EAB308" : "#EF4444";
                   else color = score >= 71 ? "#22C55E" : score >= 41 ? "#EAB308" : "#EF4444";
-                  let badgeHtml = '';
+                  let badgeHtml = "";
                   if (performanceMap[key] === minPerformance && !hasBadgeGist) {
                     badgeHtml = '<span style="background-color:#EF4444; color:#FFFFFF; padding:4px 10px; border-radius:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px;">POR TRABAJAR</span>';
                     hasBadgeGist = true;
@@ -379,27 +406,27 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                             <td align="right" style="font-size:22px; font-weight:900; color:${color};">${score}%</td>
                           </tr>
                         </table>
-                        <div style="font-size:12px; color:#64748B; font-style:italic; line-height:1.4; margin-bottom:12px; min-height:40px;">${data.contexto || ''}</div>
+                        <div style="font-size:12px; color:#64748B; font-style:italic; line-height:1.4; margin-bottom:12px; min-height:40px;">${data.contexto || ""}</div>
                         <div style="padding-top:4px;">
                           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:2px;">
                             <tr>
                               ${score > 0 ? `<td width="${score}%" align="right" style="padding-right:2px; font-size:13px; line-height:1; color:${color}; font-weight:900;">▼</td>` : `<td width="1%"></td>`}
-                              ${score < 100 && score > 0 ? `<td width="${100 - score}%"></td>` : score === 0 ? `<td width="99%" align="left" style="font-size:13px; line-height:1; color:${color}; font-weight:900;">▼</td>` : ''}
+                              ${score < 100 && score > 0 ? `<td width="${100 - score}%"></td>` : score === 0 ? `<td width="99%" align="left" style="font-size:13px; line-height:1; color:${color}; font-weight:900;">▼</td>` : ""}
                             </tr>
                           </table>
                           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:4px; height:8px; margin-bottom:2px;">
                             <tr>
-                              <td width="30%" style="height:8px; background-color:${key === 'muletillas' ? '#22C55E' : '#EF4444'}; border-radius:4px 0 0 4px;"></td>
+                              <td width="30%" style="height:8px; background-color:${key === "muletillas" ? "#22C55E" : "#EF4444"}; border-radius:4px 0 0 4px;"></td>
                               <td width="40%" style="height:8px; background-color:#EAB308;"></td>
-                              <td width="30%" style="height:8px; background-color:${key === 'muletillas' ? '#EF4444' : '#22C55E'}; border-radius:0 4px 4px 0;"></td>
+                              <td width="30%" style="height:8px; background-color:${key === "muletillas" ? "#EF4444" : "#22C55E"}; border-radius:0 4px 4px 0;"></td>
                             </tr>
                           </table>
                         </div>
-                        ${badgeHtml ? `<div style="margin-top:14px;">${badgeHtml}</div>` : ''}
+                        ${badgeHtml ? `<div style="margin-top:14px;">${badgeHtml}</div>` : ""}
                       </td>
                     </tr>
                   </table>`;
-                }).join('');
+                }).join("");
               })()}
             </td>
           </tr>
@@ -419,8 +446,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                           <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#22C55E; color:#FFFFFF; font-weight:900;">✓</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">${analysis.feedback?.aspecto_positivo?.titulo || 'Buen Trabajo'}</div>
-                          <div style="margin-top:4px; color:#475569; font-size:13px; line-height:1.45;">${analysis.feedback?.aspecto_positivo?.descripcion || ''}</div>
+                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">${analysis.feedback?.aspecto_positivo?.titulo || "Buen Trabajo"}</div>
+                          <div style="margin-top:4px; color:#475569; font-size:13px; line-height:1.45;">${analysis.feedback?.aspecto_positivo?.descripcion || ""}</div>
                         </td>
                       </tr>
                     </table>
@@ -435,8 +462,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
             </td>
           </tr>
           ${(analysis.feedback?.puntos_mejora || []).map(item => {
-            const phases = { F01: 'F01 — Apertura', F02: 'F02 — Diagnóstico', F03: 'F03 — Visión', F04: 'F04 — Vehículo', F05: 'F05 — Cierre' };
-            const phase = phases[(item.codigo_fase || '').substring(0,3)] || item.codigo_fase || '';
+            const phases = { F01: "F01 — Apertura", F02: "F02 — Diagnóstico", F03: "F03 — Visión", F04: "F04 — Vehículo", F05: "F05 — Cierre" };
+            const phase = phases[(item.codigo_fase || "").substring(0, 3)] || item.codigo_fase || "";
             return `
           <tr>
             <td style="padding:0 40px 15px 40px;" class="px-mobile">
@@ -449,7 +476,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                           <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#F97316; color:#FFFFFF; font-weight:900;">!</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; font-size:15px; line-height:1.3;"><span style="color:#94A3B8; font-weight:700;">${phase}</span> <strong style="color:#000000; font-weight:900;">· ${item.titulo_error || 'Mejora'}</strong></div>
+                          <div style="margin:0; font-size:15px; line-height:1.3;"><span style="color:#94A3B8; font-weight:700;">${phase}</span> <strong style="color:#000000; font-weight:900;">· ${item.titulo_error || "Mejora"}</strong></div>
                           <div style="margin-top:12px; color:#475569; font-size:13px; line-height:1.6;">
                             <strong>Frase detectada:</strong> <em>"${item.frase_detectada}"</em><br><br>
                             <strong style="color:#F97316;">Problema:</strong> ${item.problema}<br><br>
@@ -460,8 +487,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                             <div style="background-color:#DCFCE7; color:#166534; padding:12px 14px; border-radius:8px; margin-bottom:10px; font-weight:500; font-size:13px; line-height:1.5;">
                               "${c}"
                             </div>
-                            `).join('')}
-                            ` : ''}
+                            `).join("")}
+                            ` : ""}
                             <div style="background-color:#FFEDD5; padding:10px; border-radius:6px; font-size:12px; border-left:4px solid #EA580C;"><strong>Próxima llamada:</strong> ${item.proxima_llamada}</div>
                           </div>
                         </td>
@@ -472,7 +499,7 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
               </table>
             </td>
           </tr>`;
-          }).join('')}
+          }).join("")}
           <tr>
             <td style="padding:28px 40px 10px 40px;" class="px-mobile">
               <div style="color:#8B5CF6; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:1.5px;">Tus Fortalezas</div>
@@ -489,8 +516,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                           <div style="width:30px; height:30px; line-height:30px; text-align:center; border-radius:50%; background-color:#8B5CF6; color:#FFFFFF; font-weight:900;">★</div>
                         </td>
                         <td valign="top" class="text-box">
-                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">${analysis.feedback?.fortaleza_destacada?.titulo || 'Fortaleza'}</div>
-                          <div style="margin-top:12px; padding:12px; background-color:#E0E7FF; color:#4338CA; border-radius:8px; font-size:14px; font-style:italic; line-height:1.5; font-weight:500;">"${analysis.feedback?.fortaleza_destacada?.cita || ''}"</div>
+                          <div style="margin:0; color:#0F172A; font-size:15px; font-weight:800; line-height:1.3;">${analysis.feedback?.fortaleza_destacada?.titulo || "Fortaleza"}</div>
+                          <div style="margin-top:12px; padding:12px; background-color:#E0E7FF; color:#4338CA; border-radius:8px; font-size:14px; font-style:italic; line-height:1.5; font-weight:500;">"${analysis.feedback?.fortaleza_destacada?.cita || ""}"</div>
                         </td>
                       </tr>
                     </table>
@@ -508,17 +535,17 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
                     ${(analysis.necesidades || []).map(n => `
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:6px;">
                       <tr><td width="15" valign="top" style="color:#22C55E; font-size:14px;">●</td><td valign="top" style="font-size:13px; color:#475569; line-height:1.4;">${n}</td></tr>
-                    </table>`).join('')}
+                    </table>`).join("")}
                   </td>
                   <td valign="top" width="50%" style="padding:20px; border-top:4px solid #F97316; background-color:#F8FAFC;">
                     <div style="font-size:13px; font-weight:900; color:#C2410C; margin-bottom:12px;">Tus próximos pasos</div>
                     ${(analysis.proximos_pasos?.consultor || []).map((p, i) => `
                     <div style="background-color:#FFFFFF; border:1px solid #FFEDD5; border-radius:8px; padding:12px; margin-bottom:10px;">
                       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:8px;">
-                        <tr><td><span style="font-size:10px; font-weight:900; color:#EA580C; background-color:#FFF7ED; padding:3px 8px; border-radius:12px;">PASO ${i+1}</span></td></tr>
+                        <tr><td><span style="font-size:10px; font-weight:900; color:#EA580C; background-color:#FFF7ED; padding:3px 8px; border-radius:12px;">PASO ${i + 1}</span></td></tr>
                       </table>
                       <div style="font-size:13px; color:#334155; line-height:1.4; font-weight:600;">${p}</div>
-                    </div>`).join('')}
+                    </div>`).join("")}
                   </td>
                 </tr>
               </table>

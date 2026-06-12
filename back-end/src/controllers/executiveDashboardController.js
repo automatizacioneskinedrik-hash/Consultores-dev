@@ -1,6 +1,13 @@
 import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
+const DASHBOARD_CACHE = new Map();
+const DASHBOARD_TTL_MS = 2 * 60 * 1000; // 2 minutos
+
+function dashboardCacheKey(consultantEmail, startMs, endMs) {
+  return `${consultantEmail || "all"}:${startMs ?? ""}:${endMs ?? ""}`;
+}
+
 function clampPercent(value) {
   if (value == null || Number.isNaN(value)) return null;
   const n = Number(value);
@@ -111,7 +118,16 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.participacion.duracion_total",
     "analysis.participacion.consultor_pct",
     "analysis.participacion.cliente_pct",
-    "analysis.probabilidades.proximidad_cierre"
+    "analysis.probabilidades.proximidad_cierre",
+    "analysis.fases_alcanzadas",
+    "analysis.adherencia_guion",
+    "analysis.momento_precio",
+    "cedio_palabra_tras_precio",
+    "analysis.tipo_compromiso_cierre",
+    "analysis.preguntas_descubrimiento",
+    "analysis.objeciones",
+    "monologo_mas_largo_seg",
+    "muletillas_por_minuto"
   );
 
   const batchSize = 800;
@@ -146,8 +162,9 @@ export const getConsultantAvailableDates = async (req, res) => {
     for (;;) {
       let query = db
         .collection("meetings_analysis")
+        .where("userEmail", "==", consultantEmail)
         .orderBy("createdAt", "asc")
-        .select("createdAt", "userEmail")
+        .select("createdAt")
         .limit(batchSize);
 
       if (lastDoc) query = query.startAfter(lastDoc);
@@ -155,14 +172,8 @@ export const getConsultantAvailableDates = async (req, res) => {
       const snapshot = await query.get();
 
       for (const doc of snapshot.docs) {
-        const data = doc.data();
-        const email = normalizeEmailValue(data.userEmail);
-        if (email !== consultantEmail) continue;
-
-        const ms = toMillis(data.createdAt);
-        if (!Number.isFinite(ms)) continue;
-
-        dateSet.add(new Date(ms).toISOString().slice(0, 10));
+        const ms = toMillis(doc.data().createdAt);
+        if (Number.isFinite(ms)) dateSet.add(new Date(ms).toISOString().slice(0, 10));
       }
 
       if (snapshot.size < batchSize) break;
@@ -214,6 +225,12 @@ export const getExecutiveDashboardData = async (req, res) => {
     const startMs = req.query.startMs != null ? Number(req.query.startMs) : null;
     const endMs = req.query.endMs != null ? Number(req.query.endMs) : null;
 
+    const cacheKey = dashboardCacheKey(consultantEmail, startMs, endMs);
+    const hit = DASHBOARD_CACHE.get(cacheKey);
+    if (hit && Date.now() - hit.ts < DASHBOARD_TTL_MS) {
+      return res.json(hit.data);
+    }
+
     const [userNamesMap, docs] = await Promise.all([
       loadUserNamesMap(),
       fetchMeetingsAnalysis({ startMs, endMs }),
@@ -234,6 +251,21 @@ export const getExecutiveDashboardData = async (req, res) => {
       talkConsultantN: 0,
       talkClientSum: 0,
       talkClientN: 0,
+      sinDiagnosticoN: 0,
+      sinDiagnosticoTotal: 0,
+      preguntasSum: 0,
+      preguntasN: 0,
+      monologoSum: 0,
+      monologoN: 0,
+      muletillasPorMinutoSum: 0,
+      muletillasPorMinutoN: 0,
+      cedioPalabraT: 0,
+      cedioPalabraTotal: 0,
+      fasesMap: { F1: 0, F2: 0, F3: 0, F4: 0, F5: 0 },
+      adherenciaSum: 0,
+      adherenciaN: 0,
+      compromisoMap: { firme: 0, condicionado: 0, aplazado: 0, sin_compromiso: 0 },
+      objecionesMap: {},
     };
 
     const seriesAgg = new Map();
@@ -312,6 +344,74 @@ export const getExecutiveDashboardData = async (req, res) => {
         agg.clientTalkSum += clientTalk;
         agg.clientTalkN += 1;
       }
+
+      // momento_precio
+      const momentoPrecio = data.analysis?.momento_precio;
+      if (momentoPrecio?.fase_aparicion && momentoPrecio.fase_aparicion !== "No mencionado") {
+        totals.sinDiagnosticoTotal += 1;
+        if (momentoPrecio.precio_sin_diagnostico_previo === true) {
+          totals.sinDiagnosticoN += 1;
+        }
+      }
+
+      // tipo_compromiso_cierre
+      const tipoCompromiso = data.analysis?.tipo_compromiso_cierre;
+      if (tipoCompromiso && tipoCompromiso in totals.compromisoMap) {
+        totals.compromisoMap[tipoCompromiso] += 1;
+      }
+
+      // preguntas_descubrimiento
+      const nPreguntas = data.analysis?.preguntas_descubrimiento?.total;
+      if (typeof nPreguntas === "number" && Number.isFinite(nPreguntas)) {
+        totals.preguntasSum += nPreguntas;
+        totals.preguntasN += 1;
+      }
+
+      // monologo_mas_largo_seg
+      const monologo = data.monologo_mas_largo_seg;
+      if (typeof monologo === "number" && Number.isFinite(monologo) && monologo > 0) {
+        totals.monologoSum += monologo;
+        totals.monologoN += 1;
+      }
+
+      // objeciones
+      const objeciones = data.analysis?.objeciones;
+      if (Array.isArray(objeciones)) {
+        for (const obj of objeciones) {
+          const cat = obj?.categoria;
+          if (cat) totals.objecionesMap[cat] = (totals.objecionesMap[cat] || 0) + 1;
+        }
+      }
+
+      // fases alcanzadas — normaliza "F1-Apertura" → "F1" por si GPT usa formato largo
+      const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
+      if (Array.isArray(fasesAlcanzadas)) {
+        for (const f of fasesAlcanzadas) {
+          const code = String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase();
+          if (code && code in totals.fasesMap) totals.fasesMap[code] += 1;
+        }
+      }
+
+      // adherencia al guion
+      const adherenciaScore = data.analysis?.adherencia_guion?.score;
+      if (typeof adherenciaScore === "number" && Number.isFinite(adherenciaScore)) {
+        totals.adherenciaSum += adherenciaScore;
+        totals.adherenciaN += 1;
+      }
+
+      // cedió palabra tras precio (calculado desde AssemblyAI, no desde GPT)
+      const cedioPalabra = data.cedio_palabra_tras_precio;
+      if (cedioPalabra === true || cedioPalabra === false) {
+        totals.cedioPalabraTotal += 1;
+        if (cedioPalabra === true) totals.cedioPalabraT += 1;
+      }
+
+      // muletillas por minuto
+      const mpm = data.muletillas_por_minuto;
+      if (typeof mpm === "number" && Number.isFinite(mpm)) {
+        totals.muletillasPorMinutoSum += mpm;
+        totals.muletillasPorMinutoN += 1;
+      }
     }
 
     const series = [...seriesAgg.values()]
@@ -348,6 +448,25 @@ export const getExecutiveDashboardData = async (req, res) => {
       meanCloseProbability: totals.closeN ? totals.closeSum / totals.closeN : null,
       meanConsultantTalkPct: totals.talkConsultantN ? totals.talkConsultantSum / totals.talkConsultantN : null,
       meanClientTalkPct: totals.talkClientN ? totals.talkClientSum / totals.talkClientN : null,
+      pctSinDiagnostico: totals.sinDiagnosticoTotal > 0 ? (totals.sinDiagnosticoN / totals.sinDiagnosticoTotal) * 100 : null,
+      avgPreguntasDescubrimiento: totals.preguntasN > 0 ? totals.preguntasSum / totals.preguntasN : null,
+      avgMonologoSeg: totals.monologoN > 0 ? totals.monologoSum / totals.monologoN : null,
+      avgMuletillasPorMinuto: totals.muletillasPorMinutoN > 0 ? totals.muletillasPorMinutoSum / totals.muletillasPorMinutoN : null,
+      avgAdherenciaScore: totals.adherenciaN > 0 ? totals.adherenciaSum / totals.adherenciaN : null,
+      pctCedioPalabra: totals.cedioPalabraTotal > 0 ? (totals.cedioPalabraT / totals.cedioPalabraTotal) * 100 : null,
+    };
+
+    const distributions = {
+      compromisoBreakdown: totals.compromisoMap,
+      topObjeciones: Object.entries(totals.objecionesMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([categoria, count]) => ({ categoria, count })),
+      fasesDistribucion: Object.entries(totals.fasesMap).map(([fase, count]) => ({
+        fase,
+        count,
+        pct: totals.calls > 0 ? Math.round((count / totals.calls) * 100) : 0,
+      })),
     };
 
     const consultantLabel =
@@ -355,10 +474,11 @@ export const getExecutiveDashboardData = async (req, res) => {
         ? userNamesMap[consultantEmail] || formatConsultantLabel(consultantEmail)
         : "Todos";
 
-    return res.json({
+    const responseData = {
       ok: true,
       kpis,
       series,
+      distributions,
       meta: {
         consultant: consultantEmail && consultantEmail !== "all" ? { email: consultantEmail, name: consultantLabel } : null,
         startMs: Number.isFinite(startMs) ? startMs : null,
@@ -366,7 +486,10 @@ export const getExecutiveDashboardData = async (req, res) => {
         bucket,
         totalDocsScanned: docs.length,
       },
-    });
+    };
+
+    DASHBOARD_CACHE.set(cacheKey, { ts: Date.now(), data: responseData });
+    return res.json(responseData);
   } catch (err) {
     console.error("Error building executive dashboard:", err);
     return res.status(500).json({ ok: false, error: "Error al construir el dashboard" });

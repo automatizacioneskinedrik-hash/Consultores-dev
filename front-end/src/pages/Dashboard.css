@@ -496,6 +496,27 @@ body.sidebar-collapsed .dashboardContent {
   border-radius: 999px;
 }
 
+/* ── 5-column KPI row ── */
+
+.dashboardKpiRow5 > .ant-col {
+  flex: 0 0 20% !important;
+  max-width: 20% !important;
+}
+
+@media (max-width: 992px) {
+  .dashboardKpiRow5 > .ant-col {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboardKpiRow5 > .ant-col {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 1024px) {
