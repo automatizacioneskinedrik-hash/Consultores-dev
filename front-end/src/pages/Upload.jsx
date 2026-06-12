@@ -400,7 +400,7 @@ export default function Upload() {
           setStatus("");
           setCurrentObjectPath("");
           if (inputRef.current) inputRef.current.value = "";
-          if (user?.email) fetchRecentSessions(user.email);
+          if (user?.email) { fetchRecentSessions(user.email); fetchFollowUps(user.email); }
         }
       } catch {
         // red inestable: seguir intentando
@@ -561,7 +561,7 @@ export default function Upload() {
         setStatus("");
         setCurrentObjectPath("");
         if (inputRef.current) inputRef.current.value = "";
-        if (user?.email) fetchRecentSessions(user.email);
+        if (user?.email) { fetchRecentSessions(user.email); fetchFollowUps(user.email); }
       } else {
         setSuccessStep(3);
         setShowSuccessModal(true);
@@ -623,6 +623,7 @@ export default function Upload() {
       }
       if (user?.email) {
         fetchRecentSessions(user.email);
+        fetchFollowUps(user.email);
       }
     }
   };
