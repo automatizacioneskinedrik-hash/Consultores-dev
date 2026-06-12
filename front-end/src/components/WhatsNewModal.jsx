@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { X, BarChart2, Download } from 'lucide-react';
-import './WhatsNewModal.css';
-
-const VERSION = '1.3';
-=======
 import { X, MessageCircle, Clock, Zap } from 'lucide-react';
 import './WhatsNewModal.css';
 
 const VERSION = '3.0';
->>>>>>> develop
 
 export default function WhatsNewModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,51 +29,6 @@ export default function WhatsNewModal() {
         </button>
 
         <div className="whatsNewHeader">
-<<<<<<< HEAD
-          <div className="whatsNewVersion">Actualización v1.3</div>
-          <h1 className="whatsNewTitle">Nuevas funcionalidades disponibles</h1>
-          <p className="whatsNewSubtitle">
-            Esta versión incorpora mejoras orientadas a reducir la fricción operativa
-            y facilitar el acceso a la información de cada sesión analizada.
-          </p>
-        </div>
-
-        <div className="whatsNewFeatures">
-          <div className="wnFeature">
-            <div className="wnIconWrap analysis">
-              <BarChart2 size={22} />
-            </div>
-            <div className="wnFeatureBody">
-              <h3>Visualización inmediata del análisis</h3>
-              <p>
-                Al finalizar la carga de un audio, la plataforma redirige automáticamente
-                al informe completo de la sesión: KPIs, score general, áreas de mejora
-                y resumen ejecutivo, sin pasos adicionales.
-              </p>
-            </div>
-          </div>
-
-          <div className="wnFeature">
-            <div className="wnIconWrap download">
-              <Download size={22} />
-            </div>
-            <div className="wnFeatureBody">
-              <h3>Descarga de grabaciones desde el historial</h3>
-              <p>
-                Cada registro en el historial de llamadas ahora incluye una opción
-                de descarga directa del audio original, facilitando la revisión,
-                la auditoría interna y el proceso de retroalimentación entre
-                formadores y consultores.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="whatsNewFooter">
-          <span className="whatsNewFooterNote">KINEDRIꓘ Speech · v1.3</span>
-          <button className="whatsNewBtn" onClick={handleClose}>
-            Continuar a la plataforma
-=======
           <div className="whatsNewVersion whatsNewVersionV3">🚀 Nueva versión v3.0</div>
           <h1 className="whatsNewTitle">La plataforma da un salto.<br />Tú también.</h1>
           <p className="whatsNewSubtitle">
@@ -145,7 +93,6 @@ export default function WhatsNewModal() {
           <span className="whatsNewFooterNote">KINEDRIꓘ Speech · v3.0</span>
           <button className="whatsNewBtn" onClick={handleClose}>
             Explorar la plataforma →
->>>>>>> develop
           </button>
         </div>
       </div>
