@@ -77,9 +77,9 @@ export default function WhatsNewModal() {
               <Zap size={22} />
             </div>
             <div className="wnFeatureBody">
-              <h3>Motor Whisper — transcripción 50% más rápida <span className="wnBadgeSpeed">⚡ +VELOCIDAD</span></h3>
+              <h3>Motor Assembly — transcripción 50% más rápida <span className="wnBadgeSpeed">⚡ +VELOCIDAD</span></h3>
               <p>
-                Hemos migrado el pipeline de transcripción al modelo <strong style={{color:'#fbbf24'}}>Whisper de OpenAI</strong>,
+                Hemos migrado el pipeline de transcripción al modelo <strong style={{color:'#fbbf24'}}>AssemblyAI</strong>,
                 con detección automática de idioma y diarización de hablantes de última generación.
                 El tiempo de procesamiento se reduce hasta un <strong style={{color:'#fbbf24'}}>50%</strong> sin
                 sacrificar ni un punto de precisión en el análisis.
