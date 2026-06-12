@@ -50,6 +50,20 @@ export const markAsSent = async (req, res) => {
   }
 };
 
+export const markAsDismissed = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection("followUps").doc(id).update({
+      enviado: true,
+      rechazado: true,
+      fechaRechazado: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
 export const savePhone = async (req, res) => {
   try {
     const { id } = req.params;

@@ -201,7 +201,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
         fraseCliente: analysis.seguimiento.frase_cliente || "",
         mensajeSugerido: analysis.seguimiento.mensaje_sugerido || "",
         telefono: "",
-        codigoPais: "+57",
+        codigoPais: "+34",
         fechaSesion: admin.firestore.FieldValue.serverTimestamp(),
         fechaEnvio,
         enviado: false,
