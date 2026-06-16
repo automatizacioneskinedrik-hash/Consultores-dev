@@ -194,11 +194,11 @@ body.sidebar-collapsed .appShell {
   55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-/* Wrapper fijo — borde derecho alineado con el panel (right: 0) */
+/* Wrapper: right:16px = padding interior del panel → alinea con las tarjetas */
 .waFloatBtnWrap {
   position: fixed;
   top: 20px;
-  right: 0;
+  right: 16px;
   z-index: 200;
 }
 
@@ -260,11 +260,10 @@ body.sidebar-collapsed .appShell {
   fill: #25D366;
 }
 
-/* Badge dentro del wrapper (right:0 no permite overflow hacia la derecha) */
 .waFloatBtnBadge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: -4px;
+  right: -4px;
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
@@ -301,9 +300,9 @@ body.sidebar-collapsed .appShell {
     padding   0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Cinta extendida: 404px panel - 52px ícono = 352px → cubre el ancho completo del panel */
+/* 404px panel − 16px pad-izq − 16px pad-der − 52px ícono = 320px → alinea con las tarjetas */
 .waFloatBtnOpen .waFloatBtnLabel {
-  max-width: 352px;
+  max-width: 320px;
   padding: 0 20px 0 14px;
 }
 
