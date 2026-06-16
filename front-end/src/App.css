@@ -213,14 +213,16 @@ body.sidebar-collapsed .appShell {
   overflow: hidden;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45), 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+  transition: box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease, padding 0.3s ease;
   outline: none;
 }
 
-/* Estado desplegado: sin borde exterior, el aro verde queda solo en el ícono */
+/* Estado desplegado: padding da espacio al anillo del ícono dentro de overflow:hidden */
 .waFloatBtn.waFloatBtnOpen {
   background: white;
   border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 4px;
 }
 
 .waFloatBtn:hover {
@@ -232,7 +234,7 @@ body.sidebar-collapsed .appShell {
   outline-offset: 3px;
 }
 
-/* Ícono: verde cuando replegado, gris de pantalla cuando desplegado */
+/* Ícono: verde cuando replegado, blanco + aro verde cuando desplegado */
 .waFloatBtnIcon {
   width: 52px;
   height: 52px;
@@ -243,12 +245,18 @@ body.sidebar-collapsed .appShell {
   background: #25D366;
   border-radius: 50%;
   flex-shrink: 0;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, width 0.3s ease, height 0.3s ease,
+              min-width 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Ícono reducido a 44px para que el anillo (box-shadow 2.5px) quepa
+   dentro del padding-box (44 + 2×4px = 52px) sin recortarse */
 .waFloatBtnOpen .waFloatBtnIcon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   background: white;
-  box-shadow: 0 0 0 2.5px #25D366; /* aro verde solo en el círculo */
+  box-shadow: 0 0 0 2.5px #25D366;
 }
 
 /* SVG: blanco cuando replegado, verde cuando desplegado */
@@ -259,6 +267,11 @@ body.sidebar-collapsed .appShell {
 
 .waFloatBtnOpen .waFloatBtnIcon svg {
   fill: #25D366;
+}
+
+/* Ocultar badge cuando el panel está desplegado */
+.waFloatBtnOpen + .waFloatBtnBadge {
+  display: none;
 }
 
 .waFloatBtnBadge {
