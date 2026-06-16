@@ -194,11 +194,11 @@ body.sidebar-collapsed .appShell {
   55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-/* Wrapper fijo — contiene el botón y el badge (fuera del overflow:hidden) */
+/* Wrapper fijo — borde derecho alineado con el panel (right: 0) */
 .waFloatBtnWrap {
   position: fixed;
   top: 20px;
-  right: 20px;
+  right: 0;
   z-index: 200;
 }
 
@@ -260,11 +260,11 @@ body.sidebar-collapsed .appShell {
   fill: #25D366;
 }
 
-/* Badge fuera del overflow:hidden → no se recorta */
+/* Badge dentro del wrapper (right:0 no permite overflow hacia la derecha) */
 .waFloatBtnBadge {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: 2px;
+  right: 2px;
   min-width: 18px;
   height: 18px;
   border-radius: 9px;
@@ -301,9 +301,9 @@ body.sidebar-collapsed .appShell {
     padding   0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Cinta extendida al ancho del panel (404px - 20px margen - 52px ícono = 332px) */
+/* Cinta extendida: 404px panel - 52px ícono = 352px → cubre el ancho completo del panel */
 .waFloatBtnOpen .waFloatBtnLabel {
-  max-width: 332px;
+  max-width: 352px;
   padding: 0 20px 0 14px;
 }
 
