@@ -262,6 +262,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       cedioPalabraT: 0,
       cedioPalabraTotal: 0,
       fasesMap: { F1: 0, F2: 0, F3: 0, F4: 0, F5: 0 },
+      fasesCalls: 0,
       adherenciaSum: 0,
       adherenciaN: 0,
       compromisoMap: { firme: 0, condicionado: 0, aplazado: 0, sin_compromiso: 0 },
@@ -386,7 +387,8 @@ export const getExecutiveDashboardData = async (req, res) => {
       // fases alcanzadas — solo transcripciones desde el 15 jun 2026
       const FASES_CUTOFF_MS = Date.UTC(2026, 5, 15, 0, 0, 0, 0);
       const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
-      if (createdAtMs >= FASES_CUTOFF_MS && Array.isArray(fasesAlcanzadas)) {
+      if (createdAtMs >= FASES_CUTOFF_MS && Array.isArray(fasesAlcanzadas) && fasesAlcanzadas.length > 0) {
+        totals.fasesCalls += 1;
         for (const f of fasesAlcanzadas) {
           const code = String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase();
           if (code && code in totals.fasesMap) totals.fasesMap[code] += 1;
@@ -466,7 +468,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       fasesDistribucion: Object.entries(totals.fasesMap).map(([fase, count]) => ({
         fase,
         count,
-        pct: totals.calls > 0 ? Math.round((count / totals.calls) * 100) : 0,
+        pct: totals.fasesCalls > 0 ? Math.round((count / totals.fasesCalls) * 100) : 0,
       })),
     };
 
