@@ -165,14 +165,14 @@ body.sidebar-collapsed .appShell {
   background: var(--off);
   border-left: 1px solid rgba(4, 0, 37, 0.07);
   overflow: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.06);
+  animation: waPanelSlideIn 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-.waPanel.waPanelCollapsed {
-  width: 52px;
-  overflow: visible;
+@keyframes waPanelSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 
 .waPanelInner {
@@ -189,99 +189,64 @@ body.sidebar-collapsed .appShell {
   transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.waPanelCollapsedShell {
-  padding-right: 52px;
-  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes waBounceIn {
-  0%   { opacity: 0; transform: translateX(50px); }
-  65%  { opacity: 1; transform: translateX(-7px); }
-  82%  { transform: translateX(4px); }
-  100% { transform: translateX(0); }
-}
-
 @keyframes waBadgePulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
   55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-.waPanelCollapsedBtn {
-  width: 52px;
-  height: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+@keyframes waFabIn {
+  0%   { opacity: 0; transform: scale(0.45); }
+  70%  { transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.waFab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #25D366;
   border: none;
-  background: none;
   cursor: pointer;
-  padding: 20px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45), 0 2px 8px rgba(0, 0, 0, 0.18);
+  z-index: 100;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: waFabIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
   outline: none;
 }
 
-.waCollapsedTrigger {
-  display: flex;
-  align-items: center;
-  background: linear-gradient(145deg, #0a1a4f 0%, #040025 100%);
-  border: 1px solid rgba(43, 108, 255, 0.4);
-  border-radius: 28px;
-  padding: 10px;
-  box-shadow: 0 4px 14px rgba(4, 0, 37, 0.35), inset 0 0 0 1px rgba(43, 108, 255, 0.08);
-  overflow: hidden;
-  max-width: 42px;
-  white-space: nowrap;
-  transition:
-    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    padding   0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.22s ease,
-    transform  0.22s ease;
-  animation: waBounceIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 2.5s both;
+.waFab:hover {
+  transform: scale(1.09);
+  box-shadow: 0 8px 26px rgba(37, 211, 102, 0.58), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.waPanelCollapsedBtn:hover .waCollapsedTrigger {
-  max-width: 200px;
-  padding: 10px 14px 10px 10px;
-  box-shadow: 0 8px 28px rgba(4, 0, 37, 0.45), inset 0 0 0 1px rgba(43, 108, 255, 0.22);
-  transform: scale(1.04);
-}
-
-.waPanelCollapsedBtn:focus-visible .waCollapsedTrigger {
-  outline: 2px solid #2b6cff;
+.waFab:focus-visible {
+  outline: 3px solid #25D366;
   outline-offset: 3px;
 }
 
-.waCollapsedLabel {
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.9);
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  opacity: 0;
-  width: 0;
-  overflow: hidden;
-  margin-left: 0;
-  transition:
-    opacity      0.18s ease 0.07s,
-    width        0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    margin-left  0.2s ease;
-}
-
-.waPanelCollapsedBtn:hover .waCollapsedLabel {
-  opacity: 1;
-  width: 110px;
-  margin-left: 8px;
-}
-
-.waPanelCollapsedIcon {
-  position: relative;
-  display: inline-flex;
-  flex-shrink: 0;
-}
-
-.waPanelCollapsedIcon .waPanelCount {
+.waFabBadge {
   position: absolute;
-  top: -7px;
-  right: -9px;
+  top: -2px;
+  right: -2px;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  padding: 0 4px;
+  line-height: 1;
   animation: waBadgePulse 2.4s ease-in-out infinite;
 }
 
