@@ -383,9 +383,10 @@ export const getExecutiveDashboardData = async (req, res) => {
         }
       }
 
-      // fases alcanzadas — normaliza "F1-Apertura" → "F1" por si GPT usa formato largo
+      // fases alcanzadas — solo transcripciones desde el 15 jun 2026
+      const FASES_CUTOFF_MS = Date.UTC(2026, 5, 15, 0, 0, 0, 0);
       const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
-      if (Array.isArray(fasesAlcanzadas)) {
+      if (createdAtMs >= FASES_CUTOFF_MS && Array.isArray(fasesAlcanzadas)) {
         for (const f of fasesAlcanzadas) {
           const code = String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase();
           if (code && code in totals.fasesMap) totals.fasesMap[code] += 1;
