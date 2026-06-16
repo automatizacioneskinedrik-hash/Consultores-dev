@@ -219,14 +219,15 @@ body.sidebar-collapsed .appShell {
 
 /* Estado desplegado: padding da espacio al anillo del ícono dentro de overflow:hidden */
 .waFloatBtn.waFloatBtnOpen {
-  background: white;
+  background: var(--off);
   border-color: transparent;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   padding: 4px;
 }
 
 .waFloatBtn:hover {
-  box-shadow: 0 6px 22px rgba(37, 211, 102, 0.55), 0 2px 8px rgba(0, 0, 0, 0.12);
+  background: var(--off);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .waFloatBtn:focus-visible {
@@ -255,7 +256,7 @@ body.sidebar-collapsed .appShell {
   width: 44px;
   height: 44px;
   min-width: 44px;
-  background: white;
+  background: var(--off);
   box-shadow: 0 0 0 2.5px #25D366;
 }
 
@@ -288,7 +289,7 @@ body.sidebar-collapsed .appShell {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid white;
+  border: 2px solid var(--off);
   padding: 0 3px;
   line-height: 1;
   pointer-events: none;
