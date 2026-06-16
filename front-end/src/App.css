@@ -194,15 +194,15 @@ body.sidebar-collapsed .appShell {
   55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-@keyframes waFloatIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.92); }
-  to   { opacity: 1; transform: translateY(0)     scale(1); }
-}
-
-.waFloatBtn {
+/* Wrapper fijo — contiene el botón y el badge (fuera del overflow:hidden) */
+.waFloatBtnWrap {
   position: fixed;
   top: 20px;
   right: 20px;
+  z-index: 200;
+}
+
+.waFloatBtn {
   display: flex;
   align-items: center;
   background: white;
@@ -211,15 +211,12 @@ body.sidebar-collapsed .appShell {
   padding: 0;
   overflow: hidden;
   cursor: pointer;
-  z-index: 200;
   box-shadow: 0 3px 14px rgba(37, 211, 102, 0.32), 0 1px 4px rgba(0, 0, 0, 0.08);
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
-  animation: waFloatIn 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  transition: box-shadow 0.2s ease;
   outline: none;
 }
 
 .waFloatBtn:hover {
-  transform: translateY(-2px);
   box-shadow: 0 6px 22px rgba(37, 211, 102, 0.45), 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -229,23 +226,24 @@ body.sidebar-collapsed .appShell {
 }
 
 .waFloatBtnIcon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  position: relative;
   background: white;
+  flex-shrink: 0;
 }
 
+/* Badge fuera del overflow:hidden → no se recorta */
 .waFloatBtnBadge {
   position: absolute;
-  top: 5px;
-  right: 3px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 8px;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
   background: #ef4444;
   color: white;
   font-size: 9px;
@@ -253,23 +251,35 @@ body.sidebar-collapsed .appShell {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid white;
+  border: 2px solid white;
   padding: 0 3px;
   line-height: 1;
+  pointer-events: none;
   animation: waBadgePulse 2.4s ease-in-out infinite;
 }
 
+/* Cinta "Seguimientos" — oculta por defecto, se desliza al abrir */
 .waFloatBtnLabel {
   background: #25D366;
   color: white;
   font-weight: 800;
   font-size: 14px;
-  height: 48px;
-  padding: 0 18px 0 12px;
+  height: 52px;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
   display: flex;
   align-items: center;
-  white-space: nowrap;
   letter-spacing: 0.2px;
+  transition:
+    max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    padding   0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.waFloatBtnOpen .waFloatBtnLabel {
+  max-width: 180px;
+  padding: 0 18px 0 12px;
 }
 
 .waPanelHeader {
