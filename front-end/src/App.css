@@ -217,10 +217,11 @@ body.sidebar-collapsed .appShell {
   outline: none;
 }
 
-/* Estado desplegado: borde verde visible sobre fondo blanco */
+/* Estado desplegado: fondo gris, sin borde exterior visible */
 .waFloatBtn.waFloatBtnOpen {
-  background: white;
-  border-color: #25D366;
+  background: var(--off);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .waFloatBtn:hover {
@@ -232,7 +233,7 @@ body.sidebar-collapsed .appShell {
   outline-offset: 3px;
 }
 
-/* Ícono: verde cuando replegado, gris de pantalla cuando desplegado */
+/* Ícono: verde cuando replegado, gris + aro verde cuando desplegado */
 .waFloatBtnIcon {
   width: 52px;
   height: 52px;
@@ -243,11 +244,12 @@ body.sidebar-collapsed .appShell {
   background: #25D366;
   border-radius: 50%;
   flex-shrink: 0;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .waFloatBtnOpen .waFloatBtnIcon {
   background: var(--off);
+  box-shadow: 0 0 0 2.5px #25D366; /* aro verde solo alrededor del ícono */
 }
 
 /* SVG: blanco cuando replegado, verde cuando desplegado */
@@ -281,10 +283,10 @@ body.sidebar-collapsed .appShell {
   animation: waBadgePulse 2.4s ease-in-out infinite;
 }
 
-/* Cinta "Seguimientos" — delgada, oculta por defecto, se desliza al abrir */
+/* Cinta "Seguimientos" — fondo gris, texto centrado, se desliza al abrir */
 .waFloatBtnLabel {
-  background: #25D366;
-  color: white;
+  background: var(--off);
+  color: rgba(4, 0, 37, 0.6);
   font-weight: 700;
   font-size: 13px;
   height: 30px;
@@ -294,6 +296,7 @@ body.sidebar-collapsed .appShell {
   padding: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   letter-spacing: 0.3px;
   flex-shrink: 0;
   transition:
@@ -304,7 +307,7 @@ body.sidebar-collapsed .appShell {
 /* 404px panel − 16px pad-izq − 16px pad-der − 52px ícono = 320px → alinea con las tarjetas */
 .waFloatBtnOpen .waFloatBtnLabel {
   width: 320px;
-  padding: 0 20px 0 14px;
+  padding: 0 16px;
 }
 
 .waPanelHeader {
