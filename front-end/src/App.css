@@ -172,6 +172,7 @@ body.sidebar-collapsed .appShell {
 
 .waPanel.waPanelCollapsed {
   width: 52px;
+  overflow: visible;
 }
 
 .waPanelInner {
@@ -193,6 +194,18 @@ body.sidebar-collapsed .appShell {
   transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+@keyframes waBounceIn {
+  0%   { opacity: 0; transform: translateX(50px); }
+  65%  { opacity: 1; transform: translateX(-7px); }
+  82%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes waBadgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
 .waPanelCollapsedBtn {
   width: 52px;
   height: 100%;
@@ -202,23 +215,74 @@ body.sidebar-collapsed .appShell {
   border: none;
   background: none;
   cursor: pointer;
-  padding: 0;
-  transition: background 0.18s ease;
+  padding: 20px 0 0 0;
+  outline: none;
 }
 
-.waPanelCollapsedBtn:hover {
-  background: rgba(4, 0, 37, 0.05);
+.waCollapsedTrigger {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(145deg, #0a1a4f 0%, #040025 100%);
+  border: 1px solid rgba(43, 108, 255, 0.4);
+  border-radius: 28px;
+  padding: 10px;
+  box-shadow: 0 4px 14px rgba(4, 0, 37, 0.35), inset 0 0 0 1px rgba(43, 108, 255, 0.08);
+  overflow: hidden;
+  max-width: 42px;
+  white-space: nowrap;
+  transition:
+    max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    padding   0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s ease,
+    transform  0.22s ease;
+  animation: waBounceIn 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) 2.5s both;
+}
+
+.waPanelCollapsedBtn:hover .waCollapsedTrigger {
+  max-width: 200px;
+  padding: 10px 14px 10px 10px;
+  box-shadow: 0 8px 28px rgba(4, 0, 37, 0.45), inset 0 0 0 1px rgba(43, 108, 255, 0.22);
+  transform: scale(1.04);
+}
+
+.waPanelCollapsedBtn:focus-visible .waCollapsedTrigger {
+  outline: 2px solid #2b6cff;
+  outline-offset: 3px;
+}
+
+.waCollapsedLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  margin-left: 0;
+  transition:
+    opacity      0.18s ease 0.07s,
+    width        0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-left  0.2s ease;
+}
+
+.waPanelCollapsedBtn:hover .waCollapsedLabel {
+  opacity: 1;
+  width: 110px;
+  margin-left: 8px;
 }
 
 .waPanelCollapsedIcon {
   position: relative;
   display: inline-flex;
+  flex-shrink: 0;
 }
 
 .waPanelCollapsedIcon .waPanelCount {
   position: absolute;
   top: -7px;
   right: -9px;
+  animation: waBadgePulse 2.4s ease-in-out infinite;
 }
 
 .waPanelHeader {
@@ -236,8 +300,8 @@ body.sidebar-collapsed .appShell {
 .waPanelCount {
   background: #ef4444;
   color: white;
-  border: none;
-  font-size: 11px;
+  border: 2px solid #040025;
+  font-size: 10px;
   font-weight: 900;
   width: 20px;
   height: 20px;
