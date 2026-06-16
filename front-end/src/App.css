@@ -288,21 +288,22 @@ body.sidebar-collapsed .appShell {
   font-weight: 700;
   font-size: 13px;
   height: 30px;
-  max-width: 0;
+  width: 0;
   overflow: hidden;
   white-space: nowrap;
   padding: 0;
   display: flex;
   align-items: center;
   letter-spacing: 0.3px;
+  flex-shrink: 0;
   transition:
-    max-width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
-    padding   0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    width   0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 404px panel − 16px pad-izq − 16px pad-der − 52px ícono = 320px → alinea con las tarjetas */
 .waFloatBtnOpen .waFloatBtnLabel {
-  max-width: 320px;
+  width: 320px;
   padding: 0 20px 0 14px;
 }
 
