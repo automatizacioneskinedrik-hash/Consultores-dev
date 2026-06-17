@@ -816,8 +816,7 @@ export default function Upload() {
           </div>
 
           {/* Panel expandido */}
-          {waOpen && (
-            <aside className="waPanel">
+          <aside className={`waPanel${waOpen ? "" : " waPanelHidden"}`}>
               <div className="waPanelInner">
                 {followUps.length > 0 ? (
                   <div className="waCardList">
@@ -835,7 +834,6 @@ export default function Upload() {
                 )}
               </div>
             </aside>
-          )}
           </div>
         </main>
 

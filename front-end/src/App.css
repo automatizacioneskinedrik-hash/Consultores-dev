@@ -36,7 +36,8 @@ body {
   flex-direction: column;
   margin-left: 215px;
   overflow-x: hidden;
-  transition: width 0.28s ease, margin-left 0.28s ease;
+  transition: width 0.28s ease, margin-left 0.28s ease,
+              padding-right 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.sidebar-collapsed .appShell {
@@ -167,12 +168,14 @@ body.sidebar-collapsed .appShell {
   overflow: hidden;
   z-index: 50;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.06);
-  animation: waPanelSlideIn 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+  transform: translateX(0);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes waPanelSlideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+.waPanelHidden {
+  transform: translateX(100%);
+  box-shadow: none;
 }
 
 .waPanelInner {
@@ -186,7 +189,6 @@ body.sidebar-collapsed .appShell {
 
 .waPanelActive {
   padding-right: 404px;
-  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes waBadgePulse {
