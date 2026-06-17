@@ -221,13 +221,17 @@ body.sidebar-collapsed .appShell {
 .waFloatBtn.waFloatBtnOpen {
   background: var(--off);
   border-color: transparent;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   padding: 4px;
 }
 
 .waFloatBtn:hover {
   background: var(--off);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.waFloatBtn.waFloatBtnOpen:hover {
+  box-shadow: none;
 }
 
 .waFloatBtn:focus-visible {
