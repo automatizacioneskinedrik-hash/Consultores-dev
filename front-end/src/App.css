@@ -262,6 +262,8 @@ body.sidebar-collapsed .appShell {
   min-width: 44px;
   background: var(--off);
   box-shadow: 0 0 0 2.5px #25D366;
+  position: relative;
+  z-index: 1;
 }
 
 /* SVG: blanco cuando replegado, verde cuando desplegado */
@@ -317,14 +319,18 @@ body.sidebar-collapsed .appShell {
   letter-spacing: 0.3px;
   flex-shrink: 0;
   transition:
-    width   0.38s cubic-bezier(0.4, 0, 0.2, 1),
-    padding 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+    width         0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    padding       0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-left   0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.38s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 404px panel − 16px pad-izq − 16px pad-der − 52px ícono = 320px → alinea con las tarjetas */
+/* 320px visible + 8px bajo el ícono = 328px total; margen negativo oculta esquinas izq */
 .waFloatBtnOpen .waFloatBtnLabel {
-  width: 320px;
-  padding: 0 16px;
+  width: 328px;
+  padding: 0 16px 0 24px;
+  margin-left: -8px;
+  border-radius: 0 15px 15px 0;
 }
 
 .waPanelHeader {
