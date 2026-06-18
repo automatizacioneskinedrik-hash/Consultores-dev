@@ -17,10 +17,10 @@ router.post("/restore-default", promptController.restoreDefaultPrompt);
 router.post("/:id/activate", promptController.activatePrompt);
 router.post("/:id/favorite", promptController.toggleFavoritePrompt);
 
-// Instrucción de mensaje WhatsApp de seguimiento
-router.get("/followup", promptController.getFollowupPrompt);
-router.put("/followup", promptController.updateFollowupPrompt);
-router.get("/followup/versions", promptController.listFollowupVersions);
-router.post("/followup/versions/:id/restore", promptController.restoreFollowupVersion);
+// Prompts de mensaje WhatsApp de seguimiento
+router.get("/followup", promptController.listFollowupPrompts);
+router.post("/followup", promptController.saveFollowupPrompt);
+router.post("/followup/:id/activate", promptController.activateFollowup);
+router.delete("/followup/:id", promptController.deleteFollowup);
 
 export default router;

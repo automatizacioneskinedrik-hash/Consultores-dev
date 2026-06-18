@@ -322,7 +322,7 @@ body.sidebar-collapsed .advancedPage {
 }
 
 .promptVersionList {
-  max-height: 320px;
+  max-height: 360px;
   overflow-y: auto;
 }
 
@@ -331,20 +331,46 @@ body.sidebar-collapsed .advancedPage {
   gap: 8px;
 }
 
+.promptItemActive {
+  border-color: #25D366;
+  background: #f0fdf4;
+}
+
 .promptVersionInfo {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
 }
 
-.promptVersionLabel {
-  font-size: 11px;
+.promptVersionMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.promptBadgeDefault {
+  font-size: 10px;
   font-weight: 800;
-  color: #0040a4;
+  color: #5d6f8a;
+  background: #e8ecf4;
+  border-radius: 5px;
+  padding: 1px 6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+}
+
+.promptBadgeActive {
+  font-size: 10px;
+  font-weight: 800;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 5px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .promptVersionDate {
@@ -368,12 +394,17 @@ body.sidebar-collapsed .advancedPage {
   font-weight: 500;
 }
 
-.promptRestoreBtn {
+.promptItemActions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   flex-shrink: 0;
+}
+
+.promptRestoreBtn {
   border-color: #b8d4ff;
   background: #eef5ff;
   color: #0040a4;
-  margin-top: 2px;
 }
 
 .promptRestoreBtn:hover {
@@ -381,7 +412,8 @@ body.sidebar-collapsed .advancedPage {
   border-color: #7ab0ff;
 }
 
-.promptRestoreBtn:disabled {
+.promptRestoreBtn:disabled,
+.emailRemoveBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

@@ -1,9 +1,9 @@
 import admin, { db } from "../config/firebase.js";
 import {
-  getFollowupInstructionForDisplay,
-  saveFollowupInstruction,
-  getFollowupVersions as fetchFollowupVersions,
-  restoreFollowupVersion as applyFollowupVersionRestore,
+  getFollowupPrompts,
+  createFollowupPrompt,
+  activateFollowupPrompt,
+  deleteFollowupPrompt,
 } from "../prompts/promptService.js";
 
 export const getAllPrompts = async (req, res) => {
@@ -100,47 +100,45 @@ export const restoreDefaultPrompt = async (req, res) => {
   }
 };
 
-// --- Instrucción de mensaje WhatsApp de seguimiento ---
+// --- Prompts de mensaje WhatsApp de seguimiento ---
 
-export const getFollowupPrompt = async (req, res) => {
+export const listFollowupPrompts = async (req, res) => {
   try {
-    const result = await getFollowupInstructionForDisplay();
-    return res.json({ ok: true, ...result });
+    const prompts = await getFollowupPrompts();
+    return res.json({ ok: true, prompts });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: "Error al obtener la instrucción de seguimiento" });
+    return res.status(500).json({ ok: false, error: "Error al obtener los prompts de seguimiento" });
   }
 };
 
-export const updateFollowupPrompt = async (req, res) => {
+export const saveFollowupPrompt = async (req, res) => {
   try {
     const { instruction } = req.body;
-    if (typeof instruction !== "string") {
-      return res.status(400).json({ ok: false, error: "instruction debe ser un texto" });
+    if (typeof instruction !== "string" || !instruction.trim()) {
+      return res.status(400).json({ ok: false, error: "instruction es requerida" });
     }
-    const updatedBy = (req.headers["x-admin-email"] || "").toLowerCase();
-    await saveFollowupInstruction(instruction, updatedBy);
-    return res.json({ ok: true });
+    const createdBy = (req.headers["x-admin-email"] || "").toLowerCase();
+    const id = await createFollowupPrompt(instruction, createdBy);
+    return res.json({ ok: true, id });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: "Error al guardar la instrucción de seguimiento" });
+    return res.status(500).json({ ok: false, error: "Error al guardar el prompt" });
   }
 };
 
-export const listFollowupVersions = async (req, res) => {
+export const activateFollowup = async (req, res) => {
   try {
-    const versions = await fetchFollowupVersions();
-    return res.json({ ok: true, versions });
+    await activateFollowupPrompt(req.params.id);
+    return res.json({ ok: true });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: "Error al obtener el historial de versiones" });
+    return res.status(500).json({ ok: false, error: err.message || "Error al activar el prompt" });
   }
 };
 
-export const restoreFollowupVersion = async (req, res) => {
+export const deleteFollowup = async (req, res) => {
   try {
-    const { id } = req.params;
-    const restoredBy = (req.headers["x-admin-email"] || "").toLowerCase();
-    await applyFollowupVersionRestore(id, restoredBy);
+    await deleteFollowupPrompt(req.params.id);
     return res.json({ ok: true });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: err.message || "Error al restaurar la versión" });
+    return res.status(400).json({ ok: false, error: err.message || "Error al eliminar el prompt" });
   }
 };

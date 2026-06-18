@@ -37,13 +37,13 @@ export default function AdvancedConfig() {
   const [updatedBy, setUpdatedBy] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
 
-  const [followupPrompt, setFollowupPrompt] = useState("");
-  const [followupPromptDraft, setFollowupPromptDraft] = useState("");
+  const [followupDraft, setFollowupDraft] = useState("");
+  const [followupPrompts, setFollowupPrompts] = useState([]);
+  const [isLoadingFollowup, setIsLoadingFollowup] = useState(true);
   const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [activatingId, setActivatingId] = useState(null);
   const [promptMsg, setPromptMsg] = useState({ type: "", text: "" });
-  const [followupVersions, setFollowupVersions] = useState([]);
-  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
-  const [restoringId, setRestoringId] = useState(null);
 
   const [openSections, setOpenSections] = useState({ email: true, whatsapp: true });
   const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -86,29 +86,21 @@ export default function AdvancedConfig() {
     "X-Auth-Token": user.authToken || "",
   };
 
-  const loadFollowupPrompt = async () => {
+  const loadFollowupPrompts = async () => {
+    setIsLoadingFollowup(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/prompts/followup`, { headers: authHeaders });
       const data = await res.json();
       if (data.ok) {
-        setFollowupPrompt(data.instruction);
-        setFollowupPromptDraft(data.instruction);
+        const list = data.prompts || [];
+        setFollowupPrompts(list);
+        const active = list.find((p) => p.isActive);
+        if (active) setFollowupDraft(active.instruction);
       }
     } catch {
       // silencioso
-    }
-  };
-
-  const loadFollowupVersions = async () => {
-    setIsLoadingVersions(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/versions`, { headers: authHeaders });
-      const data = await res.json();
-      if (data.ok) setFollowupVersions(data.versions || []);
-    } catch {
-      // silencioso
     } finally {
-      setIsLoadingVersions(false);
+      setIsLoadingFollowup(false);
     }
   };
 
@@ -117,15 +109,14 @@ export default function AdvancedConfig() {
     setIsSavingPrompt(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/prompts/followup`, {
-        method: "PUT",
+        method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ instruction: followupPromptDraft }),
+        body: JSON.stringify({ instruction: followupDraft }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Error al guardar");
-      setFollowupPrompt(followupPromptDraft);
-      setPromptMsg({ type: "success", text: "Prompt guardado correctamente." });
-      loadFollowupVersions();
+      setPromptMsg({ type: "success", text: "Prompt guardado y activado correctamente." });
+      await loadFollowupPrompts();
     } catch (err) {
       setPromptMsg({ type: "error", text: err.message });
     } finally {
@@ -133,24 +124,39 @@ export default function AdvancedConfig() {
     }
   };
 
-  const restoreVersion = async (versionId, instruction) => {
-    setRestoringId(versionId);
+  const activateFollowupPrompt = async (id) => {
+    setActivatingId(id);
     setPromptMsg({ type: "", text: "" });
     try {
-      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/versions/${versionId}/restore`, {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/${id}/activate`, {
         method: "POST",
         headers: authHeaders,
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "Error al restaurar");
-      setFollowupPrompt(instruction);
-      setFollowupPromptDraft(instruction);
-      setPromptMsg({ type: "success", text: "Versión restaurada correctamente." });
-      loadFollowupVersions();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Error al activar");
+      await loadFollowupPrompts();
     } catch (err) {
       setPromptMsg({ type: "error", text: err.message });
     } finally {
-      setRestoringId(null);
+      setActivatingId(null);
+    }
+  };
+
+  const deleteFollowupPrompt = async (id) => {
+    setDeletingId(id);
+    setPromptMsg({ type: "", text: "" });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/${id}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Error al eliminar");
+      await loadFollowupPrompts();
+    } catch (err) {
+      setPromptMsg({ type: "error", text: err.message });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -158,8 +164,7 @@ export default function AdvancedConfig() {
     const isAuthorized = user?.role === "superadmin" || user?.email === "adminkinedrik@eadic.com";
     if (isAuthorized) {
       loadEmailConfig();
-      loadFollowupPrompt();
-      loadFollowupVersions();
+      loadFollowupPrompts();
     } else {
       setIsLoading(false);
     }
@@ -389,88 +394,95 @@ export default function AdvancedConfig() {
             </div>
 
             <div className={`panelBody${openSections.whatsapp ? "" : " collapsed"}`}>
-            <div className="advancedForm">
-              {/* Columna izquierda: editor del prompt */}
-              <section className="emailBlock">
-                <div className="emailBlockHeader">
-                  <h3>Prompt</h3>
-                  {followupPromptDraft !== followupPrompt && <span>Sin guardar</span>}
-                </div>
-                <textarea
-                  className="followupPromptTextarea"
-                  value={followupPromptDraft}
-                  onChange={(e) => setFollowupPromptDraft(e.target.value)}
-                  rows={8}
-                  placeholder="Escribe la instrucción para el mensaje sugerido de WhatsApp..."
-                />
-                <div className="followupPromptActions">
-                  <button
-                    type="button"
-                    className="addEmailBtn promptSaveBtn"
-                    onClick={saveFollowupPrompt}
-                    disabled={isSavingPrompt || followupPromptDraft === followupPrompt}
-                  >
-                    {isSavingPrompt ? "Guardando..." : "Guardar prompt"}
-                  </button>
-                  {followupPromptDraft !== followupPrompt && (
+              <div className="advancedForm">
+                {/* Columna izquierda: editor del nuevo prompt */}
+                <section className="emailBlock">
+                  <div className="emailBlockHeader">
+                    <h3>Prompt</h3>
+                  </div>
+                  <textarea
+                    className="followupPromptTextarea"
+                    value={followupDraft}
+                    onChange={(e) => setFollowupDraft(e.target.value)}
+                    rows={8}
+                    placeholder="Escribe la instrucción para el mensaje sugerido de WhatsApp..."
+                  />
+                  <div className="followupPromptActions">
                     <button
                       type="button"
-                      className="emailRemoveBtn"
-                      style={{ marginLeft: 10 }}
-                      onClick={() => setFollowupPromptDraft(followupPrompt)}
+                      className="addEmailBtn promptSaveBtn"
+                      onClick={saveFollowupPrompt}
+                      disabled={isSavingPrompt || !followupDraft.trim()}
                     >
-                      Descartar
+                      {isSavingPrompt ? "Guardando..." : "Guardar prompt"}
                     </button>
+                  </div>
+                  <small>Al guardar se crea un nuevo prompt y se activa automáticamente.</small>
+                </section>
+
+                {/* Columna derecha: lista de prompts */}
+                <section className="emailBlock">
+                  <div className="emailBlockHeader">
+                    <h3>Prompts guardados</h3>
+                    <span>{followupPrompts.length} en total</span>
+                  </div>
+                  {isLoadingFollowup ? (
+                    <div className="advancedLoading">Cargando prompts...</div>
+                  ) : (
+                    <ul className="emailList promptVersionList">
+                      {followupPrompts.map((p) => (
+                        <li key={p.id} className={`emailItem promptVersionItem${p.isActive ? " promptItemActive" : ""}`}>
+                          <div className="promptVersionInfo">
+                            <div className="promptVersionMeta">
+                              {p.isDefault && <span className="promptBadgeDefault">Original</span>}
+                              {p.isActive && <span className="promptBadgeActive">Activo</span>}
+                              {p.createdAt?._seconds && (
+                                <span className="promptVersionDate">
+                                  {new Date(p.createdAt._seconds * 1000).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}
+                                </span>
+                              )}
+                            </div>
+                            <span className="promptVersionPreview">
+                              {p.instruction.slice(0, 80)}{p.instruction.length > 80 ? "…" : ""}
+                            </span>
+                            {p.createdBy && p.createdBy !== "system" && (
+                              <span className="promptVersionBy">{p.createdBy}</span>
+                            )}
+                          </div>
+                          <div className="promptItemActions">
+                            {!p.isActive && (
+                              <button
+                                type="button"
+                                className="emailRemoveBtn promptRestoreBtn"
+                                onClick={() => { activateFollowupPrompt(p.id); setFollowupDraft(p.instruction); }}
+                                disabled={activatingId === p.id}
+                              >
+                                {activatingId === p.id ? "..." : "Activar"}
+                              </button>
+                            )}
+                            {!p.isDefault && (
+                              <button
+                                type="button"
+                                className="emailRemoveBtn"
+                                onClick={() => deleteFollowupPrompt(p.id)}
+                                disabled={deletingId === p.id}
+                              >
+                                {deletingId === p.id ? "..." : "Eliminar"}
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   )}
-                </div>
-              </section>
-
-              {/* Columna derecha: historial de versiones */}
-              <section className="emailBlock">
-                <div className="emailBlockHeader">
-                  <h3>Historial de versiones</h3>
-                  <span>{followupVersions.length} guardadas</span>
-                </div>
-                {isLoadingVersions ? (
-                  <div className="advancedLoading">Cargando historial...</div>
-                ) : followupVersions.length === 0 ? (
-                  <ul className="emailList">
-                    <li className="emailEmpty">No hay versiones anteriores.</li>
-                  </ul>
-                ) : (
-                  <ul className="emailList promptVersionList">
-                    {followupVersions.map((v, i) => (
-                      <li key={v.id} className="emailItem promptVersionItem">
-                        <div className="promptVersionInfo">
-                          <span className="promptVersionLabel">v{followupVersions.length - i}</span>
-                          <span className="promptVersionDate">
-                            {v.savedAt?._seconds
-                              ? new Date(v.savedAt._seconds * 1000).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })
-                              : "—"}
-                          </span>
-                          <span className="promptVersionPreview">{v.instruction.slice(0, 70)}{v.instruction.length > 70 ? "…" : ""}</span>
-                          {v.savedBy && <span className="promptVersionBy">{v.savedBy}</span>}
-                        </div>
-                        <button
-                          type="button"
-                          className="emailRemoveBtn promptRestoreBtn"
-                          onClick={() => restoreVersion(v.id, v.instruction)}
-                          disabled={restoringId === v.id}
-                        >
-                          {restoringId === v.id ? "..." : "Restaurar"}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </div>
-
-            {promptMsg.text && (
-              <div className={promptMsg.type === "success" ? "advancedNotice" : "advancedError"}>
-                {promptMsg.text}
+                </section>
               </div>
-            )}
+
+              {promptMsg.text && (
+                <div className={promptMsg.type === "success" ? "advancedNotice" : "advancedError"}>
+                  {promptMsg.text}
+                </div>
+              )}
             </div>
           </section>
         </main>
