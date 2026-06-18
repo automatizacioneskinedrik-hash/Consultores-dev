@@ -1,4 +1,10 @@
 import admin, { db } from "../config/firebase.js";
+import {
+  getFollowupInstructionForDisplay,
+  saveFollowupInstruction,
+  getFollowupVersions as fetchFollowupVersions,
+  restoreFollowupVersion as applyFollowupVersionRestore,
+} from "../prompts/promptService.js";
 
 export const getAllPrompts = async (req, res) => {
   try {
@@ -91,5 +97,50 @@ export const restoreDefaultPrompt = async (req, res) => {
     return res.json({ ok: true, message: "Prompt por defecto restaurado" });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
+// --- Instrucción de mensaje WhatsApp de seguimiento ---
+
+export const getFollowupPrompt = async (req, res) => {
+  try {
+    const result = await getFollowupInstructionForDisplay();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Error al obtener la instrucción de seguimiento" });
+  }
+};
+
+export const updateFollowupPrompt = async (req, res) => {
+  try {
+    const { instruction } = req.body;
+    if (typeof instruction !== "string") {
+      return res.status(400).json({ ok: false, error: "instruction debe ser un texto" });
+    }
+    const updatedBy = (req.headers["x-admin-email"] || "").toLowerCase();
+    await saveFollowupInstruction(instruction, updatedBy);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Error al guardar la instrucción de seguimiento" });
+  }
+};
+
+export const listFollowupVersions = async (req, res) => {
+  try {
+    const versions = await fetchFollowupVersions();
+    return res.json({ ok: true, versions });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Error al obtener el historial de versiones" });
+  }
+};
+
+export const restoreFollowupVersion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const restoredBy = (req.headers["x-admin-email"] || "").toLowerCase();
+    await applyFollowupVersionRestore(id, restoredBy);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message || "Error al restaurar la versión" });
   }
 };

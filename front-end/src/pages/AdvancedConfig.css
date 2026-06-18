@@ -281,6 +281,105 @@ body.sidebar-collapsed .advancedPage {
   padding: 10px 12px;
 }
 
+.promptVersionList {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.promptVersionItem {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.promptVersionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.promptVersionLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0040a4;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.promptVersionDate {
+  font-size: 11px;
+  font-weight: 600;
+  color: #73839d;
+}
+
+.promptVersionPreview {
+  font-size: 12px;
+  font-weight: 500;
+  color: #22324d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.promptVersionBy {
+  font-size: 10px;
+  color: #9baabf;
+  font-weight: 500;
+}
+
+.promptRestoreBtn {
+  flex-shrink: 0;
+  border-color: #b8d4ff;
+  background: #eef5ff;
+  color: #0040a4;
+  margin-top: 2px;
+}
+
+.promptRestoreBtn:hover {
+  background: #d6e9ff;
+  border-color: #7ab0ff;
+}
+
+.promptRestoreBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.followupPromptTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #d0d5e8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: "Inter", "Arial", sans-serif;
+  color: #040025;
+  background: #f8f9fc;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.followupPromptTextarea:focus {
+  border-color: #0040a4;
+  box-shadow: 0 0 0 3px rgba(0, 64, 164, 0.14);
+  background: #fff;
+}
+
+.followupPromptActions {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.addEmailBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .advancedMeta {
   margin-top: 14px;
   display: flex;

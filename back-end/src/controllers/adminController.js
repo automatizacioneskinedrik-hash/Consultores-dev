@@ -2,7 +2,6 @@ import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue, sanitizeEmailArray, isValidEmailValue } from "../utils/helpers.js";
 import { getEmailConfigFromFirestore } from "../services/emailService.js";
 import { MASTER_SUPERADMIN_EMAIL } from "../middleware/auth.js";
-
 // --- Gestión de Usuarios ---
 
 export const getAllUsers = async (req, res) => {

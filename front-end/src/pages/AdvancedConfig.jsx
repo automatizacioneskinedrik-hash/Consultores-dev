@@ -37,6 +37,14 @@ export default function AdvancedConfig() {
   const [updatedBy, setUpdatedBy] = useState("");
   const [updatedAt, setUpdatedAt] = useState("");
 
+  const [followupPrompt, setFollowupPrompt] = useState("");
+  const [followupPromptDraft, setFollowupPromptDraft] = useState("");
+  const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+  const [promptMsg, setPromptMsg] = useState({ type: "", text: "" });
+  const [followupVersions, setFollowupVersions] = useState([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
+  const [restoringId, setRestoringId] = useState(null);
+
   const loadEmailConfig = async () => {
     try {
       setIsLoading(true);
@@ -69,10 +77,86 @@ export default function AdvancedConfig() {
     }
   };
 
+  const authHeaders = {
+    "X-Admin-Role": user.role || "user",
+    "X-Admin-Email": user.email || "",
+    "X-Auth-Token": user.authToken || "",
+  };
+
+  const loadFollowupPrompt = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup`, { headers: authHeaders });
+      const data = await res.json();
+      if (data.ok) {
+        setFollowupPrompt(data.instruction);
+        setFollowupPromptDraft(data.instruction);
+      }
+    } catch {
+      // silencioso
+    }
+  };
+
+  const loadFollowupVersions = async () => {
+    setIsLoadingVersions(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/versions`, { headers: authHeaders });
+      const data = await res.json();
+      if (data.ok) setFollowupVersions(data.versions || []);
+    } catch {
+      // silencioso
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  };
+
+  const saveFollowupPrompt = async () => {
+    setPromptMsg({ type: "", text: "" });
+    setIsSavingPrompt(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ instruction: followupPromptDraft }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Error al guardar");
+      setFollowupPrompt(followupPromptDraft);
+      setPromptMsg({ type: "success", text: "Prompt guardado correctamente." });
+      loadFollowupVersions();
+    } catch (err) {
+      setPromptMsg({ type: "error", text: err.message });
+    } finally {
+      setIsSavingPrompt(false);
+    }
+  };
+
+  const restoreVersion = async (versionId, instruction) => {
+    setRestoringId(versionId);
+    setPromptMsg({ type: "", text: "" });
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/prompts/followup/versions/${versionId}/restore`, {
+        method: "POST",
+        headers: authHeaders,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Error al restaurar");
+      setFollowupPrompt(instruction);
+      setFollowupPromptDraft(instruction);
+      setPromptMsg({ type: "success", text: "Versión restaurada correctamente." });
+      loadFollowupVersions();
+    } catch (err) {
+      setPromptMsg({ type: "error", text: err.message });
+    } finally {
+      setRestoringId(null);
+    }
+  };
+
   useEffect(() => {
     const isAuthorized = user?.role === "superadmin" || user?.email === "adminkinedrik@eadic.com";
     if (isAuthorized) {
       loadEmailConfig();
+      loadFollowupPrompt();
+      loadFollowupVersions();
     } else {
       setIsLoading(false);
     }
@@ -299,6 +383,95 @@ export default function AdvancedConfig() {
               <div className="advancedMeta">
                 {updatedBy && <span>Actualizado por: {updatedBy}</span>}
                 {updatedAt && <span>Fecha: {updatedAt}</span>}
+              </div>
+            )}
+          </section>
+
+          <section className="advancedPanel">
+            <div className="advancedPanelTop">
+              <h2>Configuracion mensaje de WhatsApp</h2>
+            </div>
+
+            <div className="advancedForm">
+              {/* Columna izquierda: editor del prompt */}
+              <section className="emailBlock">
+                <div className="emailBlockHeader">
+                  <h3>Prompt</h3>
+                  {followupPromptDraft !== followupPrompt && <span>Sin guardar</span>}
+                </div>
+                <textarea
+                  className="followupPromptTextarea"
+                  value={followupPromptDraft}
+                  onChange={(e) => setFollowupPromptDraft(e.target.value)}
+                  rows={8}
+                  placeholder="Escribe la instrucción para el mensaje sugerido de WhatsApp..."
+                />
+                <div className="followupPromptActions">
+                  <button
+                    type="button"
+                    className="addEmailBtn"
+                    onClick={saveFollowupPrompt}
+                    disabled={isSavingPrompt || followupPromptDraft === followupPrompt}
+                  >
+                    {isSavingPrompt ? "Guardando..." : "Guardar prompt"}
+                  </button>
+                  {followupPromptDraft !== followupPrompt && (
+                    <button
+                      type="button"
+                      className="emailRemoveBtn"
+                      style={{ marginLeft: 10 }}
+                      onClick={() => setFollowupPromptDraft(followupPrompt)}
+                    >
+                      Descartar
+                    </button>
+                  )}
+                </div>
+              </section>
+
+              {/* Columna derecha: historial de versiones */}
+              <section className="emailBlock">
+                <div className="emailBlockHeader">
+                  <h3>Historial de versiones</h3>
+                  <span>{followupVersions.length} guardadas</span>
+                </div>
+                {isLoadingVersions ? (
+                  <div className="advancedLoading">Cargando historial...</div>
+                ) : followupVersions.length === 0 ? (
+                  <ul className="emailList">
+                    <li className="emailEmpty">No hay versiones anteriores.</li>
+                  </ul>
+                ) : (
+                  <ul className="emailList promptVersionList">
+                    {followupVersions.map((v, i) => (
+                      <li key={v.id} className="emailItem promptVersionItem">
+                        <div className="promptVersionInfo">
+                          <span className="promptVersionLabel">v{followupVersions.length - i}</span>
+                          <span className="promptVersionDate">
+                            {v.savedAt?._seconds
+                              ? new Date(v.savedAt._seconds * 1000).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })
+                              : "—"}
+                          </span>
+                          <span className="promptVersionPreview">{v.instruction.slice(0, 70)}{v.instruction.length > 70 ? "…" : ""}</span>
+                          {v.savedBy && <span className="promptVersionBy">{v.savedBy}</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className="emailRemoveBtn promptRestoreBtn"
+                          onClick={() => restoreVersion(v.id, v.instruction)}
+                          disabled={restoringId === v.id}
+                        >
+                          {restoringId === v.id ? "..." : "Restaurar"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
+
+            {promptMsg.text && (
+              <div className={promptMsg.type === "success" ? "advancedNotice" : "advancedError"}>
+                {promptMsg.text}
               </div>
             )}
           </section>

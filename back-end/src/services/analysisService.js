@@ -7,7 +7,7 @@ import admin, { db } from "../config/firebase.js";
 import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
 import { transporter } from "../config/mailer.js";
-import { getSystemPrompt } from "../../prompts-master.js";
+import { buildAnalysisPrompt } from "../prompts/promptService.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
@@ -137,13 +137,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    let additionalInstructions = "";
-    const promptSnapshot = await db.collection("prompts").where("isActive", "==", true).limit(1).get();
-    if (!promptSnapshot.empty) {
-      additionalInstructions = promptSnapshot.docs[0].data().content || "";
-    }
-
-    const systemPrompt = getSystemPrompt(durationStr, additionalInstructions, transcriptionText);
+    const systemPrompt = await buildAnalysisPrompt(durationStr, transcriptionText);
     const completion = await openai.chat.completions.create({
       model: "gpt-5.4-mini",
       messages: [{ role: "user", content: systemPrompt }],

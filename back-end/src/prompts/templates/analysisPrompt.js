@@ -1,7 +1,11 @@
-export const getSystemPrompt = (durationStr, additionalInstructions = "", transcriptionText) => {
+import { DEFAULT_FOLLOWUP_INSTRUCTION } from "./followupPrompt.js";
+
+export const getAnalysisPrompt = (durationStr, additionalInstructions = "", transcriptionText, customFollowupInstruction = "") => {
   const safeInstructions = additionalInstructions
     ? additionalInstructions.replace(/<\/?(instrucciones|system|prompt|transcripci[oó]n)[^>]*>/gi, "")
     : "";
+
+  const followupInstruction = customFollowupInstruction || DEFAULT_FOLLOWUP_INSTRUCTION;
 
   return `Eres un coach auditor de sesiones comerciales de KINEDRIꓘ.
 Tu trabajo es detectar los errores o áreas de mejora basándote en la metodología oficial.
@@ -122,7 +126,7 @@ N. SEGUIMIENTO COMERCIAL (WhatsApp 24 horas):
      * "rellamar": acordaron una llamada o contacto de seguimiento.
      * "general": el cliente cerró sin señal específica de seguimiento (incluyendo cierres firmes).
    - frase_cliente: cita textual breve del cliente que refleje su principal dolor, necesidad o aspiración expresada en la sesión. Si cerró la venta, usa la frase que mejor captura su motivación principal.
-   - mensaje_sugerido: redacta un mensaje WhatsApp en español, cálido y personalizado (máx 180 chars). Escríbelo como si hubiera pasado 1 día desde la reunión. Menciona el nombre de pila del cliente. Conecta directamente con el dolor o necesidad específica que expresó en la sesión (usa sus propias palabras). Si aún no tomó decisión: motiva suavemente a avanzar sin presionar. Si cerró la venta: refuerza su decisión con una frase alentadora que genere expectativa positiva. El tono debe ser cercano, humano y genuino. Ejemplo: "Hola [nombre], ayer me quedé pensando en lo que me contaste sobre [dolor]. Creo que estás más cerca de ese cambio de lo que crees. 💪"
+   - mensaje_sugerido: ${followupInstruction}
 
 ---
 SALIDA REQUERIDA (JSON EXACTO):
