@@ -178,6 +178,18 @@ body.sidebar-collapsed .appShell {
   box-shadow: none;
 }
 
+.waPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: linear-gradient(to bottom, var(--off) 55%, transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .waPanelInner {
   width: 404px;
   height: 100%;
