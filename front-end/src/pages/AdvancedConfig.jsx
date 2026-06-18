@@ -406,7 +406,7 @@ export default function AdvancedConfig() {
                 <div className="followupPromptActions">
                   <button
                     type="button"
-                    className="addEmailBtn"
+                    className="addEmailBtn promptSaveBtn"
                     onClick={saveFollowupPrompt}
                     disabled={isSavingPrompt || followupPromptDraft === followupPrompt}
                   >

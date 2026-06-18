@@ -414,6 +414,11 @@ body.sidebar-collapsed .advancedPage {
   margin-top: 12px;
 }
 
+.promptSaveBtn {
+  min-width: 148px;
+  padding: 0 20px;
+}
+
 .addEmailBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
