@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useMemo } from "react";
+import { Eye } from "lucide-react";
 import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
@@ -789,6 +790,14 @@ export default function Upload() {
                           {new Date(session.date).toLocaleDateString()} - {session.duration}
                         </div>
                       </div>
+                      <button
+                        className="viewSummaryBtn"
+                        onClick={(e) => { e.stopPropagation(); handleOpenSession(session); }}
+                        disabled={sessionLoading === session.id}
+                      >
+                        <Eye size={14} />
+                        <span>Ver Resumen</span>
+                      </button>
                     </div>
                   ))}
                 </div>

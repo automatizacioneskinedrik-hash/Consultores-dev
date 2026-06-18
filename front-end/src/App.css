@@ -1165,6 +1165,43 @@ body.sidebar-collapsed .appShell {
   font-weight: 500;
 }
 
+.viewSummaryBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2885FF 0%, #0040A4 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(40, 133, 255, 0.2);
+}
+
+.viewSummaryBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(40, 133, 255, 0.4);
+  filter: brightness(1.1);
+}
+
+.viewSummaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.viewSummaryBtn svg {
+  transition: transform 0.3s ease;
+}
+
+.viewSummaryBtn:hover svg {
+  transform: rotate(-10deg);
+}
+
 .resendBtn {
   background: white;
   color: var(--blue);
