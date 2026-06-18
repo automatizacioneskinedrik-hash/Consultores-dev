@@ -45,6 +45,9 @@ export default function AdvancedConfig() {
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [restoringId, setRestoringId] = useState(null);
 
+  const [openSections, setOpenSections] = useState({ email: true, whatsapp: true });
+  const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+
   const loadEmailConfig = async () => {
     try {
       setIsLoading(true);
@@ -282,116 +285,110 @@ export default function AdvancedConfig() {
           </header>
 
           <section className="advancedPanel">
-            <div className="advancedPanelTop">
+            <div className="advancedPanelTop" onClick={() => toggleSection("email")}>
               <h2>Configuracion de correo</h2>
+              <svg className={`panelChevron${openSections.email ? "" : " collapsed"}`} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </div>
 
-            {isLoading ? (
-              <div className="advancedLoading">Cargando configuracion...</div>
-            ) : (
-              <div className="advancedForm">
-                <section className="emailBlock">
-                  <div className="emailBlockHeader">
-                    <h3>Correo con copia (CC)</h3>
-                    <span>{ccEmails.length} agregados</span>
-                  </div>
-                  <div className="emailInputRow">
-                    <input
-                      id="cc-input"
-                      type="text"
-                      value={ccInput}
-                      onChange={(e) => setCcInput(e.target.value)}
-                      onKeyDown={(e) => handleInputKeyDown(e, "cc")}
-                      placeholder="correo@gmail.com"
-                    />
-                    <button type="button" className="addEmailBtn" onClick={() => addEmailToList("cc")}>
-                      Agregar
-                    </button>
-                  </div>
-                  <small>Ingresa un correo por vez y presiona Enter o Agregar.</small>
-                  <ul className="emailList">
-                    {ccEmails.length === 0 ? (
-                      <li className="emailEmpty">No hay correos en copia.</li>
-                    ) : (
-                      ccEmails.map((email) => (
-                        <li key={email} className="emailItem">
-                          <span>{email}</span>
-                          <button
-                            type="button"
-                            className="emailRemoveBtn"
-                            onClick={() => removeEmailFromList("cc", email)}
-                          >
-                            Eliminar
-                          </button>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </section>
+            <div className={`panelBody${openSections.email ? "" : " collapsed"}`}>
+              {isLoading ? (
+                <div className="advancedLoading">Cargando configuracion...</div>
+              ) : (
+                <div className="advancedForm">
+                  <section className="emailBlock">
+                    <div className="emailBlockHeader">
+                      <h3>Correo con copia (CC)</h3>
+                      <span>{ccEmails.length} agregados</span>
+                    </div>
+                    <div className="emailInputRow">
+                      <input
+                        id="cc-input"
+                        type="text"
+                        value={ccInput}
+                        onChange={(e) => setCcInput(e.target.value)}
+                        onKeyDown={(e) => handleInputKeyDown(e, "cc")}
+                        placeholder="correo@gmail.com"
+                      />
+                      <button type="button" className="addEmailBtn" onClick={() => addEmailToList("cc")}>
+                        Agregar
+                      </button>
+                    </div>
+                    <small>Ingresa un correo por vez y presiona Enter o Agregar.</small>
+                    <ul className="emailList">
+                      {ccEmails.length === 0 ? (
+                        <li className="emailEmpty">No hay correos en copia.</li>
+                      ) : (
+                        ccEmails.map((email) => (
+                          <li key={email} className="emailItem">
+                            <span>{email}</span>
+                            <button type="button" className="emailRemoveBtn" onClick={() => removeEmailFromList("cc", email)}>
+                              Eliminar
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </section>
 
-                <section className="emailBlock">
-                  <div className="emailBlockHeader bcc">
-                    <h3>Correo con copia oculta (BCC)</h3>
-                    <span>{bccEmails.length} agregados</span>
-                  </div>
-                  <div className="emailInputRow">
-                    <input
-                      id="bcc-input"
-                      type="text"
-                      value={bccInput}
-                      onChange={(e) => setBccInput(e.target.value)}
-                      onKeyDown={(e) => handleInputKeyDown(e, "bcc")}
-                      placeholder="correo@gmail.com"
-                    />
-                    <button type="button" className="addEmailBtn" onClick={() => addEmailToList("bcc")}>
-                      Agregar
-                    </button>
-                  </div>
-                  <small>Estas direcciones no seran visibles para los demas destinatarios.</small>
-                  <ul className="emailList">
-                    {bccEmails.length === 0 ? (
-                      <li className="emailEmpty">No hay correos en copia oculta.</li>
-                    ) : (
-                      bccEmails.map((email) => (
-                        <li key={email} className="emailItem">
-                          <span>{email}</span>
-                          <button
-                            type="button"
-                            className="emailRemoveBtn"
-                            onClick={() => removeEmailFromList("bcc", email)}
-                          >
-                            Eliminar
-                          </button>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </section>
+                  <section className="emailBlock">
+                    <div className="emailBlockHeader bcc">
+                      <h3>Correo con copia oculta (BCC)</h3>
+                      <span>{bccEmails.length} agregados</span>
+                    </div>
+                    <div className="emailInputRow">
+                      <input
+                        id="bcc-input"
+                        type="text"
+                        value={bccInput}
+                        onChange={(e) => setBccInput(e.target.value)}
+                        onKeyDown={(e) => handleInputKeyDown(e, "bcc")}
+                        placeholder="correo@gmail.com"
+                      />
+                      <button type="button" className="addEmailBtn" onClick={() => addEmailToList("bcc")}>
+                        Agregar
+                      </button>
+                    </div>
+                    <small>Estas direcciones no seran visibles para los demas destinatarios.</small>
+                    <ul className="emailList">
+                      {bccEmails.length === 0 ? (
+                        <li className="emailEmpty">No hay correos en copia oculta.</li>
+                      ) : (
+                        bccEmails.map((email) => (
+                          <li key={email} className="emailItem">
+                            <span>{email}</span>
+                            <button type="button" className="emailRemoveBtn" onClick={() => removeEmailFromList("bcc", email)}>
+                              Eliminar
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </section>
+                </div>
+              )}
 
-              </div>
-            )}
-
-            {successMsg && (
-              <div className="advancedNotice">
-                {successMsg}
-              </div>
-            )}
-
-            {errorMsg && <div className="advancedError">{errorMsg}</div>}
-
-            {(updatedBy || updatedAt) && (
-              <div className="advancedMeta">
-                {updatedBy && <span>Actualizado por: {updatedBy}</span>}
-                {updatedAt && <span>Fecha: {updatedAt}</span>}
-              </div>
-            )}
+              {successMsg && <div className="advancedNotice">{successMsg}</div>}
+              {errorMsg && <div className="advancedError">{errorMsg}</div>}
+              {(updatedBy || updatedAt) && (
+                <div className="advancedMeta">
+                  {updatedBy && <span>Actualizado por: {updatedBy}</span>}
+                  {updatedAt && <span>Fecha: {updatedAt}</span>}
+                </div>
+              )}
+            </div>
           </section>
 
           <section className="advancedPanel">
-            <div className="advancedPanelTop">
+            <div className="advancedPanelTop" onClick={() => toggleSection("whatsapp")}>
               <h2>Configuracion mensaje de WhatsApp</h2>
+              <svg className={`panelChevron${openSections.whatsapp ? "" : " collapsed"}`} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </div>
 
+            <div className={`panelBody${openSections.whatsapp ? "" : " collapsed"}`}>
             <div className="advancedForm">
               {/* Columna izquierda: editor del prompt */}
               <section className="emailBlock">
@@ -474,6 +471,7 @@ export default function AdvancedConfig() {
                 {promptMsg.text}
               </div>
             )}
+            </div>
           </section>
         </main>
       </div>
