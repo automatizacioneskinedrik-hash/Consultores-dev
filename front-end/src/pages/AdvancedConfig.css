@@ -18,25 +18,6 @@ body.sidebar-collapsed .advancedPage {
   padding: 40px 0 68px;
 }
 
-.advancedTitle {
-  margin: 0;
-  font-family: "Inter", "Arial", sans-serif;
-  font-size: var(--fs-h1);
-  line-height: var(--lh-h1);
-  letter-spacing: 0;
-  font-weight: 700;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.titlePrimary {
-  color: #040025;
-}
-
-.titleAccent {
-  color: #0040a4;
-}
 
 .advancedHeader p {
   margin: 10px 0 0;

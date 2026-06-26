@@ -280,9 +280,8 @@ export default function AdvancedConfig() {
       <div className="advancedPage">
         <main className="advancedContent">
           <header className="advancedHeader">
-            <h1 className="advancedTitle">
-              <span className="titlePrimary">Configuracion</span>
-              <span className="titleAccent">avanzada</span>
+            <h1 className="pageTitle">
+              Configuracion <span className="titleAccent">avanzada</span>
             </h1>
             <p>
               Define los correos que recibiran copia en los reportes automaticos.

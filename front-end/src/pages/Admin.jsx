@@ -216,7 +216,7 @@ export default function Admin() {
         <main className="adminContent">
           <div className="adminHeaderRow">
             <div className="adminTitleSection">
-              <h1>Gestión de Usuarios</h1>
+              <h1 className="pageTitle">Gestión de <span className="titleAccent">Usuarios</span></h1>
               <p>Administra el acceso y roles de tu equipo</p>
             </div>
 

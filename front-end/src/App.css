@@ -19,6 +19,19 @@
   --lh-body:  1.5;
 }
 
+/* ── Patrón de título de página: última palabra en azul ── */
+.pageTitle {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: var(--lh-h1);
+  color: var(--navy);
+  margin: 0;
+}
+
+.titleAccent {
+  color: var(--blue);
+}
+
 * {
   box-sizing: border-box;
 }
