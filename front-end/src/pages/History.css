@@ -101,10 +101,11 @@ body.sidebar-collapsed .historyContent {
 .historyTable th {
   padding: 12px 20px;
   text-align: left;
-  font-size: 11px;
+  font-size: var(--fs-table-header);
+  font-weight: 600;
   text-transform: uppercase;
   color: #94a3b8;
-  letter-spacing: 1px;
+  letter-spacing: 0.03em;
 }
 
 .historyTable tbody tr {
@@ -288,7 +289,7 @@ body.sidebar-collapsed .historyContent {
 
 @media (max-width: 480px) {
   .headerText h1 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
   .headerText p {
     font-size: 13px;

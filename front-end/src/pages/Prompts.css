@@ -220,10 +220,10 @@ body.sidebar-collapsed .promptsPage {
 }
 
 .panelHeader h2 {
-  font-size: 24px;
+  font-size: var(--fs-h2);
   color: var(--navy);
   margin: 0;
-  line-height: 1.2;
+  line-height: var(--lh-h2);
 }
 
 .panelBody {
@@ -361,7 +361,7 @@ body.sidebar-collapsed .promptsPage {
 }
 
 .modalHeader h2 {
-  font-size: 22px;
+  font-size: var(--fs-h2);
   color: #071033;
   margin: 0;
   font-weight: 800;

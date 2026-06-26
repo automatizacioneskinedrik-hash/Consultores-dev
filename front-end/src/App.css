@@ -3,16 +3,17 @@
   --blue: #0040a4;
   --off: #e7e7e7;
 
-  /* ── Escala tipográfica modular (base 16px, razón ~1.25) ── */
-  --fs-hero:  2.5rem;    /* 40px  — hero / display               */
-  --fs-h1:    1.75rem;   /* 28px  — títulos de página            */
-  --fs-h2:    1.375rem;  /* 22px  — subtítulos / panels          */
-  --fs-h3:    1.25rem;   /* 20px  — títulos de tarjeta           */
-  --fs-body:  1rem;      /* 16px  — cuerpo de texto              */
-  --fs-small: 0.875rem;  /* 14px  — etiquetas, metadatos         */
-  --fs-tiny:  0.75rem;   /* 12px  — badges, caps                 */
+  /* ── Escala tipográfica modular (base 16px) ── */
+  --fs-hero:         2rem;       /* 32px  — hero / display           */
+  --fs-h1:           1.5rem;     /* 24px  — títulos de página        */
+  --fs-h2:           1.25rem;    /* 20px  — sección / subtítulo      */
+  --fs-h3:           1.125rem;   /* 18px  — títulos de tarjeta       */
+  --fs-body:         1rem;       /* 16px  — cuerpo de texto          */
+  --fs-small:        0.875rem;   /* 14px  — labels / valores tabla   */
+  --fs-table-header: 0.8125rem;  /* 13px  — headers de columna       */
+  --fs-tiny:         0.75rem;    /* 12px  — badges, captions         */
 
-  --lh-hero:  1.1;
+  --lh-hero:  1.15;
   --lh-h1:    1.2;
   --lh-h2:    1.25;
   --lh-body:  1.5;
@@ -752,7 +753,7 @@ body.sidebar-collapsed .appShell {
 
 .dropZone h3 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--fs-h3);
   font-weight: 800;
 }
 
@@ -1253,7 +1254,7 @@ body.sidebar-collapsed .appShell {
     width: 100%;
   }
   .title {
-    font-size: clamp(1.5rem, 8vw, 2rem);
+    font-size: clamp(1.25rem, 6vw, 1.75rem);
   }
   .dropZone {
     padding: 30px 15px;
