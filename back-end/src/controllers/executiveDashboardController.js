@@ -89,6 +89,24 @@ function bucketStart(bucket, bucketStartMs, idx) {
   return bucketStartMs + idx * width;
 }
 
+async function countWaEnviados({ consultantEmail, startMs, endMs }) {
+  let query = db.collection("followUps").where("enviado", "==", true);
+  if (consultantEmail && consultantEmail !== "all") {
+    query = query.where("consultorEmail", "==", consultantEmail);
+  }
+  const snap = await query.select("fechaEnviado").get();
+  let count = 0;
+  snap.forEach((doc) => {
+    const ms = toMillis(doc.data().fechaEnviado);
+    if (!Number.isFinite(ms)) return;
+    if (Number.isFinite(startMs) && Number.isFinite(endMs)) {
+      if (ms < startMs || ms >= endMs) return;
+    }
+    count++;
+  });
+  return count;
+}
+
 async function loadUserNamesMap() {
   const usersSnapshot = await db.collection("users").get();
   const map = {};
@@ -231,9 +249,10 @@ export const getExecutiveDashboardData = async (req, res) => {
       return res.json(hit.data);
     }
 
-    const [userNamesMap, docs] = await Promise.all([
+    const [userNamesMap, docs, waEnviadosN] = await Promise.all([
       loadUserNamesMap(),
       fetchMeetingsAnalysis({ startMs, endMs }),
+      countWaEnviados({ consultantEmail, startMs, endMs }),
     ]);
 
     const bucket = pickBucket(startMs, endMs);
@@ -457,6 +476,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       avgMuletillasPorMinuto: totals.muletillasPorMinutoN > 0 ? totals.muletillasPorMinutoSum / totals.muletillasPorMinutoN : null,
       avgAdherenciaScore: totals.adherenciaN > 0 ? totals.adherenciaSum / totals.adherenciaN : null,
       pctCedioPalabra: totals.cedioPalabraTotal > 0 ? (totals.cedioPalabraT / totals.cedioPalabraTotal) * 100 : null,
+      waEnviadosN,
     };
 
     const distributions = {

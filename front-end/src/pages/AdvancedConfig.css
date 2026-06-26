@@ -3,7 +3,6 @@
   width: calc(100% - 215px);
   min-height: 100vh;
   background: var(--off);
-  font-family: "Inter", "Arial", sans-serif;
   transition: margin-left 0.28s ease, width 0.28s ease;
 }
 
@@ -407,7 +406,7 @@ body.sidebar-collapsed .advancedPage {
   border-radius: 12px;
   padding: 12px 14px;
   font-size: 13px;
-  font-family: "Inter", "Arial", sans-serif;
+  font-family: inherit;
   color: #040025;
   background: #f8f9fc;
   resize: vertical;
