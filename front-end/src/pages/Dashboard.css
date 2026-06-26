@@ -98,8 +98,9 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardHeaderText h1 {
-  font-size: 32px;
+  font-size: var(--fs-h1);
   font-weight: 900;
+  line-height: var(--lh-h1);
   margin: 0;
 }
 

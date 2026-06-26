@@ -364,7 +364,7 @@
 }
 
 .logoutModalTitle {
-  font-size: 32px;
+  font-size: var(--fs-h2);
   font-weight: 900;
   background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
   -webkit-background-clip: text;

@@ -23,8 +23,9 @@ body.sidebar-collapsed .historyContent {
 }
 
 .headerText h1 {
-  font-size: 32px;
+  font-size: var(--fs-h1);
   font-weight: 900;
+  line-height: var(--lh-h1);
   color: var(--navy);
   margin: 0;
 }
@@ -287,7 +288,7 @@ body.sidebar-collapsed .historyContent {
 
 @media (max-width: 480px) {
   .headerText h1 {
-    font-size: 24px;
+    font-size: 1.5rem;
   }
   .headerText p {
     font-size: 13px;

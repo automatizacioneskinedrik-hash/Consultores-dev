@@ -21,8 +21,8 @@ body.sidebar-collapsed .advancedPage {
 .advancedTitle {
   margin: 0;
   font-family: "Inter", "Arial", sans-serif;
-  font-size: 32px;
-  line-height: 1.1;
+  font-size: var(--fs-h1);
+  line-height: var(--lh-h1);
   letter-spacing: 0;
   font-weight: 800;
   display: flex;
@@ -73,7 +73,8 @@ body.sidebar-collapsed .advancedPage {
 
 .advancedPanelTop h2 {
   margin: 0;
-  font-size: 26px;
+  font-size: var(--fs-h2);
+  line-height: var(--lh-h2);
   color: #040025;
   letter-spacing: 0;
   font-weight: 800;
@@ -495,7 +496,7 @@ body.sidebar-collapsed .advancedPage {
   }
 
   .advancedTitle {
-    font-size: 28px;
+    font-size: 1.5rem;
     line-height: 1.15;
     flex-wrap: wrap;
     gap: 6px;
