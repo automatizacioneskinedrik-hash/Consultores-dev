@@ -45,7 +45,7 @@ body.sidebar-collapsed .promptsPage {
   line-height: var(--lh-h1);
   margin: 0;
   color: var(--text-primary);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .cardHeader p {
@@ -160,7 +160,7 @@ body.sidebar-collapsed .promptsPage {
   margin: 0;
   font-size: var(--fs-h3);
   color: var(--text-primary);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .activeContentBox {

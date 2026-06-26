@@ -24,7 +24,7 @@ body.sidebar-collapsed .advancedPage {
   font-size: var(--fs-h1);
   line-height: var(--lh-h1);
   letter-spacing: 0;
-  font-weight: 800;
+  font-weight: 700;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -73,11 +73,11 @@ body.sidebar-collapsed .advancedPage {
 
 .advancedPanelTop h2 {
   margin: 0;
-  font-size: var(--fs-h2);
+  font-size: var(--fs-h3);
   line-height: var(--lh-h2);
   color: #040025;
   letter-spacing: 0;
-  font-weight: 800;
+  font-weight: 700;
   flex: 1;
 }
 
@@ -140,8 +140,8 @@ body.sidebar-collapsed .advancedPage {
 
 .emailBlockHeader h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--fs-body);
+  font-weight: 600;
   color: #0040a4;
 }
 

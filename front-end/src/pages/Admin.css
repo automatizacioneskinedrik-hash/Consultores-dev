@@ -40,7 +40,7 @@ body.sidebar-collapsed .adminPage .adminContent {
 
 .adminTitleSection h1 {
   font-size: var(--fs-h1);
-  font-weight: 900;
+  font-weight: 700;
   line-height: var(--lh-h1);
   color: var(--navy);
   margin: 0;
