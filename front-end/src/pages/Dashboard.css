@@ -1,7 +1,7 @@
 .dashboardPage {
   display: flex;
   min-height: 100vh;
-  background: #f1f5f9;
+  background: var(--off);
 }
 
 .dashboardContent {
@@ -98,17 +98,7 @@ body.sidebar-collapsed .dashboardContent {
 }
 
 .dashboardHeaderText h1 {
-  font-size: 32px;
-  font-weight: 900;
   margin: 0;
-}
-
-.dashboardTitleBlack {
-  color: #040025;
-}
-
-.dashboardTitleBlue {
-  color: #0040a4;
 }
 
 .dashboardHeaderText p {

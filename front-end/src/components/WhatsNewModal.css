@@ -77,10 +77,10 @@
 }
 
 .whatsNewTitle {
-  font-size: 26px;
+  font-size: var(--fs-h2);
   font-weight: 850;
   color: #ffffff;
-  line-height: 1.25;
+  line-height: var(--lh-h2);
   margin: 0;
 }
 
@@ -325,7 +325,7 @@
   }
 
   .whatsNewTitle {
-    font-size: 22px;
+    font-size: 1.25rem;
   }
 
   .whatsNewFooter {

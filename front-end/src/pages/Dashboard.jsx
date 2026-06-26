@@ -3,6 +3,7 @@ import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Select, Spin
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
+  MessageOutlined,
   PercentageOutlined,
   PhoneOutlined,
   QuestionCircleOutlined,
@@ -74,6 +75,13 @@ const KPI_DEFS = [
     icon: <PercentageOutlined />,
     suffix: "%",
   },
+  // {
+  //   key: "waEnviadosN",
+  //   label: "WhatsApp enviados",
+  //   legend: "Mensajes de seguimiento enviados por WhatsApp en el periodo.",
+  //   icon: <MessageOutlined />,
+  //   iconStyle: { color: "#25D366", background: "rgba(37, 211, 102, 0.1)" },
+  // },
 ];
 
 const CHART_TABS = [
@@ -891,6 +899,7 @@ export default function Dashboard() {
       meanScore: formatFixed(k.meanScore, 1),
       expectedDurationSec: formatDurationSeconds(k.expectedDurationSec),
       meanCloseProbability: formatFixed(k.meanCloseProbability, 1),
+      waEnviadosN: formatInt(k.waEnviadosN),
     };
   }, [dashboardData.kpis]);
 
@@ -924,7 +933,7 @@ export default function Dashboard() {
           <header className="dashboardTopBar">
             <div className="dashboardHeaderTitle">
               <div className="dashboardHeaderText">
-                <h1><span className="dashboardTitleBlack">Speech</span> <span className="dashboardTitleBlue">Analytics</span></h1>
+                <h1 className="pageTitle">Speech <span className="titleAccent">Analytics</span></h1>
               </div>
             </div>
 
@@ -1025,7 +1034,7 @@ export default function Dashboard() {
                         iconStyle={
                           kpi.key === "meanScore"
                             ? getScoreStyle(dashboardData.kpis?.meanScore)
-                            : undefined
+                            : kpi.iconStyle || undefined
                         }
                         value={kpiValues[kpi.key]}
                         suffix={kpi.suffix || null}

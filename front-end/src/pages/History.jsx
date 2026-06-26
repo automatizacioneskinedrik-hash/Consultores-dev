@@ -73,7 +73,7 @@ export default function History() {
       <div className="historyContent">
         <header className="historyHeader">
           <div className="headerText">
-            <h1>Historial de Reportes</h1>
+            <h1 className="pageTitle">Historial de <span className="titleAccent">Reportes</span></h1>
             <p>Consulta todos tus análisis y sesiones procesadas.</p>
           </div>
 

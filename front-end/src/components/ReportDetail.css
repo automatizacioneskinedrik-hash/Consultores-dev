@@ -168,7 +168,7 @@
 }
 
 .heroText h3 {
-  font-size: 28px;
+  font-size: var(--fs-h3);
   font-weight: 900;
   color: var(--navy);
   margin: 0 0 8px 0;
@@ -791,7 +791,7 @@
     padding: 20px;
   }
   .heroText h3 {
-    font-size: 22px;
+    font-size: 1.125rem;
   }
   .heroText p {
     font-size: 13px;
@@ -821,7 +821,7 @@
 
 @media (max-width: 480px) {
   .heroText h3 {
-    font-size: 20px;
+    font-size: 1rem;
   }
   .footerSectionCol {
     padding: 16px;

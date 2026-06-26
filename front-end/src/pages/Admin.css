@@ -16,7 +16,7 @@
 .adminPage {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--off);
 }
 
 .adminContent {
@@ -39,9 +39,6 @@ body.sidebar-collapsed .adminPage .adminContent {
 }
 
 .adminTitleSection h1 {
-  font-size: 32px;
-  font-weight: 900;
-  color: var(--navy);
   margin: 0;
 }
 
@@ -120,10 +117,10 @@ body.sidebar-collapsed .adminPage .adminContent {
 }
 
 .headerCell {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-table-header);
+  font-weight: 600;
   color: var(--text-light);
-  letter-spacing: 1px;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 

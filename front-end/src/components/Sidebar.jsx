@@ -63,32 +63,9 @@ export default function Sidebar() {
     setIsMobileSidebarOpen(false);
   };
 
-  const handleAdminClick = () => {
-    if (!isAuthorizedAdmin) {
-      alert("No tienes permiso para acceder a esta sección");
-      return;
-    }
-    navigate("/admin");
-    setIsMobileSidebarOpen(false);
-  };
-
-  const handleAdvancedConfigClick = () => {
-    if (!isAuthorizedSuperAdmin) {
-      alert("No tienes permiso para acceder a esta sección");
-      return;
-    }
-    navigate("/configuracion-avanzada");
-    setIsMobileSidebarOpen(false);
-  };
-
-  const handleDashboardClick = () => {
-    if (!isAuthorizedSuperAdmin) {
-      alert("No tienes permiso para acceder a esta sección");
-      return;
-    }
-    navigate("/dashboard");
-    setIsMobileSidebarOpen(false);
-  };
+  const handleAdminClick = () => { navigate("/admin"); setIsMobileSidebarOpen(false); };
+  const handleAdvancedConfigClick = () => { navigate("/configuracion-avanzada"); setIsMobileSidebarOpen(false); };
+  const handleDashboardClick = () => { navigate("/dashboard"); setIsMobileSidebarOpen(false); };
 
   const handleLogoutClick = () => setShowLogoutModal(true);
 
@@ -141,14 +118,16 @@ export default function Sidebar() {
           </button>
 
 
-          <button
-            className={`sidebarItem ${isAdminPage ? "active" : ""} ${!isAuthorizedAdmin ? "disabled" : ""}`}
-            onClick={handleAdminClick}
-            title={isAuthorizedAdmin ? "Gestionar usuarios" : "Sin acceso"}
-          >
-            <Users size={22} strokeWidth={2} />
-            <span>Gestionar Usuarios</span>
-          </button>
+          {isAuthorizedAdmin && (
+            <button
+              className={`sidebarItem ${isAdminPage ? "active" : ""}`}
+              onClick={handleAdminClick}
+              title="Gestionar usuarios"
+            >
+              <Users size={22} strokeWidth={2} />
+              <span>Gestionar Usuarios</span>
+            </button>
+          )}
 
           {isAuthorizedSuperAdmin && (
             <button
@@ -252,7 +231,7 @@ export default function Sidebar() {
         <div className="logoutModalOverlay">
           <div className="logoutModalCard">
             <div className="logoutModalTitle">Kinedriꓘ</div>
-            <div className="logoutModalText">¿Estás seguro de que quieres salir?</div>
+            <div className="logoutModalText">¿Estás seguro de que quieres salir{email ? ` ${email}` : ""}?</div>
             <div className="logoutModalSubtext">Tu progreso está a salvo. Te esperamos pronto.</div>
             <div className="logoutModalActions">
               <button className="logoutModalBtn cancel" onClick={handleCancelLogout}>

@@ -10,10 +10,17 @@ router.use(async (req, res, next) => {
   next();
 });
 
+// Instrucciones adicionales (colección "prompts" en Firestore)
 router.get("/", promptController.getAllPrompts);
 router.post("/", promptController.createPrompt);
+router.post("/restore-default", promptController.restoreDefaultPrompt);
 router.post("/:id/activate", promptController.activatePrompt);
 router.post("/:id/favorite", promptController.toggleFavoritePrompt);
-router.post("/restore-default", promptController.restoreDefaultPrompt);
+
+// Prompts de mensaje WhatsApp de seguimiento
+router.get("/followup", promptController.listFollowupPrompts);
+router.post("/followup", promptController.saveFollowupPrompt);
+router.post("/followup/:id/activate", promptController.activateFollowup);
+router.delete("/followup/:id", promptController.deleteFollowup);
 
 export default router;

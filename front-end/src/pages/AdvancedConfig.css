@@ -2,8 +2,7 @@
   margin-left: 215px;
   width: calc(100% - 215px);
   min-height: 100vh;
-  background: #e7e7e7;
-  font-family: "Inter", "Arial", sans-serif;
+  background: var(--off);
   transition: margin-left 0.28s ease, width 0.28s ease;
 }
 
@@ -18,25 +17,6 @@ body.sidebar-collapsed .advancedPage {
   padding: 40px 0 68px;
 }
 
-.advancedTitle {
-  margin: 0;
-  font-family: "Inter", "Arial", sans-serif;
-  font-size: 32px;
-  line-height: 1.1;
-  letter-spacing: 0;
-  font-weight: 800;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.titlePrimary {
-  color: #040025;
-}
-
-.titleAccent {
-  color: #0040a4;
-}
 
 .advancedHeader p {
   margin: 10px 0 0;
@@ -59,15 +39,56 @@ body.sidebar-collapsed .advancedPage {
   align-items: center;
   justify-content: flex-start;
   gap: 16px;
-  margin-bottom: 22px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: 12px;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  transition: background 0.15s ease;
+}
+
+.advancedPanelTop:hover {
+  background: rgba(4, 0, 37, 0.04);
 }
 
 .advancedPanelTop h2 {
   margin: 0;
-  font-size: 26px;
+  font-size: var(--fs-h3);
+  line-height: var(--lh-h2);
   color: #040025;
   letter-spacing: 0;
-  font-weight: 800;
+  font-weight: 700;
+  flex: 1;
+}
+
+.panelChevron {
+  color: #5d6f8a;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.panelChevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+.advancedPanelTop:hover .panelChevron {
+  color: #040025;
+}
+
+.panelBody {
+  overflow: hidden;
+  max-height: 3000px;
+  opacity: 1;
+  margin-top: 22px;
+  transition: max-height 0.38s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.28s ease,
+              margin-top 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panelBody.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
 }
 
 .advancedForm {
@@ -99,8 +120,8 @@ body.sidebar-collapsed .advancedPage {
 
 .emailBlockHeader h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--fs-body);
+  font-weight: 600;
   color: #0040a4;
 }
 
@@ -281,6 +302,142 @@ body.sidebar-collapsed .advancedPage {
   padding: 10px 12px;
 }
 
+.promptVersionList {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.promptVersionItem {
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.promptItemActive {
+  border-color: #25D366;
+  background: #f0fdf4;
+}
+
+.promptVersionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.promptVersionMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.promptBadgeDefault {
+  font-size: 10px;
+  font-weight: 800;
+  color: #5d6f8a;
+  background: #e8ecf4;
+  border-radius: 5px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.promptBadgeActive {
+  font-size: 10px;
+  font-weight: 800;
+  color: #166534;
+  background: #dcfce7;
+  border-radius: 5px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.promptVersionDate {
+  font-size: 11px;
+  font-weight: 600;
+  color: #73839d;
+}
+
+.promptVersionPreview {
+  font-size: 12px;
+  font-weight: 500;
+  color: #22324d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.promptVersionBy {
+  font-size: 10px;
+  color: #9baabf;
+  font-weight: 500;
+}
+
+.promptItemActions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.promptRestoreBtn {
+  border-color: #b8d4ff;
+  background: #eef5ff;
+  color: #0040a4;
+}
+
+.promptRestoreBtn:hover {
+  background: #d6e9ff;
+  border-color: #7ab0ff;
+}
+
+.promptRestoreBtn:disabled,
+.emailRemoveBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.followupPromptTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #d0d5e8;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #040025;
+  background: #f8f9fc;
+  resize: vertical;
+  line-height: 1.6;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.followupPromptTextarea:focus {
+  border-color: #0040a4;
+  box-shadow: 0 0 0 3px rgba(0, 64, 164, 0.14);
+  background: #fff;
+}
+
+.followupPromptActions {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.promptSaveBtn {
+  min-width: 148px;
+  padding: 0 20px;
+}
+
+.addEmailBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .advancedMeta {
   margin-top: 14px;
   display: flex;
@@ -319,8 +476,8 @@ body.sidebar-collapsed .advancedPage {
   }
 
   .advancedTitle {
-    font-size: 28px;
-    line-height: 1.15;
+    font-size: 1.25rem;
+    line-height: 1.2;
     flex-wrap: wrap;
     gap: 6px;
   }

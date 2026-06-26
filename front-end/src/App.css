@@ -2,6 +2,34 @@
   --navy: #040025;
   --blue: #0040a4;
   --off: #e7e7e7;
+
+  /* ── Escala tipográfica modular (base 16px) ── */
+  --fs-hero:         2rem;       /* 32px  — hero / display           */
+  --fs-h1:           1.5rem;     /* 24px  — títulos de página        */
+  --fs-h2:           1.25rem;    /* 20px  — sección / subtítulo      */
+  --fs-h3:           1.125rem;   /* 18px  — títulos de tarjeta       */
+  --fs-body:         1rem;       /* 16px  — cuerpo de texto          */
+  --fs-small:        0.875rem;   /* 14px  — labels / valores tabla   */
+  --fs-table-header: 0.8125rem;  /* 13px  — headers de columna       */
+  --fs-tiny:         0.75rem;    /* 12px  — badges, captions         */
+
+  --lh-hero:  1.15;
+  --lh-h1:    1.2;
+  --lh-h2:    1.25;
+  --lh-body:  1.5;
+}
+
+/* ── Patrón de título de página: última palabra en azul ── */
+.pageTitle {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+  line-height: var(--lh-h1);
+  color: var(--navy);
+  margin: 0;
+}
+
+.titleAccent {
+  color: var(--blue);
 }
 
 * {
@@ -22,9 +50,10 @@ body {
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   background: var(--off);
   overflow-x: hidden;
-  /* evitar scroll horizontal global */
 }
 
 /* APP SHELL */
@@ -36,7 +65,8 @@ body {
   flex-direction: column;
   margin-left: 215px;
   overflow-x: hidden;
-  transition: width 0.28s ease, margin-left 0.28s ease;
+  transition: width 0.28s ease, margin-left 0.28s ease,
+              padding-right 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body.sidebar-collapsed .appShell {
@@ -165,19 +195,34 @@ body.sidebar-collapsed .appShell {
   background: var(--off);
   border-left: 1px solid rgba(4, 0, 37, 0.07);
   overflow: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 50;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.06);
+  transform: translateX(0);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.waPanel.waPanelCollapsed {
-  width: 52px;
+.waPanelHidden {
+  transform: translateX(100%);
+  box-shadow: none;
+}
+
+.waPanel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  background: linear-gradient(to bottom, var(--off) 55%, transparent);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .waPanelInner {
   width: 404px;
   height: 100%;
-  padding: 28px 16px 40px;
+  padding: 82px 16px 40px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -185,40 +230,150 @@ body.sidebar-collapsed .appShell {
 
 .waPanelActive {
   padding-right: 404px;
-  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.waPanelCollapsedShell {
-  padding-right: 52px;
-  transition: padding-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@keyframes waBadgePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); }
+  55%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
 }
 
-.waPanelCollapsedBtn {
-  width: 52px;
-  height: 100%;
+/* Wrapper: right:16px = padding interior del panel → alinea con las tarjetas */
+.waFloatBtnWrap {
+  position: fixed;
+  top: 20px;
+  right: 16px;
+  z-index: 200;
+}
+
+/* Estado replegado: círculo verde con ícono WA blanco */
+.waFloatBtn {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  border: none;
-  background: none;
-  cursor: pointer;
+  align-items: center;
+  background: #25D366;
+  border: 2.5px solid #25D366;
+  border-radius: 50px;
   padding: 0;
-  transition: background 0.18s ease;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.45), 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease, background 0.3s ease, border-color 0.3s ease, padding 0.3s ease;
+  outline: none;
 }
 
-.waPanelCollapsedBtn:hover {
-  background: rgba(4, 0, 37, 0.05);
+/* Estado desplegado: padding da espacio al anillo del ícono dentro de overflow:hidden */
+.waFloatBtn.waFloatBtnOpen {
+  background: var(--off);
+  border-color: transparent;
+  box-shadow: none;
+  padding: 4px;
 }
 
-.waPanelCollapsedIcon {
+.waFloatBtn:hover {
+  background: var(--off);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.waFloatBtn.waFloatBtnOpen:hover {
+  box-shadow: none;
+}
+
+.waFloatBtn:focus-visible {
+  outline: 3px solid #25D366;
+  outline-offset: 3px;
+}
+
+/* Ícono: verde cuando replegado, blanco + aro verde cuando desplegado */
+.waFloatBtnIcon {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #25D366;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s ease, width 0.3s ease, height 0.3s ease,
+              min-width 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Ícono reducido a 44px para que el anillo (box-shadow 2.5px) quepa
+   dentro del padding-box (44 + 2×4px = 52px) sin recortarse */
+.waFloatBtnOpen .waFloatBtnIcon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  background: var(--off);
+  box-shadow: 0 0 0 2.5px #25D366;
   position: relative;
-  display: inline-flex;
+  z-index: 1;
 }
 
-.waPanelCollapsedIcon .waPanelCount {
+/* SVG: blanco cuando replegado, verde cuando desplegado */
+.waFloatBtnIcon svg {
+  fill: white;
+  transition: fill 0.3s ease;
+}
+
+.waFloatBtnOpen .waFloatBtnIcon svg {
+  fill: #25D366;
+}
+
+/* Ocultar badge cuando el panel está desplegado */
+.waFloatBtnOpen + .waFloatBtnBadge {
+  display: none;
+}
+
+.waFloatBtnBadge {
   position: absolute;
-  top: -7px;
-  right: -9px;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ef4444;
+  color: white;
+  font-size: 9px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--off);
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
+  animation: waBadgePulse 2.4s ease-in-out infinite;
+}
+
+/* Cinta "Seguimientos" — delgada, oculta por defecto, se desliza al abrir */
+.waFloatBtnLabel {
+  background: #25D366;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  height: 30px;
+  width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  transition:
+    width         0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    padding       0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    margin-left   0.38s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.38s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 320px visible + 8px bajo el ícono = 328px total; margen negativo oculta esquinas izq */
+.waFloatBtnOpen .waFloatBtnLabel {
+  width: 328px;
+  padding: 0 16px 0 24px;
+  margin-left: -8px;
+  border-radius: 0 15px 15px 0;
 }
 
 .waPanelHeader {
@@ -236,8 +391,8 @@ body.sidebar-collapsed .appShell {
 .waPanelCount {
   background: #ef4444;
   color: white;
-  border: none;
-  font-size: 11px;
+  border: 2px solid #040025;
+  font-size: 10px;
   font-weight: 900;
   width: 20px;
   height: 20px;
@@ -493,10 +648,10 @@ body.sidebar-collapsed .appShell {
 
 /* TITLES */
 .title {
-  font-size: 40px;
+  font-size: var(--fs-hero);
   font-weight: 900;
   color: #0b0b22;
-  line-height: 1.1;
+  line-height: var(--lh-hero);
   margin-bottom: 16px;
 }
 
@@ -611,7 +766,7 @@ body.sidebar-collapsed .appShell {
 
 .dropZone h3 {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--fs-h3);
   font-weight: 800;
 }
 
@@ -1039,6 +1194,43 @@ body.sidebar-collapsed .appShell {
   font-weight: 500;
 }
 
+.viewSummaryBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2885FF 0%, #0040A4 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(40, 133, 255, 0.2);
+}
+
+.viewSummaryBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(40, 133, 255, 0.4);
+  filter: brightness(1.1);
+}
+
+.viewSummaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.viewSummaryBtn svg {
+  transition: transform 0.3s ease;
+}
+
+.viewSummaryBtn:hover svg {
+  transform: rotate(-10deg);
+}
+
 .resendBtn {
   background: white;
   color: var(--blue);
@@ -1075,7 +1267,7 @@ body.sidebar-collapsed .appShell {
     width: 100%;
   }
   .title {
-    font-size: clamp(24px, 8vw, 32px);
+    font-size: clamp(1.25rem, 6vw, 1.75rem);
   }
   .dropZone {
     padding: 30px 15px;
@@ -1095,7 +1287,7 @@ body.sidebar-collapsed .appShell {
 
 @media (max-width: 480px) {
   .title {
-    font-size: 24px;
+    font-size: 1.5rem;
   }
   .subtitle {
     font-size: 12px;

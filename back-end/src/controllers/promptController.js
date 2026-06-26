@@ -1,4 +1,10 @@
 import admin, { db } from "../config/firebase.js";
+import {
+  getFollowupPrompts,
+  createFollowupPrompt,
+  activateFollowupPrompt,
+  deleteFollowupPrompt,
+} from "../prompts/promptService.js";
 
 export const getAllPrompts = async (req, res) => {
   try {
@@ -91,5 +97,48 @@ export const restoreDefaultPrompt = async (req, res) => {
     return res.json({ ok: true, message: "Prompt por defecto restaurado" });
   } catch (err) {
     return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
+// --- Prompts de mensaje WhatsApp de seguimiento ---
+
+export const listFollowupPrompts = async (req, res) => {
+  try {
+    const prompts = await getFollowupPrompts();
+    return res.json({ ok: true, prompts });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Error al obtener los prompts de seguimiento" });
+  }
+};
+
+export const saveFollowupPrompt = async (req, res) => {
+  try {
+    const { instruction } = req.body;
+    if (typeof instruction !== "string" || !instruction.trim()) {
+      return res.status(400).json({ ok: false, error: "instruction es requerida" });
+    }
+    const createdBy = (req.headers["x-admin-email"] || "").toLowerCase();
+    const id = await createFollowupPrompt(instruction, createdBy);
+    return res.json({ ok: true, id });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: "Error al guardar el prompt" });
+  }
+};
+
+export const activateFollowup = async (req, res) => {
+  try {
+    await activateFollowupPrompt(req.params.id);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: err.message || "Error al activar el prompt" });
+  }
+};
+
+export const deleteFollowup = async (req, res) => {
+  try {
+    await deleteFollowupPrompt(req.params.id);
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(400).json({ ok: false, error: err.message || "Error al eliminar el prompt" });
   }
 };
