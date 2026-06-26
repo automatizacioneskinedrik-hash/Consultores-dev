@@ -75,13 +75,13 @@ const KPI_DEFS = [
     icon: <PercentageOutlined />,
     suffix: "%",
   },
-  {
-    key: "waEnviadosN",
-    label: "WhatsApp enviados",
-    legend: "Mensajes de seguimiento enviados por WhatsApp en el periodo.",
-    icon: <MessageOutlined />,
-    iconStyle: { color: "#25D366", background: "rgba(37, 211, 102, 0.1)" },
-  },
+  // {
+  //   key: "waEnviadosN",
+  //   label: "WhatsApp enviados",
+  //   legend: "Mensajes de seguimiento enviados por WhatsApp en el periodo.",
+  //   icon: <MessageOutlined />,
+  //   iconStyle: { color: "#25D366", background: "rgba(37, 211, 102, 0.1)" },
+  // },
 ];
 
 const CHART_TABS = [
