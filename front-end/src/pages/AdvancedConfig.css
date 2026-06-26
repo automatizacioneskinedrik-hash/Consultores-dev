@@ -2,7 +2,7 @@
   margin-left: 215px;
   width: calc(100% - 215px);
   min-height: 100vh;
-  background: #e7e7e7;
+  background: var(--off);
   font-family: "Inter", "Arial", sans-serif;
   transition: margin-left 0.28s ease, width 0.28s ease;
 }

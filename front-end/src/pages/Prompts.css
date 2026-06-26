@@ -11,7 +11,7 @@
 
 .promptsPage {
   margin-left: 215px;
-  background: var(--bg-primary);
+  background: var(--off);
   min-height: 100vh;
   color: var(--text-primary);
   width: calc(100% - 215px);

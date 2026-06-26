@@ -16,7 +16,7 @@
 .adminPage {
   display: flex;
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: var(--off);
 }
 
 .adminContent {
