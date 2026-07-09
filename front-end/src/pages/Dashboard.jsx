@@ -1097,26 +1097,26 @@ export default function Dashboard() {
 
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} sm={12} xl={6}>
+                  <Col xs={24} xl={12}>
                     <DashboardTalkBarCard
                       consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
                       clientPct={dashboardData.kpis?.meanClientTalkPct}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} sm={12} xl={6}>
+                  <Col xs={24} xl={12}>
                     <DashboardCompromisoCard
                       data={dashboardData.distributions?.compromisoBreakdown}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} sm={12} xl={6}>
+                  <Col xs={24} xl={12}>
                     <DashboardFasesCard
                       data={dashboardData.distributions?.fasesDistribucion}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} sm={12} xl={6}>
+                  <Col xs={24} xl={12}>
                     <DashboardObjecionesCard
                       data={dashboardData.distributions?.topObjeciones}
                       loading={dashboardLoading}
