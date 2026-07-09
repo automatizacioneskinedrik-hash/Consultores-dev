@@ -406,16 +406,27 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
   const formatTick = useMemo(() => {
     const dtfHour = new Intl.DateTimeFormat("es-CO", { hour: "2-digit", minute: "2-digit" });
     const dtfDay = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short" });
-    const dtfMonth = new Intl.DateTimeFormat("es-CO", { month: "short", year: "2-digit", timeZone: "UTC" });
+    const dtfWeek = new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "short", timeZone: "UTC" });
     return (ts) => {
       const n = clampNumber(ts);
       if (n == null) return "";
       const d = new Date(n);
       if (bucket === "hour") return dtfHour.format(d);
       if (bucket === "day") return dtfDay.format(d);
-      return dtfMonth.format(d);
+      return dtfWeek.format(d);
     };
   }, [bucket]);
+
+  const formatWeekRange = useMemo(() => {
+    const MONTHS_ABBR = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    return (startTs) => {
+      const start = new Date(startTs);
+      const end = new Date(startTs + 6 * 24 * 60 * 60 * 1000);
+      const startLabel = `${start.getUTCDate()}/${MONTHS_ABBR[start.getUTCMonth()]}`;
+      const endLabel = `${end.getUTCDate()}/${MONTHS_ABBR[end.getUTCMonth()]}`;
+      return `${startLabel} - ${endLabel}`;
+    };
+  }, []);
 
   const renderTooltip = useMemo(() => {
     return ({ active, label, payload }) => {
@@ -428,9 +439,10 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
           : tab.valueSuffix
             ? `${formatFixed(n, 1)}${tab.valueSuffix}`
             : formatFixed(n, 1);
+      const labelText = bucket === "week" ? formatWeekRange(Number(label)) : formatTick(label);
       return (
         <div className="dashboardTooltip">
-          <div className="dashboardTooltipLabel">{formatTick(label)}</div>
+          <div className="dashboardTooltipLabel">{labelText}</div>
           <div className="dashboardTooltipRow">
             <span className="dashboardTooltipDot" style={{ background: tab.stroke }} />
             <span className="dashboardTooltipName">{tab.valueLabel || tab.label}</span>
@@ -439,7 +451,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
         </div>
       );
     };
-  }, [tab, formatTick]);
+  }, [tab, formatTick, formatWeekRange, bucket]);
 
   return (
     <Card
@@ -1072,18 +1084,11 @@ export default function Dashboard() {
 
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} xl={16}>
+                  <Col xs={24}>
                     <DashboardMultiLineCard
                       tabs={CHART_TABS}
                       data={dashboardData.series}
                       bucket={dashboardData.meta?.bucket}
-                      loading={dashboardLoading}
-                    />
-                  </Col>
-                  <Col xs={24} xl={8}>
-                    <DashboardTalkBarCard
-                      consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
-                      clientPct={dashboardData.kpis?.meanClientTalkPct}
                       loading={dashboardLoading}
                     />
                   </Col>
@@ -1092,19 +1097,26 @@ export default function Dashboard() {
 
               <section className="dashboardSection">
                 <Row gutter={[16, 16]}>
-                  <Col xs={24} xl={8}>
+                  <Col xs={24} sm={12} xl={6}>
+                    <DashboardTalkBarCard
+                      consultantPct={dashboardData.kpis?.meanConsultantTalkPct}
+                      clientPct={dashboardData.kpis?.meanClientTalkPct}
+                      loading={dashboardLoading}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} xl={6}>
                     <DashboardCompromisoCard
                       data={dashboardData.distributions?.compromisoBreakdown}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} xl={8}>
+                  <Col xs={24} sm={12} xl={6}>
                     <DashboardFasesCard
                       data={dashboardData.distributions?.fasesDistribucion}
                       loading={dashboardLoading}
                     />
                   </Col>
-                  <Col xs={24} xl={8}>
+                  <Col xs={24} sm={12} xl={6}>
                     <DashboardObjecionesCard
                       data={dashboardData.distributions?.topObjeciones}
                       loading={dashboardLoading}
