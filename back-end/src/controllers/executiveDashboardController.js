@@ -69,7 +69,7 @@ function formatConsultantLabel(email = "") {
 }
 
 function pickBucket(rangeStartMs, rangeEndMs) {
-  if (rangeStartMs == null || rangeEndMs == null) return "month";
+  if (rangeStartMs == null || rangeEndMs == null) return "week";
   const spanMs = rangeEndMs - rangeStartMs;
   if (spanMs <= 2 * 24 * 60 * 60 * 1000) return "hour";
   return "day";
@@ -87,6 +87,13 @@ function bucketStart(bucket, bucketStartMs, idx) {
   const DAY = 24 * 60 * 60 * 1000;
   const width = bucket === "hour" ? HOUR : DAY;
   return bucketStartMs + idx * width;
+}
+
+function startOfWeekMondayUTCMs(eventMs) {
+  const d = new Date(eventMs);
+  const dayOfWeek = d.getUTCDay(); // 0=Sun..6=Sat
+  const diffToMonday = (dayOfWeek + 6) % 7;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - diffToMonday, 0, 0, 0, 0);
 }
 
 async function countWaEnviados({ consultantEmail, startMs, endMs }) {
@@ -330,8 +337,8 @@ export const getExecutiveDashboardData = async (req, res) => {
       }
 
       const key =
-        bucket === "month"
-          ? `${new Date(createdAtMs).getUTCFullYear()}-${String(new Date(createdAtMs).getUTCMonth() + 1).padStart(2, "0")}`
+        bucket === "week"
+          ? String(startOfWeekMondayUTCMs(createdAtMs))
           : (() => {
               const anchor = bucketAnchor ?? createdAtMs;
               const idx = bucketIndex(bucket, anchor, createdAtMs);
@@ -342,7 +349,6 @@ export const getExecutiveDashboardData = async (req, res) => {
         seriesAgg.set(key, {
           bucket,
           key,
-          ts: bucket === "month" ? null : null,
           scoreSum: 0,
           scoreN: 0,
           closeSum: 0,
@@ -438,11 +444,10 @@ export const getExecutiveDashboardData = async (req, res) => {
 
     const series = [...seriesAgg.values()]
       .map((agg) => {
-        if (agg.bucket === "month") {
-          const [y, m] = String(agg.key).split("-");
-          const ts = Date.UTC(Number(y), Number(m) - 1, 1, 0, 0, 0, 0);
+        if (agg.bucket === "week") {
+          const ts = Number(agg.key);
           return {
-            bucket: "month",
+            bucket: "week",
             ts,
             meanScore: agg.scoreN ? agg.scoreSum / agg.scoreN : null,
             meanClose: agg.closeN ? agg.closeSum / agg.closeN : null,
