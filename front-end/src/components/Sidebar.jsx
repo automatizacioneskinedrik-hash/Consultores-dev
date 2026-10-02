@@ -1,16 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
-import { 
-  CloudUpload, 
-  History, 
-  Users, 
-  LogOut, 
-} from "lucide-react";
+import { BookOpenText, ChartNoAxesCombined, CloudUpload, History, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
-const EXPANDED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Logotipo_negativo.svg";
-const COLLAPSED_TOP_LOGO = "https://storage.googleapis.com/kinedrik-imagenes/KINEDRIK_Simbolo_negativo.svg";
+const SIDEBAR_MASCOT = "/mascots/dot-listening.png";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -30,6 +24,7 @@ export default function Sidebar() {
   const isHistoryPage = location.pathname === "/history";
   const isDashboardPage = location.pathname === "/dashboard";
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
+  const isSpeechConfigPage = location.pathname === "/speech-comercial";
 
   const isAuthorizedAdmin =
     user?.role === "admin" ||
@@ -83,38 +78,69 @@ export default function Sidebar() {
         {isMobileSidebarOpen ? "✕" : "☰"}
       </button>
 
+      {storedName && (
+        <button
+          className={`accountAvatarButton ${isUploadPage ? "withWhatsApp" : ""}`}
+          type="button"
+          onClick={handleLogoutClick}
+          title="Cuenta"
+          aria-label={`Cuenta de ${storedName}. Abrir opciones de cierre de sesión`}
+        >
+          <span className={`accountAvatar ${user.picture ? "hasPicture" : ""}`}>
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt=""
+                className="accountAvatarPhoto"
+                referrerPolicy="no-referrer"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  event.currentTarget.nextSibling.style.display = "flex";
+                }}
+              />
+            )}
+            <span className="accountAvatarFallback" style={{ display: user.picture ? "none" : "flex" }}>
+              {(() => {
+                const parts = (storedName || "").split(" ").filter(Boolean);
+                if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                return (storedName || "?").charAt(0).toUpperCase();
+              })()}
+            </span>
+          </span>
+        </button>
+      )}
+
       {isMobileSidebarOpen && <div className="sidebarOverlay" onClick={() => setIsMobileSidebarOpen(false)} />}
 
       <div className={sidebarClassName}>
         <div className="sidebarBrand">
           <button
-            className="sidebarTopLogoSwitch"
+            className={`sidebarBrandToggle ${isSidebarCollapsed ? "is-collapsed" : "is-expanded"}`}
+            type="button"
             onClick={toggleCollapsedSidebar}
             title={isSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
             aria-label={isSidebarCollapsed ? "Desplegar sidebar" : "Replegar sidebar"}
+            aria-expanded={!isSidebarCollapsed}
           >
-            <img
-              src={EXPANDED_TOP_LOGO}
-              alt="Kinedrik"
-              className={`sidebarTopLogoImage full ${isSidebarCollapsed ? "hidden" : "visible"}`}
-            />
-            <img
-              src={COLLAPSED_TOP_LOGO}
-              alt="Kinedrik símbolo"
-              className={`sidebarTopLogoImage symbol ${isSidebarCollapsed ? "visible" : "hidden"}`}
-            />
+            {isSidebarCollapsed ? (
+              <Menu size={23} strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <span className="sidebarMascotViewport" aria-hidden="true">
+                <img src={SIDEBAR_MASCOT} alt="" className="sidebarMascot" />
+              </span>
+            )}
           </button>
         </div>
 
         <nav className="sidebarNav">
           <button className={`sidebarItem ${isUploadPage ? "active" : ""}`} onClick={handleUploadClick} title="Subir archivo">
-            <CloudUpload size={22} strokeWidth={2} />
-            <span>Subir Archivo</span>
+            <CloudUpload className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+            <span className="sidebarItemLabel">Subir Archivo</span>
           </button>
 
           <button className={`sidebarItem ${isHistoryPage ? "active" : ""}`} onClick={() => { navigate("/history"); setIsMobileSidebarOpen(false); }} title="Historial de reportes">
-            <History size={22} strokeWidth={2} />
-            <span>Historial</span>
+            <History className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+            <span className="sidebarItemLabel">Historial</span>
           </button>
 
 
@@ -124,8 +150,8 @@ export default function Sidebar() {
               onClick={handleAdminClick}
               title="Gestionar usuarios"
             >
-              <Users size={22} strokeWidth={2} />
-              <span>Gestionar Usuarios</span>
+              <Users className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel">Gestionar Usuarios</span>
             </button>
           )}
 
@@ -133,28 +159,17 @@ export default function Sidebar() {
             <button
               className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
               onClick={handleDashboardClick}
-              title="Dashboard"
+              title="Panel"
             >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide-custom-icon"
-                aria-hidden="true"
-              >
-                <path d="M3 20h18" />
-                <path d="M6 20v-8" />
-                <path d="M10 20v-12" />
-                <path d="M14 20v-6" />
-                <path d="M18 13v-3" />
-                <path d="M15 11l3-3 3 3" />
-              </svg>
-              <span>Dashboard</span>
+              <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel" translate="no">Panel</span>
+            </button>
+          )}
+
+          {isAuthorizedAdmin && (
+            <button className={`sidebarItem ${isSpeechConfigPage ? "active" : ""}`} onClick={() => { navigate("/speech-comercial"); setIsMobileSidebarOpen(false); }} title="Speech comercial">
+              <BookOpenText className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel">Speech Comercial</span>
             </button>
           )}
 
@@ -164,67 +179,12 @@ export default function Sidebar() {
               onClick={handleAdvancedConfigClick}
               title="Configuración avanzada"
             >
-              <svg 
-                width="22" 
-                height="22" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="1.8" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-                className="lucide-custom-icon"
-              >
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-              <span>Configuración<br />Avanzada</span>
+              <Settings className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel">Configuración<br />Avanzada</span>
             </button>
           )}
         </nav>
 
-        {storedName && (
-          <button className="sidebarBadge" type="button" onClick={handleLogoutClick} title="Cerrar sesión">
-            <div className={`userAvatarWrapper ${user.picture ? 'hasPic' : ''}`}>
-              {user.picture ? (
-                <img 
-                  src={user.picture} 
-                  alt={storedName || "Profile"} 
-                  className="userPhoto" 
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-              ) : null}
-              {(
-                <div 
-                  className="defaultAvatar" 
-                  style={{ display: user.picture ? 'none' : 'flex' }}
-                >
-                  {(() => {
-                    const parts = (storedName || "").split(" ").filter(Boolean);
-                    if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-                    return (storedName || "?").charAt(0).toUpperCase();
-                  })()}
-                </div>
-              )}
-              {!user.picture && <span className="statusDot" aria-hidden="true" />}
-            </div>
-            {!isSidebarCollapsed && (
-              <div className="badgeInfo">
-                <span className="badgeName">{storedName}</span>
-                <span className="badgeRole">{(role || 'user').toUpperCase()}</span>
-              </div>
-            )}
-            {!isSidebarCollapsed && (
-              <span className="logoutActionIcon" aria-hidden="true">
-                <LogOut size={18} strokeWidth={2.5} />
-              </span>
-            )}
-          </button>
-        )}
       </div>
 
       {showLogoutModal && (

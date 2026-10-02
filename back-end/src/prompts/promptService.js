@@ -1,5 +1,7 @@
 import admin, { db } from "../config/firebase.js";
 import { getAnalysisPrompt } from "./templates/analysisPrompt.js";
+import { getDynamicAnalysisPrompt } from "./templates/dynamicAnalysisPrompt.js";
+import { getActiveSpeech } from "./speechConfig.js";
 import { DEFAULT_FOLLOWUP_INSTRUCTION } from "./templates/followupPrompt.js";
 
 export { DEFAULT_FOLLOWUP_INSTRUCTION };
@@ -13,11 +15,15 @@ const FOLLOWUP_COL = () => db.collection("followupPrompts");
  * Reads the active additional instructions and the active followup prompt from Firestore.
  */
 export async function buildAnalysisPrompt(durationStr, transcriptionText) {
-  const [additionalInstructions, customFollowupInstruction] = await Promise.all([
+  const [additionalInstructions, customFollowupInstruction, speech] = await Promise.all([
     loadAdditionalInstructions(),
     loadActiveFollowupInstruction(),
+    getActiveSpeech(),
   ]);
-  return getAnalysisPrompt(durationStr, additionalInstructions, transcriptionText, customFollowupInstruction);
+  const prompt = speech.legacy
+    ? getAnalysisPrompt(durationStr, additionalInstructions, transcriptionText, customFollowupInstruction)
+    : getDynamicAnalysisPrompt(durationStr, additionalInstructions, transcriptionText, customFollowupInstruction, speech);
+  return { prompt, speech };
 }
 
 async function loadAdditionalInstructions() {

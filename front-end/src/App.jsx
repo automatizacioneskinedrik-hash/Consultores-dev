@@ -6,6 +6,7 @@ import AdvancedConfig from "./pages/AdvancedConfig";
 import WhatsNewModal from "./components/WhatsNewModal";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
+import SpeechConfig from "./pages/SpeechConfig";
 import "./App.css";
 
 function isLoggedIn() {
@@ -91,6 +92,7 @@ export default function App() {
             </AdminRoute>
           }
         />
+        <Route path="/speech-comercial" element={<AdminRoute><SpeechConfig /></AdminRoute>} />
 
         <Route
           path="/dashboard"

@@ -1,20 +1,17 @@
-/* SIDEBAR STYLES - PREMIUM MODERN REWORK */
+/* Secondary sidebar styled to sit beside the Admissions portal. */
 :root {
-  --sidebar-gradient: linear-gradient(180deg, #040025 0%, #08003c 100%);
-  --sidebar-item-active: rgba(43, 108, 255, 0.15);
-  --sidebar-item-hover: rgba(255, 255, 255, 0.05);
-  --brand-blue: #2b6cff;
-  --brand-orange: #ff7a00;
+  --sidebar-background: #040025;
+  --sidebar-active: #fbb42a;
   --brand-indigo: #6366f1;
 }
 
 .sidebar {
   width: 240px;
-  background: var(--sidebar-gradient);
+  background: var(--sidebar-background);
   display: flex;
   flex-direction: column;
-  padding: 24px 0;
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
+  padding: 14px 0;
+  box-shadow: 5px 0 18px rgba(0, 0, 0, 0.12);
   position: fixed;
   left: 0;
   top: 0;
@@ -22,127 +19,165 @@
   z-index: 999;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  transition: width 0.28s ease, transform 0.28s ease, box-shadow 0.28s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sidebarBrand {
-  padding: 0 20px 40px;
+  height: 78px;
+  flex: 0 0 78px;
+  padding: 0 12px 8px;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
-.sidebarTopLogoSwitch {
+.sidebarBrandToggle {
   width: 100%;
-  height: 50px;
+  height: 100%;
   border: none;
   background: transparent;
   padding: 0;
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  color: #fff;
+  border-radius: 8px;
+}
+
+.sidebarBrandToggle.is-expanded {
+  width: 200px;
+}
+
+.sidebarBrandToggle.is-collapsed {
+  width: 48px;
+  height: 48px;
+  margin: auto;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.sidebarBrandToggle.is-collapsed:hover {
+  color: var(--sidebar-active);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebarMascotViewport {
+  display: block;
+  position: relative;
+  width: 200px;
+  height: 62px;
+  overflow: hidden;
+}
+
+.sidebarMascotViewport::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 8px;
+  background: var(--sidebar-background);
+  border-top: 2px solid rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+
+.sidebarMascot {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 200px;
+  height: auto;
+  object-fit: contain;
+  transform-origin: center bottom;
+  animation: sidebarMascotFloat 3.2s ease-in-out infinite;
   transition: transform 0.2s ease;
 }
 
-.sidebarTopLogoSwitch:hover {
-  transform: translateY(-2px);
+.sidebarBrandToggle.is-expanded:hover .sidebarMascot {
+  animation: sidebarMascotListen 0.65s ease-in-out;
 }
 
-.sidebarTopLogoImage {
-  position: absolute;
-  object-fit: contain;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@keyframes sidebarMascotFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
-.sidebarTopLogoImage.full {
-  width: 170px;
-  height: 32px;
+@keyframes sidebarMascotListen {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  35% { transform: rotate(-2deg) translateY(-1px); }
+  70% { transform: rotate(2deg) translateY(0); }
 }
 
-.sidebarTopLogoImage.symbol {
-  width: 40px;
-  height: 40px;
-}
-
-.sidebarTopLogoImage.visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.sidebarTopLogoImage.hidden {
-  opacity: 0;
-  transform: scale(0.85);
+@media (prefers-reduced-motion: reduce) {
+  .sidebarMascot,
+  .sidebarBrandToggle.is-expanded:hover .sidebarMascot { animation: none; }
 }
 
 .sidebarNav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
   flex: 1;
-  padding: 0 14px;
+  padding: 0;
 }
 
 .sidebarItem {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 10px;
+  min-height: 48px;
+  margin: 0 12px;
+  padding: 10px 12px 10px 24px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: #fff;
   border: none;
-  border-radius: 14px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: var(--fs-small);
-  font-weight: 600;
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  transition: color 0.2s ease, padding 0.28s ease;
   text-align: left;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.sidebarItem span {
+.sidebarItemLabel {
   white-space: normal;
   line-height: 1.2;
   opacity: 1;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  max-width: 170px;
+  transition: opacity 0.22s ease, max-width 0.28s ease;
 }
 
 .sidebarItem:hover:not(.disabled) {
-  background: var(--sidebar-item-hover);
-  color: white;
-  transform: translateX(4px);
+  color: var(--sidebar-active);
+  background: #0b1432;
 }
 
 .sidebarItem.active {
-  background: var(--sidebar-item-active);
-  color: white;
-  box-shadow: inset 0 0 0 1px rgba(43, 108, 255, 0.3);
+  background: #0b1432;
+  color: var(--sidebar-active);
+  box-shadow: none;
 }
 
 .sidebarItem.active::before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 20%;
-  bottom: 20%;
+  left: 7px;
+  top: 5px;
+  bottom: 5px;
   width: 4px;
-  background: var(--brand-blue);
-  box-shadow: 0 0 15px var(--brand-blue);
-  border-radius: 0 4px 4px 0;
+  background: var(--sidebar-active);
+  border-radius: 2px;
 }
 
-.sidebarItem svg {
-  transition: color 0.25s ease;
-  flex-shrink: 0;
+.sidebarNavIcon {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
   display: block;
-  min-width: 22px;
-}
-
-.sidebarItem.active svg {
-  color: white !important;
-  filter: drop-shadow(0 0 5px var(--brand-blue));
 }
 
 .sidebarItem.disabled {
@@ -150,101 +185,72 @@
   cursor: not-allowed;
 }
 
-/* PROFILE / LOGOUT BADGE */
-.sidebarBadge {
-  margin: auto 14px 0;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  display: grid;
-  grid-template-columns: 34px 1fr 24px;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.sidebarBadge:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-}
-
-.userAvatarWrapper {
-  width: 34px;
-  height: 34px;
+/* Account access stays visible outside the sidebar; the WhatsApp button
+   occupies the far-right corner on the upload screen. */
+.accountAvatarButton {
+  position: fixed;
+  top: 24px;
+  right: 20px;
+  z-index: 201;
+  width: 40px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-  background: linear-gradient(135deg, #6366f1 0%, #2b6cff 100%);
+  background: #040025;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  flex-shrink: 0;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 10px rgba(4, 0, 37, 0.2);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.userPhoto {
+.accountAvatarButton:hover {
+  transform: scale(1.06);
+  box-shadow: 0 3px 14px rgba(4, 0, 37, 0.3);
+}
+
+.accountAvatarButton:focus-visible {
+  outline: 3px solid var(--sidebar-active);
+  outline-offset: 3px;
+}
+
+.accountAvatarButton.withWhatsApp {
+  right: 84px;
+}
+
+/* When the WhatsApp drawer opens, keep the account avatar in the space
+   reserved beside that drawer instead of letting the two controls overlap. */
+body:has(.appShell.waPanelActive) .accountAvatarButton.withWhatsApp {
+  right: 420px;
+}
+
+.accountAvatar,
+.accountAvatarPhoto,
+.accountAvatarFallback {
   width: 100%;
   height: 100%;
+  border-radius: 50%;
+}
+
+.accountAvatar {
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(135deg, #6366f1 0%, #2b6cff 100%);
+}
+
+.accountAvatarPhoto {
+  display: block;
   object-fit: cover;
 }
 
-.defaultAvatar {
-  color: white;
-  font-weight: 800;
-  font-size: 16px;
-}
-
-.statusDot {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  background: #22c55e;
-  border: 2px solid #040025;
-  border-radius: 50%;
-}
-
-.badgeInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-  text-align: left;
-}
-.badgeName {
-  color: white;
-  font-weight: 700;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.badgeRole {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.logoutActionIcon {
-  display: flex;
+.accountAvatarFallback {
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
-  transition: all 0.2s ease;
-}
-
-.sidebarBadge:hover .logoutActionIcon {
-  color: #ff4d4d;
-  transform: translateX(3px);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* COLLAPSED STATE */
@@ -253,26 +259,21 @@
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarBrand {
-  padding: 0 10px 30px;
+  padding: 0 10px 8px;
 }
 
-.sidebar.uploadSidebar.collapsed .sidebarItem span,
-.sidebar.uploadSidebar.collapsed .sidebarBadge .badgeInfo,
-.sidebar.uploadSidebar.collapsed .sidebarBadge .logoutActionIcon {
-  display: none;
+.sidebar.uploadSidebar.collapsed .sidebarItemLabel {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .sidebar.uploadSidebar.collapsed .sidebarItem {
   justify-content: center;
+  gap: 0;
   padding: 12px;
-  margin: 0 10px;
-}
-
-.sidebar.uploadSidebar.collapsed .sidebarBadge {
-  grid-template-columns: 1fr;
-  padding: 12px;
-  margin: 0 14px;
-  justify-items: center;
+  margin: 0 8px;
 }
 
 /* MODAL / MOBILE */
@@ -284,11 +285,11 @@
   z-index: 1000;
   width: 44px;
   height: 44px;
-  background: var(--brand-blue);
+  background: #040025;
   color: white;
   border: none;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(43, 108, 255, 0.3);
+  box-shadow: 0 4px 15px rgba(4, 0, 37, 0.3);
   cursor: pointer;
   align-items: center;
   justify-content: center;
@@ -322,15 +323,28 @@
   .sidebar.uploadSidebar.collapsed {
     width: 240px;
   }
-  .sidebar.uploadSidebar.collapsed .sidebarItem span,
-  .sidebar.uploadSidebar.collapsed .sidebarBadge .badgeInfo,
-  .sidebar.uploadSidebar.collapsed .sidebarBadge .logoutActionIcon {
+  .sidebar.uploadSidebar.collapsed .sidebarItemLabel {
     opacity: 1;
+    max-width: 170px;
+    overflow: visible;
     transform: none;
-    display: flex;
   }
-  .sidebar.uploadSidebar.collapsed .sidebarItem span {
-    display: inline;
+  .sidebar.uploadSidebar.collapsed .sidebarItemLabel {
+    white-space: normal;
+  }
+
+  .accountAvatarButton {
+    top: 20px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .accountAvatarButton.withWhatsApp {
+    right: 78px;
+  }
+
+  body:has(.appShell.waPanelActive) .accountAvatarButton.withWhatsApp {
+    right: min(420px, calc(100vw - 64px));
   }
 }
 

@@ -178,7 +178,7 @@ const KPI_DEFS_COMERCIAL = [
   {
     key: "avgAdherenciaScore",
     label: "Adherencia al guion",
-    legend: "Mide si las fases se ejecutaron en la secuencia correcta (F1→F5), no cuántas se alcanzaron. Complementa 'Avance por fase': alta cobertura con orden incorrecto baja este score.",
+    legend: "Mide la presencia y el orden de las fases de la versión de speech seleccionada.",
     icon: <StarOutlined />,
     suffix: "%",
     getIconStyle: (val) =>
@@ -204,14 +204,6 @@ const COMPROMISO_COLORS = {
   aplazado: "#2885FF",
   sin_compromiso: "#dc2626",
 };
-const FASE_LABELS = {
-  F1: "F1 · Apertura",
-  F2: "F2 · Diagnóstico",
-  F3: "F3 · Visión",
-  F4: "F4 · Propuesta",
-  F5: "F5 · Cierre",
-};
-
 const OBJECION_LABELS = {
   precio: "Precio",
   titulacion: "Titulación",
@@ -633,9 +625,14 @@ function DashboardCompromisoCard({ data, loading }) {
   );
 }
 
-function DashboardFasesCard({ data, loading }) {
+function DashboardFasesCard({ data, loading, speech, versions, selectedVersion, onSelectVersion }) {
   return (
     <Card className="dashboardPanel" title="Avance por fase del guion">
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10, fontSize: 12, color: "#52627b" }}>
+        <span>Versión:</span>
+        <Select size="small" value={selectedVersion} onChange={onSelectVersion} style={{ minWidth: 190 }} options={[{ value: "active", label: "Versión activa" }, ...(versions || []).map((version) => ({ value: version.id, label: version.name }))]} />
+        <span>{speech?.name || ""} · {speech?.callsWithPhases || 0} llamadas</span>
+      </div>
       <div className="dashboardChartWrap">
         {loading ? (
           <div className="dashboardChartState"><Spin /></div>
@@ -652,12 +649,12 @@ function DashboardFasesCard({ data, loading }) {
                 type="category"
                 dataKey="fase"
                 tick={{ fontSize: 12 }}
-                tickFormatter={(v) => FASE_LABELS[v] || v}
+                tickFormatter={(v) => data.find((entry) => entry.fase === v)?.label || v}
                 width={110}
               />
               <Tooltip
                 formatter={(value) => [`${value}%`, "% de llamadas"]}
-                labelFormatter={(label) => FASE_LABELS[label] || label}
+                labelFormatter={(label) => data.find((entry) => entry.fase === label)?.label || label}
               />
               <Bar dataKey="pct" name="% llamadas" fill="#0040A4" radius={[0, 6, 6, 0]} barSize={18}>
                 <LabelList
@@ -731,6 +728,7 @@ export default function Dashboard() {
   const [week, setWeek] = useState(null);
   const [day, setDay] = useState(null);
   const [consultant, setConsultant] = useState("all");
+  const [speechVersionId, setSpeechVersionId] = useState("active");
   const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
 
   const [availableDates, setAvailableDates] = useState(null);
@@ -785,6 +783,7 @@ export default function Dashboard() {
     setWeek(null);
     setDay(null);
     setConsultant("all");
+    setSpeechVersionId("active");
   };
 
   useEffect(() => {
@@ -865,6 +864,7 @@ export default function Dashboard() {
         setDashboardLoading(true);
         const params = new URLSearchParams();
         params.set("consultantEmail", consultant || "all");
+        params.set("speechVersionId", speechVersionId);
         if (Number.isFinite(timeRange.startMs) && Number.isFinite(timeRange.endMs)) {
           params.set("startMs", String(timeRange.startMs));
           params.set("endMs", String(timeRange.endMs));
@@ -902,7 +902,7 @@ export default function Dashboard() {
       ignore = true;
       controller.abort();
     };
-  }, [authHeaders, consultant, isAuthorizedSuperAdmin, refetchToken, timeRange.endMs, timeRange.startMs]);
+  }, [authHeaders, consultant, speechVersionId, isAuthorizedSuperAdmin, refetchToken, timeRange.endMs, timeRange.startMs]);
 
   const kpiValues = useMemo(() => {
     const k = dashboardData.kpis || {};
@@ -1114,6 +1114,10 @@ export default function Dashboard() {
                     <DashboardFasesCard
                       data={dashboardData.distributions?.fasesDistribucion}
                       loading={dashboardLoading}
+                      speech={dashboardData.meta?.selectedSpeech}
+                      versions={dashboardData.meta?.speechVersions}
+                      selectedVersion={speechVersionId}
+                      onSelectVersion={setSpeechVersionId}
                     />
                   </Col>
                   <Col xs={24} xl={12}>

@@ -8,6 +8,7 @@ import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
 import { transporter } from "../config/mailer.js";
 import { buildAnalysisPrompt } from "../prompts/promptService.js";
+import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 
@@ -137,7 +138,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    const systemPrompt = await buildAnalysisPrompt(durationStr, transcriptionText);
+    const { prompt: systemPrompt, speech } = await buildAnalysisPrompt(durationStr, transcriptionText);
     const completion = await openai.chat.completions.create({
       model: "gpt-5.4-mini",
       messages: [{ role: "user", content: systemPrompt }],
@@ -146,7 +147,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       seed: 42,
     });
 
-    const analysis = JSON.parse(completion.choices[0].message.content);
+    const analysis = applySpeechToAnalysis(JSON.parse(completion.choices[0].message.content), speech);
 
     // Sobrescribir participación con los valores reales calculados desde AssemblyAI
     analysis.participacion = {
@@ -174,6 +175,8 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       objectPath,
       transcription: transcriptionText,
       analysis,
+      speechVersionId: speech.id,
+      speechSnapshot: { name: speech.name, phases: speech.phases, scoring: speech.scoring, rules: speech.rules || null, extraRules: speech.extraRules || "" },
       generalScore,
       monologo_mas_largo_seg,
       muletillas_por_minuto,
@@ -217,7 +220,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
         from: process.env.EMAIL_FROM || "Kinedriꓘ <no-reply@kinedrik.com>",
         to: normalizeEmailValue(userEmail),
         subject: `Reporte: Reunión con ${clienteNome} — ${dateStr}`,
-        html: generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome),
+        html: generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome, speech),
       };
 
       if (emailConfig.ccEmails.length > 0) mailOptions.cc = emailConfig.ccEmails;
@@ -242,7 +245,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
   }
 }
 
-function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome) {
+function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNome, speech) {
   return `
 <!DOCTYPE html>
 <html lang="es">
@@ -456,8 +459,8 @@ function generateEmailHtml(analysis, consultantName, minutes, seconds, clienteNo
             </td>
           </tr>
           ${(analysis.feedback?.puntos_mejora || []).map(item => {
-            const phases = { F01: "F01 — Apertura", F02: "F02 — Diagnóstico", F03: "F03 — Visión", F04: "F04 — Vehículo", F05: "F05 — Cierre" };
-            const phase = phases[(item.codigo_fase || "").substring(0, 3)] || item.codigo_fase || "";
+            const phaseInfo = speech.phases.find((entry) => entry.id === item.codigo_fase);
+            const phase = phaseInfo ? phaseInfo.name : item.codigo_fase || "";
             return `
           <tr>
             <td style="padding:0 40px 15px 40px;" class="px-mobile">

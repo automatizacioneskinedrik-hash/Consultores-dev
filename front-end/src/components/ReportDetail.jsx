@@ -85,6 +85,7 @@ export default function ReportDetail({ report, onClose }) {
           <div className="headerLeft">
             <h2>Reporte de Sesión</h2>
             <span>{clienteNome} — {dateStr}</span>
+            <span style={{ display: "block", fontSize: 11, opacity: 0.75 }}>Speech: {report.speechSnapshot?.name || "Metodología original"}{report.speechSnapshot?.phases?.length ? ` · ${report.speechSnapshot.phases.length} fases` : ""}</span>
           </div>
           <div className="headerActions">
             {report.objectPath && (

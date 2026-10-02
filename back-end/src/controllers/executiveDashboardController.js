@@ -1,11 +1,12 @@
 import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
+import { getActiveSpeech, getSpeechEditorData, getSpeechVersion, LEGACY_VERSION_ID } from "../prompts/speechConfig.js";
 
 const DASHBOARD_CACHE = new Map();
 const DASHBOARD_TTL_MS = 2 * 60 * 1000; // 2 minutos
 
-function dashboardCacheKey(consultantEmail, startMs, endMs) {
-  return `${consultantEmail || "all"}:${startMs ?? ""}:${endMs ?? ""}`;
+function dashboardCacheKey(consultantEmail, startMs, endMs, speechVersionId) {
+  return `${consultantEmail || "all"}:${startMs ?? ""}:${endMs ?? ""}:${speechVersionId}`;
 }
 
 function clampPercent(value) {
@@ -146,6 +147,7 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
     "analysis.probabilidades.proximidad_cierre",
     "analysis.fases_alcanzadas",
     "analysis.adherencia_guion",
+    "speechVersionId",
     "analysis.momento_precio",
     "cedio_palabra_tras_precio",
     "analysis.tipo_compromiso_cierre",
@@ -250,16 +252,20 @@ export const getExecutiveDashboardData = async (req, res) => {
     const startMs = req.query.startMs != null ? Number(req.query.startMs) : null;
     const endMs = req.query.endMs != null ? Number(req.query.endMs) : null;
 
-    const cacheKey = dashboardCacheKey(consultantEmail, startMs, endMs);
+    const activeSpeech = await getActiveSpeech();
+    const selectedSpeech = req.query.speechVersionId && req.query.speechVersionId !== "active"
+      ? await getSpeechVersion(String(req.query.speechVersionId)) : activeSpeech;
+    const cacheKey = dashboardCacheKey(consultantEmail, startMs, endMs, selectedSpeech.id);
     const hit = DASHBOARD_CACHE.get(cacheKey);
     if (hit && Date.now() - hit.ts < DASHBOARD_TTL_MS) {
       return res.json(hit.data);
     }
 
-    const [userNamesMap, docs, waEnviadosN] = await Promise.all([
+    const [userNamesMap, docs, waEnviadosN, speechEditor] = await Promise.all([
       loadUserNamesMap(),
       fetchMeetingsAnalysis({ startMs, endMs }),
       countWaEnviados({ consultantEmail, startMs, endMs }),
+      getSpeechEditorData(),
     ]);
 
     const bucket = pickBucket(startMs, endMs);
@@ -287,7 +293,7 @@ export const getExecutiveDashboardData = async (req, res) => {
       muletillasPorMinutoN: 0,
       cedioPalabraT: 0,
       cedioPalabraTotal: 0,
-      fasesMap: { F1: 0, F2: 0, F3: 0, F4: 0, F5: 0 },
+      fasesMap: Object.fromEntries(selectedSpeech.phases.map((phase) => [phase.id, 0])),
       fasesCalls: 0,
       adherenciaSum: 0,
       adherenciaN: 0,
@@ -412,17 +418,18 @@ export const getExecutiveDashboardData = async (req, res) => {
       // fases alcanzadas — solo transcripciones desde el 15 jun 2026
       const FASES_CUTOFF_MS = Date.UTC(2026, 5, 15, 0, 0, 0, 0);
       const fasesAlcanzadas = data.analysis?.fases_alcanzadas;
-      if (createdAtMs >= FASES_CUTOFF_MS && Array.isArray(fasesAlcanzadas) && fasesAlcanzadas.length > 0) {
+      const documentVersion = data.speechVersionId || LEGACY_VERSION_ID;
+      if (documentVersion === selectedSpeech.id && createdAtMs >= FASES_CUTOFF_MS && Array.isArray(fasesAlcanzadas) && fasesAlcanzadas.length > 0) {
         totals.fasesCalls += 1;
         for (const f of fasesAlcanzadas) {
-          const code = String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase();
+          const code = selectedSpeech.legacy ? String(f).match(/^(F[1-5])/i)?.[1]?.toUpperCase() : f;
           if (code && code in totals.fasesMap) totals.fasesMap[code] += 1;
         }
       }
 
       // adherencia al guion
       const adherenciaScore = data.analysis?.adherencia_guion?.score;
-      if (typeof adherenciaScore === "number" && Number.isFinite(adherenciaScore)) {
+      if (documentVersion === selectedSpeech.id && typeof adherenciaScore === "number" && Number.isFinite(adherenciaScore)) {
         totals.adherenciaSum += adherenciaScore;
         totals.adherenciaN += 1;
       }
@@ -492,6 +499,7 @@ export const getExecutiveDashboardData = async (req, res) => {
         .map(([categoria, count]) => ({ categoria, count })),
       fasesDistribucion: Object.entries(totals.fasesMap).map(([fase, count]) => ({
         fase,
+        label: selectedSpeech.phases.find((phase) => phase.id === fase)?.name || fase,
         count,
         pct: totals.fasesCalls > 0 ? Math.round((count / totals.fasesCalls) * 100) : 0,
       })),
@@ -513,6 +521,8 @@ export const getExecutiveDashboardData = async (req, res) => {
         endMs: Number.isFinite(endMs) ? endMs : null,
         bucket,
         totalDocsScanned: docs.length,
+        selectedSpeech: { id: selectedSpeech.id, name: selectedSpeech.name, phaseCount: selectedSpeech.phases.length, callsWithPhases: totals.fasesCalls },
+        speechVersions: speechEditor.versions,
       },
     };
 

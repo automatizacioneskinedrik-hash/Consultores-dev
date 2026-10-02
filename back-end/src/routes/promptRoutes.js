@@ -1,5 +1,6 @@
 import express from "express";
 import * as promptController from "../controllers/promptController.js";
+import * as speechController from "../controllers/speechConfigController.js";
 import { isAdminOrSuperadminRequest } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -11,6 +12,10 @@ router.use(async (req, res, next) => {
 });
 
 // Instrucciones adicionales (colección "prompts" en Firestore)
+router.get("/speech", speechController.getSpeechConfig);
+router.put("/speech/draft", speechController.putSpeechDraft);
+router.post("/speech/publish", speechController.postSpeechPublish);
+router.post("/speech/versions/:id/activate", speechController.postSpeechActivate);
 router.get("/", promptController.getAllPrompts);
 router.post("/", promptController.createPrompt);
 router.post("/restore-default", promptController.restoreDefaultPrompt);
