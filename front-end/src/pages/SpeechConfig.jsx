@@ -15,9 +15,16 @@ const RULE_FIELDS = [
   ["discovery", "Preguntas de descubrimiento"],
   ["objections", "Objeciones"],
 ];
+const SPEECH_TABS = [
+  ["version", "Versión"],
+  ["rules", "Reglas comerciales"],
+  ["phases", "Fases del speech"],
+  ["history", "Versiones anteriores"],
+];
 
 export default function SpeechConfig() {
   const [user] = useState(() => getUser() || {});
+  const [activeTab, setActiveTab] = useState("version");
   const [active, setActive] = useState(null);
   const [draft, setDraft] = useState(null);
   const [versions, setVersions] = useState([]);
@@ -119,54 +126,77 @@ export default function SpeechConfig() {
       <main className="speechConfigContent">
         <header className="speechConfigHeader">
           <div>
-            <span className="speechEyebrow">Metodología comercial</span>
             <h1 className="pageTitle">Configurar <span className="titleAccent">Speech Comercial</span></h1>
             <p>Ordena las fases y define cómo reconocerlas y evaluarlas en cada llamada.</p>
+            <p className="speechActiveStatus">Versión activa: {active?.name || "Cargando..."}</p>
           </div>
-          <span className="speechActiveBadge">Activa: {active?.name || "Cargando..."}</span>
         </header>
 
         {notice && <div role="status" className={`speechNotice ${notice.error ? "error" : ""}`}>{notice.text}</div>}
         {loading && <div className="speechCard">Cargando speech comercial…</div>}
         {!loading && draft && <>
-          <section className="speechCard speechOverview">
-            <div className="speechField"><label htmlFor="speechName">Nombre de esta versión</label><input id="speechName" value={draft.name} maxLength={100} onChange={(event) => change({ name: event.target.value })} /></div>
-            <div className="speechField"><label htmlFor="speechDescription">Descripción</label><input id="speechDescription" value={draft.description || ""} maxLength={500} onChange={(event) => change({ description: event.target.value })} /></div>
-            <div className="speechScoring">
-              <span>Adherencia al guion</span>
-              <div className="speechField"><label htmlFor="speechOmission">Puntos por fase omitida</label><input id="speechOmission" type="number" min="0" max="100" value={draft.scoring.omissionPenalty} onChange={(event) => change({ scoring: { ...draft.scoring, omissionPenalty: Number(event.target.value) } })} /></div>
-              <div className="speechField"><label htmlFor="speechInversion">Puntos por orden invertido</label><input id="speechInversion" type="number" min="0" max="100" value={draft.scoring.inversionPenalty} onChange={(event) => change({ scoring: { ...draft.scoring, inversionPenalty: Number(event.target.value) } })} /></div>
-            </div>
+          <nav className="speechTabs" role="tablist" aria-label="Secciones de configuración del speech">
+            {SPEECH_TABS.map(([id, label]) => <button
+              key={id}
+              id={`speech-tab-${id}`}
+              className="speechTab"
+              type="button"
+              role="tab"
+              aria-selected={activeTab === id}
+              aria-controls="speech-tab-panel"
+              onClick={() => setActiveTab(id)}
+            >{label}</button>)}
+          </nav>
+
+          <section className="speechTabPanel" id="speech-tab-panel" role="tabpanel" aria-labelledby={`speech-tab-${activeTab}`}>
+            {activeTab === "version" && <section className="speechSection speechOverview">
+              <div className="speechSectionHeading"><div><h2>Datos de la versión</h2><p>Identifica esta versión y describe brevemente la metodología comercial.</p></div></div>
+              <div className="speechOverviewFields">
+                <div className="speechField"><label htmlFor="speechName">Nombre de esta versión</label><input id="speechName" value={draft.name} maxLength={100} onChange={(event) => change({ name: event.target.value })} /></div>
+                <div className="speechField"><label htmlFor="speechDescription">Descripción</label><input id="speechDescription" value={draft.description || ""} maxLength={500} onChange={(event) => change({ description: event.target.value })} /></div>
+              </div>
+              <div className="speechScoring">
+                <div className="speechScoringHeading"><h3>Cálculo de adherencia al guion</h3><p>El puntaje parte de 100 y se le aplican los descuentos definidos aquí.</p></div>
+                <div className="speechScoringRow">
+                  <div><label htmlFor="speechOmission">Descuento por fase omitida</label><p>Se aplica por cada fase del speech que no se detecte.</p></div>
+                  <div className="speechScoringValue"><input id="speechOmission" type="number" min="0" max="100" value={draft.scoring.omissionPenalty} onChange={(event) => change({ scoring: { ...draft.scoring, omissionPenalty: Number(event.target.value) } })} /><span>puntos</span></div>
+                </div>
+                <div className="speechScoringRow">
+                  <div><label htmlFor="speechInversion">Descuento por orden alterado</label><p>Se aplica si las fases se detectan en un orden diferente.</p></div>
+                  <div className="speechScoringValue"><input id="speechInversion" type="number" min="0" max="100" value={draft.scoring.inversionPenalty} onChange={(event) => change({ scoring: { ...draft.scoring, inversionPenalty: Number(event.target.value) } })} /><span>puntos</span></div>
+                </div>
+              </div>
+            </section>}
+
+            {activeTab === "rules" && <section className="speechSection speechRules">
+              <div className="speechSectionHeading"><div><h2>Reglas comerciales generales</h2><p>Estas reglas complementan las fases y alimentan el análisis de cada llamada nueva. Los criterios actuales se mantienen sin cambios.</p></div></div>
+              <div className="speechRulesGrid">
+                {RULE_FIELDS.map(([key, label]) => <div className="speechField" key={key}>
+                  <label htmlFor={`speechRule-${key}`}>{label}</label>
+                  <textarea id={`speechRule-${key}`} value={draft.rules?.[key] || ""} maxLength={4000} rows={2} onChange={(event) => change({ rules: { ...draft.rules, [key]: event.target.value } })} />
+                </div>)}
+              </div>
+            </section>}
+
+            {activeTab === "phases" && <section className="speechSection">
+              <div className="speechSectionHeading"><div><h2>Fases del speech</h2><p>{draft.phases.length} fases · cambia el orden con las flechas</p></div><button className="speechTextButton" onClick={addPhase} disabled={draft.phases.length >= 12}><Plus size={16} /> Añadir fase</button></div>
+              <div className="speechPhaseList">
+                {draft.phases.map((phase, index) => <section className="speechPhase" key={phase.id}>
+                  <div className="speechPhaseHead"><span className="speechPhaseNumber">{String(index + 1).padStart(2, "0")}</span><span className="speechPhaseId">ID {phase.id}</span><div className="speechPhaseActions"><button title="Subir fase" aria-label={`Subir ${phase.name}`} onClick={() => movePhase(index, -1)} disabled={index === 0}><ArrowUp size={16} /></button><button title="Bajar fase" aria-label={`Bajar ${phase.name}`} onClick={() => movePhase(index, 1)} disabled={index === draft.phases.length - 1}><ArrowDown size={16} /></button><button title="Quitar fase" aria-label={`Quitar ${phase.name}`} onClick={() => removePhase(index)} disabled={draft.phases.length === 1}><Trash2 size={16} /></button></div></div>
+                  <div className="speechField"><label htmlFor={`speechPhaseName-${phase.id}`}>Nombre</label><input id={`speechPhaseName-${phase.id}`} value={phase.name} maxLength={100} onChange={(event) => changePhase(index, "name", event.target.value)} /></div>
+                  <div className="speechPhaseGrid">
+                    <div className="speechField"><label htmlFor={`speechObjective-${phase.id}`}>Objetivo</label><textarea id={`speechObjective-${phase.id}`} value={phase.objective} maxLength={2000} onChange={(event) => changePhase(index, "objective", event.target.value)} rows={3} /></div>
+                    <div className="speechField"><label htmlFor={`speechDetection-${phase.id}`}>Cómo reconocerla en la llamada</label><textarea id={`speechDetection-${phase.id}`} value={phase.detection} maxLength={2000} onChange={(event) => changePhase(index, "detection", event.target.value)} rows={3} /></div>
+                  </div>
+                  <div className="speechField"><label htmlFor={`speechEvaluation-${phase.id}`}>Criterios de evaluación</label><textarea id={`speechEvaluation-${phase.id}`} value={phase.evaluation} maxLength={3000} onChange={(event) => changePhase(index, "evaluation", event.target.value)} rows={3} /></div>
+                </section>)}
+              </div>
+            </section>}
+
+            {activeTab === "history" && <section className="speechSection speechVersions"><div className="speechSectionHeading"><div><h2>Versiones anteriores</h2><p>Una versión publicada permanece disponible para revisión y reactivación.</p></div></div><div className="speechVersionList">{versions.map((version) => <div className="speechVersion" key={version.id}><div><strong>{version.name}</strong><span>{version.phaseCount} fases · {version.legacy ? "Original" : version.publishedAt?._seconds ? new Date(version.publishedAt._seconds * 1000).toLocaleDateString("es-CO") : "Publicada"}</span></div>{active?.id === version.id ? <em>Activa</em> : <button onClick={() => activate(version.id)} disabled={busy || dirty}><RotateCcw size={15} /> Activar</button>}</div>)}</div></section>}
           </section>
 
-          <details className="speechCard speechRules">
-            <summary>Reglas comerciales generales <span>8 criterios editables</span></summary>
-            <p>Estas reglas complementan las fases y alimentan el análisis de cada llamada nueva.</p>
-            <div className="speechRulesGrid">
-              {RULE_FIELDS.map(([key, label]) => <div className="speechField" key={key}>
-                <label htmlFor={`speechRule-${key}`}>{label}</label>
-                <textarea id={`speechRule-${key}`} value={draft.rules?.[key] || ""} maxLength={4000} rows={4} onChange={(event) => change({ rules: { ...draft.rules, [key]: event.target.value } })} />
-              </div>)}
-            </div>
-            <div className="speechField"><label htmlFor="speechExtraRules">Reglas comerciales adicionales</label><textarea id="speechExtraRules" value={draft.extraRules || ""} maxLength={6000} rows={4} placeholder="Añade aquí criterios que no encajen en las secciones anteriores." onChange={(event) => change({ extraRules: event.target.value })} /></div>
-          </details>
-
-          <div className="speechSectionHeading"><div><h2>Fases del speech</h2><p>{draft.phases.length} fases · cambia el orden con las flechas</p></div><button className="speechTextButton" onClick={addPhase} disabled={draft.phases.length >= 12}><Plus size={16} /> Añadir fase</button></div>
-          <div className="speechPhaseList">
-            {draft.phases.map((phase, index) => <section className="speechCard speechPhase" key={phase.id}>
-              <div className="speechPhaseHead"><span className="speechPhaseNumber">{String(index + 1).padStart(2, "0")}</span><span className="speechPhaseId">ID {phase.id}</span><div className="speechPhaseActions"><button title="Subir fase" aria-label={`Subir ${phase.name}`} onClick={() => movePhase(index, -1)} disabled={index === 0}><ArrowUp size={16} /></button><button title="Bajar fase" aria-label={`Bajar ${phase.name}`} onClick={() => movePhase(index, 1)} disabled={index === draft.phases.length - 1}><ArrowDown size={16} /></button><button title="Quitar fase" aria-label={`Quitar ${phase.name}`} onClick={() => removePhase(index)} disabled={draft.phases.length === 1}><Trash2 size={16} /></button></div></div>
-              <div className="speechField"><label htmlFor={`speechPhaseName-${phase.id}`}>Nombre</label><input id={`speechPhaseName-${phase.id}`} value={phase.name} maxLength={100} onChange={(event) => changePhase(index, "name", event.target.value)} /></div>
-              <div className="speechPhaseGrid">
-                <div className="speechField"><label htmlFor={`speechObjective-${phase.id}`}>Objetivo</label><textarea id={`speechObjective-${phase.id}`} value={phase.objective} maxLength={2000} onChange={(event) => changePhase(index, "objective", event.target.value)} rows={3} /></div>
-                <div className="speechField"><label htmlFor={`speechDetection-${phase.id}`}>Cómo reconocerla en la llamada</label><textarea id={`speechDetection-${phase.id}`} value={phase.detection} maxLength={2000} onChange={(event) => changePhase(index, "detection", event.target.value)} rows={3} /></div>
-              </div>
-              <div className="speechField"><label htmlFor={`speechEvaluation-${phase.id}`}>Criterios de evaluación</label><textarea id={`speechEvaluation-${phase.id}`} value={phase.evaluation} maxLength={3000} onChange={(event) => changePhase(index, "evaluation", event.target.value)} rows={3} /></div>
-            </section>)}
-          </div>
-
           <div className="speechBottomBar"><span>{dirty ? "Tienes cambios sin guardar" : "Los cambios guardados esperan publicación"}</span><div><button className="speechSecondaryButton" onClick={save} disabled={busy || !dirty}><Save size={16} /> Guardar borrador</button><button className="speechPrimaryButton" onClick={publish} disabled={busy || dirty || !draft.phases.length}><Send size={16} /> Publicar versión</button></div></div>
-
-          <section className="speechVersions"><h2>Versiones anteriores</h2><p>Una versión publicada permanece disponible para revisión y reactivación.</p><div className="speechVersionList">{versions.map((version) => <div className="speechVersion" key={version.id}><div><strong>{version.name}</strong><span>{version.phaseCount} fases · {version.legacy ? "Original" : version.publishedAt?._seconds ? new Date(version.publishedAt._seconds * 1000).toLocaleDateString("es-CO") : "Publicada"}</span></div>{active?.id === version.id ? <em>Activa</em> : <button onClick={() => activate(version.id)} disabled={busy || dirty}><RotateCcw size={15} /> Activar</button>}</div>)}</div></section>
         </>}
       </main>
     </div>
