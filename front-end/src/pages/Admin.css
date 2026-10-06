@@ -179,15 +179,10 @@ body.sidebar-collapsed .adminPage .adminContent {
   gap: 12px;
 }
 
-.userAvatar {
+.adminUserAvatar {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-basis: 32px;
 }
 
 .fullName {

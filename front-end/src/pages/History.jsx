@@ -3,7 +3,8 @@ import "./History.css";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import { getUser } from "../utils/user";
-import { Search, Filter, Calendar, ChevronRight, User, Eye, CheckCircle } from "lucide-react";
+import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle } from "lucide-react";
+import UserAvatar from "../components/UserAvatar";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -122,7 +123,7 @@ export default function History() {
                       {isAdmin && (
                         <td>
                           <div className="userCell">
-                            <User size={14} />
+                            <UserAvatar name={session.userName} email={session.userEmail} picture={session.userPicture} className="historyConsultantAvatar" />
                             {session.userName}
                           </div>
                         </td>

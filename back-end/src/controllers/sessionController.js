@@ -71,16 +71,20 @@ export const getAllSessions = async (req, res) => {
       db.collection("users").get(),
     ]);
 
-    const userNamesMap = {};
+    const userProfilesMap = {};
     usersSnapshot.forEach(u => {
       const uData = u.data();
-      userNamesMap[normalizeEmailValue(uData.email)] = uData.name || "";
+      userProfilesMap[normalizeEmailValue(uData.email)] = {
+        name: uData.name || "",
+        picture: uData.picture || uData.photoURL || "",
+      };
     });
 
     const sessions = snapshot.docs.map(doc => {
       const data = doc.data();
       const sc = data.analysis?.scorecard || {};
       const email = normalizeEmailValue(data.userEmail);
+      const userProfile = userProfilesMap[email] || {};
 
       const generalScore = data.generalScore ?? Math.round(
         ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
@@ -89,7 +93,8 @@ export const getAllSessions = async (req, res) => {
       return {
         id: doc.id,
         userEmail: data.userEmail,
-        userName: userNamesMap[email] || (data.userEmail ? data.userEmail.split('@')[0] : "Desconocido"),
+        userName: userProfile.name || (data.userEmail ? data.userEmail.split('@')[0] : "Desconocido"),
+        userPicture: userProfile.picture,
         cliente: data.analysis?.nombre_cliente || "Desconocido",
         date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         duration: data.analysis?.participacion?.duracion_total || "00:00",

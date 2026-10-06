@@ -133,6 +133,8 @@ body.sidebar-collapsed .historyContent {
   font-size: 13px;
 }
 
+.historyConsultantAvatar { width: 28px; height: 28px; flex-basis: 28px; }
+
 .clientName {
   font-weight: 700;
   color: var(--navy);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { User, Mail, Shield, Edit2, Trash2, Search, UserPlus } from "lucide-react";
+import { Mail, Shield, Edit2, Trash2, Search, UserPlus } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import UserAvatar from "../components/UserAvatar";
 import "./Admin.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -258,9 +259,7 @@ export default function Admin() {
                     <div key={u.id} className={`userLogRow role-${u.role || 'user'}`}>
                       <div className="userRowContent">
                         <div className="userNameCol">
-                          <div className="userAvatar">
-                            <User size={16} />
-                          </div>
+                          <UserAvatar name={u.name} email={u.email} picture={u.picture || u.photoURL} className="adminUserAvatar" />
                           <span className="fullName">{u.name}</span>
                         </div>
                         
