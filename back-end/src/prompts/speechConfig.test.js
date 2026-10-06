@@ -2,7 +2,31 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getDynamicAnalysisPrompt } from "./templates/dynamicAnalysisPrompt.js";
 import { applySpeechToAnalysis } from "./speechAnalysis.js";
-import { DEFAULT_SPEECH, validateSpeech } from "./speechConfig.js";
+import { DEFAULT_SPEECH, normalizeSpeechRules, validateSpeech } from "./speechConfig.js";
+
+test("las reglas editables usan lenguaje natural y limpian las versiones guardadas con claves internas", () => {
+  const legacyRules = {
+    ...DEFAULT_SPEECH.rules,
+    closing: "Evalúa cierre_negociacion según las fases de decisión, precio y objeciones.",
+    proposal: "Evalúa propuesta_valor; el score no puede superar 50.",
+    price: "precio_sin_diagnostico_previo es true si no se había explorado presupuesto, ingresos o capacidad de pago; describe el momento.",
+    commitment: "Clasifica como firme o sin_compromiso.",
+    discovery: "Marca pregunto_decisor cuando pregunta quién decide y pregunto_presupuesto cuando explora capacidad económica. En temas_cubiertos incluye motivacion y situacion_actual.",
+    objections: "Clasifica como precio u otras_opciones.",
+  };
+  const normalized = normalizeSpeechRules(legacyRules);
+  assert.match(normalized.closing, /calidad del cierre y la negociación/);
+  assert.match(normalized.proposal, /puntuación/);
+  assert.match(normalized.price, /indica si presentó el precio antes de explorar/i);
+  assert.match(normalized.commitment, /sin acuerdo ni siguiente paso/);
+  assert.match(normalized.discovery, /quién toma la decisión/);
+  assert.match(normalized.objections, /otras opciones/);
+  assert.doesNotMatch(JSON.stringify(normalized), /[a-záéíóúñ]+_[a-záéíóúñ_]+/i);
+  assert.doesNotMatch(JSON.stringify(DEFAULT_SPEECH.rules), /[a-záéíóúñ]+_[a-záéíóúñ_]+/i);
+  const validated = validateSpeech({ ...DEFAULT_SPEECH, rules: legacyRules });
+  assert.doesNotMatch(JSON.stringify(validated.rules), /[a-záéíóúñ]+_[a-záéíóúñ_]+/i);
+  assert.throws(() => validateSpeech({ ...DEFAULT_SPEECH, rules: { ...DEFAULT_SPEECH.rules, proposal: "Usa una_clave_interna." } }), /lenguaje natural/);
+});
 
 test("el editor permite tres o seis fases y rechaza IDs duplicados", () => {
   const three = validateSpeech({ ...DEFAULT_SPEECH, phases: DEFAULT_SPEECH.phases.slice(0, 3) });

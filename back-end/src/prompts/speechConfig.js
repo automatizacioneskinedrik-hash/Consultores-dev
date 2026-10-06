@@ -16,19 +16,46 @@ export const DEFAULT_SPEECH = Object.freeze({
   scoring: { omissionPenalty: 15, inversionPenalty: 10 },
   rules: {
     milestones: "Verifica que el consultor indague el presupuesto antes de dar el precio, haga una pregunta de valor antes de pasar a cifras y ceda la palabra tras presentar la inversión. Las omisiones son puntos de mejora graves.",
-    participation: "Calcula la participación por palabras. Objetivo: consultor 35–45%, cliente 55–65%. Si el consultor habla más del 65%, señala la falta de escucha en la fase que corresponda. Más del 75% es grave; también puede afectar la propuesta.",
-    closing: "Evalúa cierre_negociacion según las fases de decisión, precio y objeciones. El sí emocional debe preceder al precio. Si hay beca, comunicar fecha real. Ofrecer pago único, luego cuotas y luego reserva. Penaliza ceder ante la primera objeción o crear urgencia falsa. Reconoce como cierre exitoso un pago o reserva acordados para las próximas 24 horas.",
-    proposal: "Evalúa propuesta_valor conectando la solución con el dolor específico del cliente. Penaliza listar módulos sin relacionarlos con su necesidad o monopolizar la conversación; premia pausas, comprobación de comprensión y presentar pocos elementos clave. Si el consultor habla más del 80% durante la propuesta, el score no puede superar 50.",
-    price: "Detecta la primera cifra económica mencionada por el consultor. Indica la fase donde ocurre o No mencionado. precio_sin_diagnostico_previo es true si no se había explorado presupuesto, ingresos o capacidad de pago; describe brevemente el momento.",
-    commitment: "Clasifica el cierre como firme (pago o reserva concreta), condicionado (sujeto a factor externo), aplazado (próximo contacto con fecha) o sin_compromiso (sin acuerdo ni siguiente paso).",
-    discovery: "Cuenta solo las preguntas abiertas del consultor anteriores al precio. Marca pregunto_decisor cuando pregunta quién decide y pregunto_presupuesto cuando explora capacidad económica. En temas_cubiertos incluye solo necesidad, presupuesto, decisor, plazo, motivacion y situacion_actual realmente presentes.",
-    objections: "Detecta cada objeción del cliente. Clasifica como precio, titulacion, tiempo, decisor, formato, otras_opciones, nivel u otro. Marca resuelta solo si el consultor respondió y el cliente aceptó o no insistió.",
+    participation: "Valora la distribución de la conversación. Como referencia, el consultor debería hablar aproximadamente 35–45% y el cliente 55–65%. Si el consultor supera el 65%, señala en qué fase faltó escucha; por encima del 75%, considéralo un área grave de mejora y revisa si afectó la presentación de la propuesta.",
+    closing: "Evalúa la calidad del cierre y la negociación: el cliente debería expresar su decisión de fondo antes de conocer el precio. Si se ofrece una beca o descuento, debe indicarse una fecha real. Presenta las opciones de pago desde la de mayor importe hasta la reserva. Señala si el consultor cede ante la primera objeción o crea urgencia falsa. Considera exitoso un pago o una reserva acordados para las próximas 24 horas.",
+    proposal: "Evalúa si el consultor conecta la propuesta con las necesidades concretas que expresó el cliente. Señala cuando enumera módulos sin relacionarlos con esas necesidades o monopoliza la conversación. Valora las pausas, la comprobación de comprensión y la selección de pocos elementos clave. Si el consultor habla más del 80% durante la propuesta, limita su calificación a 50 puntos.",
+    price: "Identifica la primera cifra económica que menciona el consultor e indica en qué fase aparece, o señala que no se mencionó. Indica si presentó el precio antes de explorar el presupuesto, los ingresos o la capacidad de pago del cliente. Describe brevemente el momento.",
+    commitment: "Clasifica cómo termina la llamada: firme (pago o reserva concreta), condicionado (depende de un factor externo), aplazado (se acuerda un próximo contacto con fecha) o sin acuerdo ni siguiente paso definido.",
+    discovery: "Cuenta únicamente las preguntas abiertas que hace el consultor antes de mencionar el precio. Indica si preguntó quién toma la decisión y si exploró el presupuesto o la capacidad económica. Enumera solo los temas realmente presentes: necesidad, presupuesto, decisor, plazo, motivación y situación actual.",
+    objections: "Detecta cada objeción expresada por el cliente y clasifícala como precio, titulación, tiempo, decisor, formato, otras opciones, nivel u otra. Considera una objeción resuelta solo si el consultor respondió y el cliente aceptó la respuesta o no volvió a insistir.",
   },
   extraRules: "",
 });
 
 const stateRef = () => db.collection("speech_config").doc("state");
 const versionsRef = () => db.collection("speech_versions");
+
+const LEGACY_RULE_TEXT = [
+  [/precio_sin_diagnostico_previo\s+es\s+true\s+si\s+no\s+se\s+había\s+explorado\s+presupuesto,\s*ingresos\s+o\s+capacidad\s+de\s+pago/gi, "indica si presentó el precio antes de explorar el presupuesto, los ingresos o la capacidad de pago"],
+  [/precio_sin_diagnostico_previo\s*(?:=\s*true|es\s+true)?/gi, "la presentación del precio antes de explorar la situación económica del cliente"],
+  [/cierre_negociacion/gi, "la calidad del cierre y la negociación"],
+  [/propuesta_valor/gi, "la propuesta de valor"],
+  [/sin_compromiso/gi, "sin acuerdo ni siguiente paso"],
+  [/pregunto_decisor\s+cuando\s+pregunta\s+qui[eé]n\s+decide/gi, "indica si preguntó quién toma la decisión"],
+  [/pregunto_presupuesto\s+cuando\s+explora\s+capacidad\s+econ[oó]mica/gi, "indica si exploró el presupuesto o la capacidad económica"],
+  [/temas_cubiertos\s+incluye\s+solo/gi, "enumera únicamente"],
+  [/pregunto_decisor/gi, "pregunta sobre quién toma la decisión"],
+  [/pregunto_presupuesto/gi, "exploración del presupuesto"],
+  [/temas_cubiertos/gi, "temas realmente presentes"],
+  [/otras_opciones/gi, "otras opciones"],
+  [/situacion_actual/gi, "situación actual"],
+  [/motivacion/gi, "motivación"],
+  [/\bscore\b/gi, "puntuación"],
+];
+
+export function normalizeSpeechRules(rules = {}) {
+  return Object.fromEntries(Object.keys(DEFAULT_SPEECH.rules).map((key) => {
+    const value = rules?.[key];
+    if (typeof value !== "string") return [key, value];
+    const normalized = LEGACY_RULE_TEXT.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
+    return [key, normalized.replace(/\s+([,.;])/g, "$1")];
+  }));
+}
 
 export function validateSpeech(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Configuración inválida.");
@@ -52,7 +79,14 @@ export function validateSpeech(value) {
     inversionPenalty: Number(value.scoring?.inversionPenalty),
   };
   if (Object.values(scoring).some((n) => !Number.isInteger(n) || n < 0 || n > 100)) throw new Error("Las penalizaciones deben ser números enteros entre 0 y 100.");
-  const rules = Object.fromEntries(Object.keys(DEFAULT_SPEECH.rules).map((key) => [key, clean(value.rules?.[key], `Regla ${key}`, 4000)]));
+  const normalizedRules = normalizeSpeechRules(value.rules);
+  const rules = Object.fromEntries(Object.keys(DEFAULT_SPEECH.rules).map((key) => {
+    const rule = clean(normalizedRules[key], `Regla ${key}`, 4000);
+    if (/\b[a-záéíóúñ]+_[a-záéíóúñ_]+\b/i.test(rule)) {
+      throw new Error(`La regla ${key} debe estar escrita en lenguaje natural, sin nombres técnicos internos.`);
+    }
+    return [key, rule];
+  }));
   const extraRules = typeof value.extraRules === "string" ? value.extraRules.trim() : "";
   if (extraRules.length > 6000) throw new Error("Las reglas adicionales superan 6000 caracteres.");
   return { name: clean(value.name, "Nombre", 100), description: typeof value.description === "string" ? value.description.trim().slice(0, 500) : "", phases, scoring, rules, extraRules };
@@ -64,14 +98,16 @@ export async function getActiveSpeech() {
   if (versionId === LEGACY_VERSION_ID) return { id: LEGACY_VERSION_ID, ...DEFAULT_SPEECH, legacy: true };
   const version = await versionsRef().doc(versionId).get();
   if (!version.exists) throw new Error(`Versión de speech ${versionId} no encontrada.`);
-  return { id: version.id, ...version.data().config, legacy: false };
+  const config = version.data().config;
+  return { id: version.id, ...config, rules: normalizeSpeechRules(config.rules), legacy: false };
 }
 
 export async function getSpeechVersion(versionId) {
   if (versionId === LEGACY_VERSION_ID) return { id: LEGACY_VERSION_ID, ...DEFAULT_SPEECH, legacy: true };
   const version = await versionsRef().doc(versionId).get();
   if (!version.exists) throw new Error("Versión de speech no encontrada.");
-  return { id: version.id, ...version.data().config, legacy: false };
+  const config = version.data().config;
+  return { id: version.id, ...config, rules: normalizeSpeechRules(config.rules), legacy: false };
 }
 
 export async function getSpeechEditorData() {
@@ -80,7 +116,9 @@ export async function getSpeechEditorData() {
   ]);
   return {
     active,
-    draft: state.data()?.draft || null,
+    draft: state.data()?.draft
+      ? { ...state.data().draft, rules: normalizeSpeechRules(state.data().draft.rules) }
+      : null,
     revision: state.data()?.revision || 0,
     versions: [
       ...versions.docs.map((doc) => ({ id: doc.id, name: doc.data().config.name, publishedAt: doc.data().publishedAt, publishedBy: doc.data().publishedBy, phaseCount: doc.data().config.phases.length })),
