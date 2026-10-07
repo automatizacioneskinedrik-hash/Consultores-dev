@@ -1,4 +1,4 @@
-const DEFAULT_GOOGLE_CLIENT_ID = "683216209357-dgurnrj3gvd2sbpoam4kthdona499l6r.apps.googleusercontent.com";
+const DEFAULT_GOOGLE_CLIENT_ID = "683216209357-k120400vb0pha0t7tfkid9vgkbddb82s.apps.googleusercontent.com";
 
 export class GoogleIdentityError extends Error {
   constructor(message, statusCode = 401) {
