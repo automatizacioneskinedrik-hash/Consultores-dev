@@ -7,7 +7,9 @@ import admin, { db } from "../config/firebase.js";
 import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
 import { transporter } from "../config/mailer.js";
-import { buildAnalysisPrompt } from "../prompts/promptService.js";
+import { legacyPromptFromContext, loadAnalysisContext } from "../prompts/promptService.js";
+import { buildPointsPrompt, countMuletillas, scorePointsAnalysis, swapSpeakerLabels } from "../prompts/pointsEngine.js";
+import { POINTS_FORMAT } from "../prompts/speechRules.js";
 import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
@@ -26,6 +28,56 @@ function detectCedioPalabraTrasPrice(utterances, consultorSpeaker) {
     }
   }
   return null; // precio nunca mencionado
+}
+
+async function askGpt(prompt) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-5.4-mini",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0,
+    seed: 42,
+  });
+  return JSON.parse(completion.choices[0].message.content);
+}
+
+// Fixed-rules speech: GPT returns the four scorecard scores and the general score averages them.
+async function runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos }) {
+  const { prompt, speech } = legacyPromptFromContext(context, durationStr, transcriptionText);
+  const analysis = applySpeechToAnalysis(await askGpt(prompt), speech);
+  const sc = analysis.scorecard || {};
+  const generalScore = Math.round(
+    ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
+  );
+  const muletillasCount = typeof sc.muletillas?.count === "number" ? sc.muletillas.count : 0;
+  const muletillas_por_minuto = consultorMinutos > 0 ? Math.round((muletillasCount / consultorMinutos) * 10) / 10 : null;
+  return { analysis, generalScore, muletillas_por_minuto };
+}
+
+const speakerMinutes = (utterances, isSpeaker) => utterances
+  .filter((u) => isSpeaker(u.speaker))
+  .reduce((sum, u) => sum + ((u.end || 0) - (u.start || 0)) / 60000, 0);
+
+// Points speech: GPT judges each rule; the system measures ratio and muletillas and adds the points.
+async function runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker }) {
+  const { speech } = context;
+  const countWords = speech.muletillas?.count || [];
+  const muletillas = countMuletillas(transcriptionText, countWords, { minutes: consultorMinutos });
+  const analysis = await askGpt(buildPointsPrompt({ ...context, durationStr, transcriptionText, muletillas }));
+  if (analysis.error) return { analysis, generalScore: null, muletillas_por_minuto: null };
+
+  // GPT flags when the "most words" heuristic labelled the client as the consultant.
+  if (analysis.roles_invertidos === true) {
+    const swapped = swapSpeakerLabels(transcriptionText);
+    const realMinutes = speakerMinutes(utterances, (speaker) => speaker !== consultorSpeaker);
+    const realMuletillas = countMuletillas(swapped, countWords, { minutes: realMinutes });
+    const consultantPct = 100 - consultorPct;
+    const realSpeaker = utterances.find((u) => u.speaker !== consultorSpeaker)?.speaker ?? consultorSpeaker;
+    const scoring = scorePointsAnalysis(analysis, speech, { consultantPct, muletillas: realMuletillas });
+    return { analysis, scoring, generalScore: scoring.score, muletillas_por_minuto: realMuletillas.perMinute, transcriptionText: swapped, consultantPct, consultantSpeaker: realSpeaker };
+  }
+  const scoring = scorePointsAnalysis(analysis, speech, { consultantPct: consultorPct, muletillas });
+  return { analysis, scoring, generalScore: scoring.score, muletillas_por_minuto: muletillas.perMinute };
 }
 
 async function transcribeWithDiarization(filePath) {
@@ -138,46 +190,39 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    const { prompt: systemPrompt, speech } = await buildAnalysisPrompt(durationStr, transcriptionText);
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
-      messages: [{ role: "user", content: systemPrompt }],
-      response_format: { type: "json_object" },
-      temperature: 0,
-      seed: 42,
-    });
-
-    const analysis = applySpeechToAnalysis(JSON.parse(completion.choices[0].message.content), speech);
+    const context = await loadAnalysisContext();
+    const { speech } = context;
+    const pointsFormat = speech.format === POINTS_FORMAT;
+    const result = pointsFormat
+      ? await runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker })
+      : await runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos });
+    const { analysis, generalScore, muletillas_por_minuto, scoring = null } = result;
+    const transcription = result.transcriptionText || transcriptionText;
+    const consultantPct = result.consultantPct ?? consultorPct;
+    const consultantSpeaker = result.consultantSpeaker ?? consultorSpeaker;
 
     // Sobrescribir participación con los valores reales calculados desde AssemblyAI
     analysis.participacion = {
       ...(analysis.participacion || {}),
-      consultor_pct: `${consultorPct}%`,
-      cliente_pct: `${clientePct}%`,
+      consultor_pct: `${consultantPct}%`,
+      cliente_pct: `${100 - consultantPct}%`,
       duracion_total: durationStr,
     };
 
-    const sc = analysis.scorecard || {};
-    const generalScore = Math.round(
-      ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
-    );
-
-    const muletillasCount = typeof sc.muletillas?.count === "number" ? sc.muletillas.count : 0;
-    const muletillas_por_minuto = consultorMinutos > 0
-      ? Math.round((muletillasCount / consultorMinutos) * 10) / 10
-      : null;
-
-    const cedio_palabra_tras_precio = detectCedioPalabraTrasPrice(utterances, consultorSpeaker);
+    const cedio_palabra_tras_precio = detectCedioPalabraTrasPrice(utterances, consultantSpeaker);
 
     const now = new Date();
     const analysisData = {
       userEmail,
       objectPath,
-      transcription: transcriptionText,
+      transcription,
       analysis,
       speechVersionId: speech.id,
-      speechSnapshot: { name: speech.name, phases: speech.phases, scoring: speech.scoring, rules: speech.rules || null, extraRules: speech.extraRules || "" },
+      speechSnapshot: pointsFormat
+        ? { format: POINTS_FORMAT, name: speech.name, phases: speech.phases, rules: speech.rules, talkRatio: speech.talkRatio || null, muletillas: speech.muletillas || null }
+        : { name: speech.name, phases: speech.phases, scoring: speech.scoring, rules: speech.rules || null, extraRules: speech.extraRules || "" },
       generalScore,
+      scoring,
       monologo_mas_largo_seg,
       muletillas_por_minuto,
       cedio_palabra_tras_precio,
@@ -205,7 +250,8 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       });
     }
 
-    if (transporter && userEmail && userEmail !== "anonymous") {
+    // The points report email is built in the report step; points versions cannot be published before it exists.
+    if (!pointsFormat && transporter && userEmail && userEmail !== "anonymous") {
       const userSnapshot = await db.collection("users").where("email", "==", userEmail.trim().toLowerCase()).limit(1).get();
       let consultantName = userEmail.split("@")[0];
       if (!userSnapshot.empty) {
@@ -232,9 +278,10 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     return {
       id: docRef.id,
       userEmail,
-      transcription: transcriptionText,
+      transcription,
       analysis,
       generalScore,
+      scoring,
       createdAt: { _seconds: Math.floor(now.getTime() / 1000) },
     };
   } catch (err) {

@@ -81,4 +81,120 @@ body.sidebar-collapsed .speechConfigContent { margin-left: 88px; }
 .speechVersion button { border: 0; background: transparent; color: #0040a4; padding: 7px 0; }
 .speechNotice { padding: 12px 14px; background: #eaf6f0; color: #176b42; border: 1px solid #bfe8d1; border-radius: 9px; margin-bottom: 18px; font-size: 13px; }
 .speechNotice.error { background: #fff0f0; color: #b42323; border-color: #f4c6c6; }
+.speechFlow { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; }
+.speechFlow.view { background: #eaf2ff; color: #0040A4; }
+.speechFlow.edit { background: rgba(251, 180, 42, .16); color: #040025; box-shadow: inset 4px 0 0 #FBB42A; }
+.speechFlow strong { display: block; font-size: 15px; color: #040025; }
+.speechFlow p { margin: 2px 0 0; font-size: 13px; }
+.speechFlowActions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.speechSaveState { margin-left: 6px; font-weight: 700; }
+.speechDangerButton { display: inline-flex; align-items: center; gap: 7px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: 1px solid #FF5900; background: #FF5900; color: #fff; padding: 10px 14px; }
+.speechLinkButton { border: 0; background: none; padding: 0; color: #0040a4; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.speechLinkButton.danger { color: #FF5900; }
+.speechPublishBox { border: 1px solid #0040a4; border-radius: 14px; padding: 16px; margin-bottom: 16px; display: grid; gap: 12px; }
+.speechPublishBox h2 { margin: 0; font-size: 16px; }
+.speechHint { margin: 0; font-size: 12px; color: #65728a; }
+.speechSummary { border: 1px solid #dce3ed; border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; }
+.speechSummaryHead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.speechSummaryHead strong { font-size: 15px; }
+.speechTotal { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+.speechTotal small { font-size: 13px; font-weight: 500; color: #65728a; }
+.speechTotal.ok { color: #0040A4; }
+.speechTotal.error { color: #FF5900; }
+.speechBar { display: flex; gap: 2px; }
+.speechBarSegment { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.speechBarSegment > span { display: block; height: 10px; transition: background .25s; }
+.speechBarSegment:first-child > span { border-radius: 5px 0 0 5px; }
+.speechBarSegment:last-child > span { border-radius: 0 5px 5px 0; }
+.speechBarSegment small { font-size: 12px; line-height: 1.3; color: #65728a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.speechBarSegment b { color: #040025; font-weight: 700; }
+.speechPhases { margin-top: 22px; display: grid; gap: 10px; }
+.speechPhaseCard { border: 1px solid #dce3ed; border-radius: 14px; background: #fff; overflow: hidden; }
+.speechPhaseCard.open { border-color: #0040a4; box-shadow: 0 4px 16px rgba(0, 64, 164, .08); }
+.speechPhaseHead { width: 100%; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto 20px; align-items: center; gap: 12px; padding: 14px 16px; border: 0; background: none; text-align: left; cursor: pointer; color: #040025; font: inherit; }
+.speechStep { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; background: #040025; font-size: 13px; }
+.speechPhaseTitle strong { display: block; font-size: 16px; }
+.speechPhaseTitle span { font-size: 12px; color: #65728a; }
+.speechPhasePoints { font-size: 18px; font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.speechPhasePoints small { font-size: 12px; font-weight: 500; color: #65728a; }
+.speechChevron { color: #65728a; transition: transform .2s; }
+.speechPhaseCard.open .speechChevron { transform: rotate(90deg); }
+.speechPhaseBody { padding: 0 16px 16px 62px; display: grid; gap: 14px; }
+.speechObjective { display: flex; gap: 10px; align-items: flex-start; background: #f6f8fb; border-radius: 10px; padding: 10px 12px; color: #65728a; font-size: 13px; }
+.speechObjective b { color: #040025; white-space: nowrap; }
+.speechObjective p { margin: 0; flex: 1; min-width: 0; }
+.speechSectionLabel { margin: 0; display: flex; justify-content: space-between; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; color: #65728a; }
+.speechRules { display: grid; border: 1px solid #e9edf3; border-radius: 10px; overflow: hidden; }
+.speechRule { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid #e9edf3; }
+.speechRule:first-child { border-top: 0; }
+.speechRuleText { min-width: 0; }
+.speechRuleText strong { display: block; font-weight: 500; }
+.speechRuleEmpty { color: #65728a; }
+.speechTag { display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 100px; background: #eaf2ff; color: #0040A4; font-size: 11px; font-weight: 700; }
+.speechStepper { display: inline-flex; align-items: center; border: 1px solid #dce3ed; border-radius: 8px; overflow: hidden; }
+.speechStepper.readOnly { border-color: transparent; }
+.speechStepper button { border: 0; background: #f6f8fb; width: 28px; height: 30px; cursor: pointer; font-size: 16px; color: #65728a; }
+.speechStepper button:hover { color: #0040a4; }
+.speechStepper output { min-width: 48px; text-align: center; font-weight: 900; font-variant-numeric: tabular-nums; }
+.speechStepper output small { font-size: 11px; font-weight: 500; color: #65728a; }
+.speechIconButton { border: 0; background: none; color: #65728a; cursor: pointer; padding: 6px; border-radius: 6px; display: inline-flex; }
+.speechIconButton:hover { background: #f6f8fb; color: #040025; }
+.speechIconButton.danger:hover { color: #FF5900; }
+.speechRuleActions { display: inline-flex; gap: 2px; }
+.speechRuleConfirm { grid-column: 1 / -1; }
+.speechEditor { grid-column: 1 / -1; display: grid; gap: 10px; background: #f6f8fb; border-radius: 10px; padding: 12px; }
+.speechInputField { display: grid; gap: 4px; }
+.speechInputField label { font-size: 12px; font-weight: 700; color: #34435c; }
+.speechInputField input { width: 100%; border: 1px solid #dce3ed; border-radius: 8px; padding: 8px 10px; background: #fff; color: #040025; font: 14px/1.4 Roboto, Helvetica, Arial, sans-serif; }
+.speechInputField input:focus { outline: none; border-color: #0040a4; box-shadow: 0 0 0 2px #eaf2ff; }
+.speechInputField span { font-size: 12px; color: #65728a; }
+.speechSwitch { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; cursor: pointer; }
+.speechSwitch input { margin-top: 3px; accent-color: #0040a4; }
+.speechSwitch small { display: block; color: #65728a; font-size: 12px; }
+.speechEditorActions { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.speechAddRule { justify-self: start; }
+.speechRemovePhase { justify-self: start; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #FF5900; border-radius: 8px; background: #fff; color: #FF5900; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.speechRemovePhase:hover:not(:disabled) { background: #FF5900; color: #fff; }
+.speechConfirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(255, 89, 0, .1); color: #040025; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.speechAddPhase { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid #0040A4; border-radius: 14px; padding: 14px; background: #eaf2ff; color: #0040A4; font-weight: 700; font-size: 15px; cursor: pointer; transition: background .15s, color .15s; }
+.speechAddPhase:hover:not(:disabled) { background: #0040A4; color: #fff; }
+.speechMuletillas { display: grid; gap: 10px; padding-top: 4px; }
+.speechMuletillasHow { margin: 0; font-size: 14px; color: #65728a; max-width: 75ch; }
+.speechMuletillasGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.speechWordList label { font-size: 13px; font-weight: 700; color: #34435c; }
+.speechWordList p { margin: 2px 0 8px; color: #65728a; font-size: 12px; }
+.speechChips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.speechChip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 100px; background: #eaf2ff; color: #0040a4; font-size: 12px; font-weight: 600; }
+.speechChip.muted { background: #f0f1f3; color: #65728a; }
+.speechChip button { border: 0; background: transparent; color: inherit; padding: 2px; margin-right: -4px; display: inline-flex; cursor: pointer; border-radius: 50%; }
+.speechWordAdd { display: flex; gap: 8px; align-items: center; }
+.speechWordAdd input { flex: 1 1 auto; min-width: 0; border: 1px solid #dce3ed; border-radius: 8px; padding: 7px 10px; font: 13px/1.4 Roboto, Helvetica, Arial, sans-serif; color: #040025; }
+.speechWordAdd input:focus { outline: none; border-color: #0040a4; }
+.speechActivePill { border-radius: 100px; padding: 4px 10px; font-size: 12px; font-weight: 700; background: #8ABC43; color: #040025; }
+.speechVersions .speechHint { margin-top: 12px; }
+.speechRatioHeadRow { display: flex; align-items: center; gap: 8px; padding-right: 16px; }
+.speechRatioHeadRow .speechPhaseHead { flex: 1 1 auto; }
+.speechRatio { display: grid; gap: 12px; }
+.speechRatioWho { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #040025; }
+.speechRatioWho span:last-child { color: #65728a; }
+.speechRatioSlider { position: relative; height: 48px; }
+.speechRatioBar { position: absolute; left: 0; right: 0; top: 22px; height: 16px; border-radius: 8px; background: #E7E7E7; overflow: hidden; }
+.speechRatioBar span { position: absolute; top: 0; bottom: 0; }
+.speechRatioTag { position: absolute; top: 0; transform: translateX(-50%); font-size: 12px; font-weight: 700; color: #040025; white-space: nowrap; }
+.speechRatioSlider input { position: absolute; left: 0; right: 0; top: 18px; width: 100%; height: 24px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.speechRatioSlider input::-webkit-slider-runnable-track { background: none; }
+.speechRatioSlider input::-moz-range-track { background: none; }
+.speechRatioSlider input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid #040025; cursor: grab; box-shadow: 0 1px 4px rgba(4, 0, 37, .25); }
+.speechRatioSlider input::-moz-range-thumb { pointer-events: auto; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid #040025; cursor: grab; }
+.speechRatioSlider input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #eaf2ff, 0 0 0 5px #0040A4; }
+.speechRatioScale { display: flex; justify-content: space-between; margin-top: -8px; font-size: 11px; color: #65728a; }
+.speechRatioLegend { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.speechRatioLegend li { display: grid; grid-template-columns: 14px minmax(0, 140px) 110px auto; align-items: center; gap: 10px; font-size: 14px; }
+.speechRatioLegend i { width: 12px; height: 12px; border-radius: 50%; }
+.speechRatioLegend i.none { background: #E7E7E7; }
+.speechRatioLegend span { color: #65728a; }
+.speechRatioLegend b { font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .speechRatioLegend li { grid-template-columns: 14px 1fr auto; } .speechRatioLegend li span { display: none; } }
+@media (prefers-reduced-motion: reduce) { .speechBar span, .speechChevron { transition: none; } }
+@media (max-width: 760px) { .speechPhaseBody { padding-left: 16px; } .speechPhaseHead { grid-template-columns: 30px minmax(0, 1fr) auto; } .speechChevron { display: none; } .speechRule { grid-template-columns: minmax(0, 1fr) auto; } .speechRule .speechRuleActions { grid-column: 2; justify-self: end; } .speechMuletillasGrid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .speechConfigContent { margin-left: 0; padding: 84px 16px 60px; } body.sidebar-collapsed .speechConfigContent { margin-left: 0; } .speechConfigHeader, .speechSectionHeading, .speechBottomBar { align-items: flex-start; flex-direction: column; } .speechOverviewFields .speechField, .speechRulesGrid .speechField, .speechPhaseField { grid-template-columns: 1fr; gap: 3px; } .speechPhaseField label { margin-top: 0; } .speechRulesGrid { grid-template-columns: 1fr; } .speechScoringRow { align-items: flex-start; flex-direction: column; gap: 10px; } .speechVersion { align-items: flex-start; } .speechBottomBar > div { width: 100%; flex-wrap: wrap; } }

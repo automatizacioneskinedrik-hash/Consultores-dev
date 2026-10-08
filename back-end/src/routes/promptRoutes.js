@@ -14,6 +14,7 @@ router.use(async (req, res, next) => {
 // Instrucciones adicionales (colección "prompts" en Firestore)
 router.get("/speech", speechController.getSpeechConfig);
 router.put("/speech/draft", speechController.putSpeechDraft);
+router.delete("/speech/draft", speechController.deleteSpeechDraft);
 router.post("/speech/publish", speechController.postSpeechPublish);
 router.post("/speech/versions/:id/activate", speechController.postSpeechActivate);
 router.get("/", promptController.getAllPrompts);

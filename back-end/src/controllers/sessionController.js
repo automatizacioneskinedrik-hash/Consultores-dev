@@ -133,7 +133,15 @@ export const getSessionDetail = async (req, res) => {
       return res.status(403).json({ ok: false, error: "No tienes permiso para ver este reporte" });
     }
 
-    return res.json({ ok: true, report: { id: doc.id, ...data } });
+    // The report shows the consultant's profile photo next to the score.
+    let consultant = userData;
+    const sessionEmail = normalizeEmailValue(data.userEmail);
+    if (sessionEmail && sessionEmail !== normalizeEmailValue(userData.email)) {
+      const consultantSnapshot = await db.collection("users").where("email", "==", sessionEmail).limit(1).get();
+      consultant = consultantSnapshot.empty ? {} : consultantSnapshot.docs[0].data();
+    }
+
+    return res.json({ ok: true, report: { id: doc.id, ...data, userName: consultant.name || "", userPicture: consultant.picture || consultant.photoURL || "" } });
   } catch (err) {
     console.error("Error fetching report detail:", err);
     return res.status(500).json({ ok: false, error: "Error al obtener detalle" });

@@ -18,7 +18,7 @@
 
 html,
 body {
-  font-family: "Inter", "Arial", sans-serif;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
   background: var(--off);
   color: #0b0b22;
   line-height: 1.6;
@@ -177,7 +177,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  font-family: 'Google Sans', 'Inter', sans-serif;
+  font-family: inherit;
   font-weight: 500;
   color: #3c4043;
   cursor: pointer;

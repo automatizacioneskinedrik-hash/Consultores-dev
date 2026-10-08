@@ -36,6 +36,14 @@
   box-sizing: border-box;
 }
 
+/* Form controls do not inherit the page font by default. */
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
 html,
 body,
 #root {
@@ -45,11 +53,7 @@ body,
 }
 
 body {
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: Roboto, Helvetica, Arial, sans-serif;
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   background: var(--off);

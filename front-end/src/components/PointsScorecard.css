@@ -1,0 +1,48 @@
+.psList { display: grid; gap: 14px; }
+.psCard { background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, .05); padding: 20px 22px; display: grid; gap: 10px; }
+.psCardTop { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.psCardTop strong { font-size: 17px; color: #040025; }
+.psPoints { font-weight: 900; font-size: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.psPoints small { font-weight: 500; font-size: 13px; color: #64748b; }
+.psProgress { height: 10px; border-radius: 5px; background: #E7E7E7; overflow: hidden; }
+.psProgress span { display: block; height: 100%; border-radius: 5px; }
+.psObjective { margin: 0; font-size: 14px; color: #64748b; }
+.psObjective b { color: #040025; }
+.psToggle { justify-self: start; border: 0; background: none; padding: 0; color: #0040A4; font-size: 14px; font-weight: 700; cursor: pointer; }
+.psRules { display: grid; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 14px; }
+.psRules.psCollapsed { display: none; }
+.psRule { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: #f8fafc; border-left: 5px solid var(--ps-level); }
+.psRuleTop { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.psRuleTop strong { font-size: 15px; color: #040025; }
+.psChip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #040025; white-space: nowrap; }
+.psChip i { width: 10px; height: 10px; border-radius: 50%; }
+.psRule p, .psCard > p:not(.psObjective) { margin: 0; color: #334155; font-size: 14px; }
+.psRule .psQuote { font-style: italic; color: #64748b; }
+.psGood { background: #eaf2ff; color: #0040A4; padding: 8px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+.psFix { background: #dcfce7; color: #166534; padding: 10px 14px; border-radius: 10px; font-size: 14px; font-weight: 500; }
+.psNext { background: #fff7ed; border-left: 4px solid #f97316; padding: 8px 12px; border-radius: 8px; font-size: 14px; color: #334155; }
+.psSemaforo { position: relative; height: 16px; margin-top: 18px; border-radius: 8px; background: #E7E7E7; }
+.psSemaforo span { position: absolute; top: 0; bottom: 0; }
+.psSemaforo span:first-child { border-radius: 8px 0 0 8px; }
+.psMarker { position: absolute; top: -8px; bottom: -8px; width: 3px; margin-left: -1px; border-radius: 2px; background: #040025; }
+.psMarker em { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; font-style: normal; font-weight: 700; white-space: nowrap; color: #040025; }
+.psScale { display: flex; justify-content: space-between; font-size: 11px; color: #64748b; }
+.psWords { display: flex; flex-wrap: wrap; gap: 6px; }
+.psWords span { font-size: 13px; padding: 3px 10px; border-radius: 100px; background: #f1f5f9; color: #040025; }
+
+/* Report hero for points sessions: consultant photo beside the score. */
+.psHeroCircles { display: flex; align-items: center; gap: 22px; }
+.psHeroCircles .profileAvatar { flex: 0 0 120px; width: 120px; height: 120px; border: 8px solid #eaf2ff; background: linear-gradient(135deg, #0040A4, #2885FF); color: #fff; }
+.psHeroCircles .profileAvatarInitials { font-size: 34px; font-weight: 900; }
+.metricsGrid.psSingle { grid-template-columns: 1fr; }
+
+@media print {
+  .psRules.psCollapsed { display: grid; }
+  .psToggle { display: none; }
+  .psCard, .psRule { break-inside: avoid; }
+}
+@media (max-width: 680px) {
+  .psHeroCircles { gap: 12px; }
+  .psHeroCircles .profileAvatar { flex-basis: 100px; width: 100px; height: 100px; }
+  .psRuleTop { flex-direction: column; gap: 4px; }
+}

@@ -3,7 +3,6 @@ import Login from "./pages/Login";
 import Upload from "./pages/Upload";
 import Admin from "./pages/Admin";
 import AdvancedConfig from "./pages/AdvancedConfig";
-import WhatsNewModal from "./components/WhatsNewModal";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
@@ -106,7 +105,6 @@ export default function App() {
         <Route path="/" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
       </Routes>
-      <WhatsNewModal />
     </BrowserRouter>
   );
 }

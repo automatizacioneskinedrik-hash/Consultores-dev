@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "../config/firebase.js";
+import { POINTS_FORMAT, POINTS_TEMPLATE, RULE_LEVELS, validatePointsSpeech } from "./speechRules.js";
 
 export const LEGACY_VERSION_ID = "legacy-v1";
 
@@ -92,6 +93,19 @@ export function validateSpeech(value) {
   return { name: clean(value.name, "Nombre", 100), description: typeof value.description === "string" ? value.description.trim().slice(0, 500) : "", phases, scoring, rules, extraRules };
 }
 
+// Legacy text cleanup applies only to the fixed-rules format; points speeches keep their rule list.
+function withNormalizedRules(config) {
+  return config.format === POINTS_FORMAT ? config : { ...config, rules: normalizeSpeechRules(config.rules) };
+}
+
+export function validateSpeechConfig(value, options) {
+  return value?.format === POINTS_FORMAT ? validatePointsSpeech(value, options) : validateSpeech(value);
+}
+
+// Points drafts live in their own field so editors still running the fixed-rules UI never load them.
+const draftField = (config) => config.format === POINTS_FORMAT ? "pointsDraft" : "draft";
+const currentDraft = (data) => data?.pointsDraft || data?.draft || null;
+
 export async function getActiveSpeech() {
   const state = await stateRef().get();
   const versionId = state.data()?.activeVersionId || LEGACY_VERSION_ID;
@@ -99,7 +113,7 @@ export async function getActiveSpeech() {
   const version = await versionsRef().doc(versionId).get();
   if (!version.exists) throw new Error(`Versión de speech ${versionId} no encontrada.`);
   const config = version.data().config;
-  return { id: version.id, ...config, rules: normalizeSpeechRules(config.rules), legacy: false };
+  return { id: version.id, ...withNormalizedRules(config), legacy: false };
 }
 
 export async function getSpeechVersion(versionId) {
@@ -107,7 +121,7 @@ export async function getSpeechVersion(versionId) {
   const version = await versionsRef().doc(versionId).get();
   if (!version.exists) throw new Error("Versión de speech no encontrada.");
   const config = version.data().config;
-  return { id: version.id, ...config, rules: normalizeSpeechRules(config.rules), legacy: false };
+  return { id: version.id, ...withNormalizedRules(config), legacy: false };
 }
 
 export async function getSpeechEditorData() {
@@ -116,24 +130,34 @@ export async function getSpeechEditorData() {
   ]);
   return {
     active,
-    draft: state.data()?.draft
-      ? { ...state.data().draft, rules: normalizeSpeechRules(state.data().draft.rules) }
-      : null,
+    draft: currentDraft(state.data()) ? withNormalizedRules(currentDraft(state.data())) : null,
     revision: state.data()?.revision || 0,
+    pointsTemplate: POINTS_TEMPLATE,
+    ruleLevels: RULE_LEVELS,
     versions: [
-      ...versions.docs.map((doc) => ({ id: doc.id, name: doc.data().config.name, publishedAt: doc.data().publishedAt, publishedBy: doc.data().publishedBy, phaseCount: doc.data().config.phases.length })),
+      ...versions.docs.map((doc) => ({ id: doc.id, name: doc.data().config.name, changeNote: doc.data().config.changeNote || "", format: doc.data().config.format || "", publishedAt: doc.data().publishedAt, publishedBy: doc.data().publishedBy, phaseCount: doc.data().config.phases.length })),
       { id: LEGACY_VERSION_ID, name: DEFAULT_SPEECH.name, phaseCount: 5, legacy: true },
     ],
   };
 }
 
 export async function saveSpeechDraft(input, expectedRevision) {
-  const config = validateSpeech(input);
+  // Drafts may be incomplete while editing; the full checks run on publish.
+  const config = validateSpeechConfig(input, { draft: true });
   return db.runTransaction(async (transaction) => {
     const state = await transaction.get(stateRef());
     const revision = state.data()?.revision || 0;
     if (revision !== expectedRevision) throw new Error("El borrador cambió en otra sesión. Recarga antes de guardar.");
-    transaction.set(stateRef(), { draft: config, revision: revision + 1 }, { merge: true });
+    transaction.set(stateRef(), { [draftField(config)]: config, revision: revision + 1 }, { merge: true });
+    return revision + 1;
+  });
+}
+
+export async function discardSpeechDraft() {
+  return db.runTransaction(async (transaction) => {
+    const state = await transaction.get(stateRef());
+    const revision = state.data()?.revision || 0;
+    transaction.set(stateRef(), { pointsDraft: null, revision: revision + 1 }, { merge: true });
     return revision + 1;
   });
 }
@@ -144,10 +168,13 @@ export async function publishSpeech(expectedRevision, publishedBy) {
     const state = await transaction.get(stateRef());
     const revision = state.data()?.revision || 0;
     if (revision !== expectedRevision) throw new Error("El borrador cambió en otra sesión. Recarga antes de publicar.");
-    if (!state.data()?.draft) throw new Error("Guarda un borrador antes de publicar.");
-    const config = validateSpeech(state.data().draft);
+    const draft = currentDraft(state.data());
+    if (!draft) throw new Error("Guarda un borrador antes de publicar.");
+    const config = validateSpeechConfig(draft);
+    // Until the analysis understands rule scoring, a points speech can be drafted but not published.
+    if (config.format === POINTS_FORMAT) throw new Error("La publicación por puntos se habilitará cuando el análisis de llamadas esté listo para calificar por puntos. Tu borrador queda guardado.");
     transaction.create(versionsRef().doc(versionId), { config, publishedAt: new Date(), publishedBy });
-    transaction.set(stateRef(), { activeVersionId: versionId, draft: null, revision: revision + 1 }, { merge: true });
+    transaction.set(stateRef(), { activeVersionId: versionId, [draftField(config)]: null, revision: revision + 1 }, { merge: true });
     return versionId;
   });
 }

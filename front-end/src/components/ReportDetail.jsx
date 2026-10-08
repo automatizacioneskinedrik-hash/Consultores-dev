@@ -1,6 +1,9 @@
 import React, { useRef, useState } from "react";
 import { FileText, FileDown, Headphones, X } from "lucide-react";
 import { getUser } from "../utils/user";
+import PointsScorecard from "./PointsScorecard";
+import { levelForPercent } from "../utils/scoreLevels";
+import UserAvatar from "./UserAvatar";
 import "./ReportDetail.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -76,7 +79,13 @@ export default function ReportDetail({ report, onClose }) {
   // Usar el score persistido en Firestore (guardado al momento del análisis).
   // Si no existe (registros anteriores), lo calculamos como fallback.
   const generalScore = report.generalScore ?? Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
-  const generalColor = generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
+  // Sessions graded with a points speech show the phase scorecard; older ones keep the four-card scorecard.
+  const pointsReport = report.scoring?.format === "points";
+  const generalColor = pointsReport
+    ? levelForPercent(generalScore).color
+    : generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
+  const currentUser = getUser() || {};
+  const consultantPicture = report.userPicture || (report.userEmail && report.userEmail === currentUser.email ? currentUser.picture : "");
 
   return (
     <div className="reportOverlay">
@@ -115,14 +124,22 @@ export default function ReportDetail({ report, onClose }) {
               <h3>Tu Gran Sesión de Hoy</h3>
               <p>Consultor: <strong>{userEmail}</strong></p>
             </div>
-            <div className="generalScoreCircle" style={{ borderColor: generalColor }}>
-              <span className="scoreValue">{generalScore}%</span>
-              <span className="scoreLabel">Score General</span>
-            </div>
+            {pointsReport
+              ? <div className="psHeroCircles">
+                <UserAvatar name={report.userName} email={userEmail} picture={consultantPicture} />
+                <div className="generalScoreCircle" style={{ borderColor: generalColor }}>
+                  <span className="scoreValue">{generalScore}%</span>
+                  <span className="scoreLabel">Score General</span>
+                </div>
+              </div>
+              : <div className="generalScoreCircle" style={{ borderColor: generalColor }}>
+                <span className="scoreValue">{generalScore}%</span>
+                <span className="scoreLabel">Score General</span>
+              </div>}
           </div>
 
           {/* Metrics Grid */}
-          <div className="metricsGrid">
+          <div className={`metricsGrid ${pointsReport ? "psSingle" : ""}`}>
             <div className="metricCard blue">
               <span className="mLabel">Duración Total</span>
               <span className="mValue">{analysis.participacion?.duracion_total || "00:00"}</span>
@@ -165,6 +182,10 @@ export default function ReportDetail({ report, onClose }) {
             </div>
           </div>
 
+          {pointsReport ? <div className="statsSection">
+            <h4>Scorecard por fases</h4>
+            <PointsScorecard scoring={report.scoring} speech={report.speechSnapshot} clientName={clienteNome} />
+          </div> : <>
           {/* Scorecard */}
           <div className="statsSection">
             <h4>Scorecard Detallado</h4>
@@ -261,6 +282,8 @@ export default function ReportDetail({ report, onClose }) {
               ))}
             </div>
           </div>
+
+          </>}
 
           <div className="footerSectionsGrid">
             <div className="footerSectionCol needs">

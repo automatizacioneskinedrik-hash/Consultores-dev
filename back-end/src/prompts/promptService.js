@@ -14,12 +14,21 @@ const FOLLOWUP_COL = () => db.collection("followupPrompts");
  * Builds the complete analysis prompt for a session.
  * Reads the active additional instructions and the active followup prompt from Firestore.
  */
-export async function buildAnalysisPrompt(durationStr, transcriptionText) {
-  const [additionalInstructions, customFollowupInstruction, speech] = await Promise.all([
+export async function loadAnalysisContext() {
+  const [additionalInstructions, followupInstruction, speech] = await Promise.all([
     loadAdditionalInstructions(),
     loadActiveFollowupInstruction(),
     getActiveSpeech(),
   ]);
+  return { additionalInstructions, followupInstruction, speech };
+}
+
+export async function buildAnalysisPrompt(durationStr, transcriptionText) {
+  return legacyPromptFromContext(await loadAnalysisContext(), durationStr, transcriptionText);
+}
+
+export function legacyPromptFromContext(context, durationStr, transcriptionText) {
+  const { additionalInstructions, followupInstruction: customFollowupInstruction, speech } = context;
   const prompt = speech.legacy
     ? getAnalysisPrompt(durationStr, additionalInstructions, transcriptionText, customFollowupInstruction)
     : getDynamicAnalysisPrompt(durationStr, additionalInstructions, transcriptionText, customFollowupInstruction, speech);
