@@ -864,6 +864,11 @@
     background: white !important;
   }
 
+  /* El reporte se monta fuera de #root: quitar la app del flujo para que no deje una página en blanco */
+  body > #root {
+    display: none !important;
+  }
+
   /* Ocultar toda la app por defecto (respaldo) */
   body * {
     visibility: hidden;
