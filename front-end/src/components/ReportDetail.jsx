@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FileText, FileDown, Headphones, X } from "lucide-react";
 import { getUser } from "../utils/user";
 import PointsScorecard from "./PointsScorecard";
@@ -87,7 +88,8 @@ export default function ReportDetail({ report, onClose }) {
   const currentUser = getUser() || {};
   const consultantPicture = report.userPicture || (report.userEmail && report.userEmail === currentUser.email ? currentUser.picture : "");
 
-  return (
+  // Rendered on <body> so printing (which hides the app shell) keeps the report visible from every page.
+  return createPortal(
     <div className="reportOverlay">
       <div className="reportContainer" ref={reportRef}>
         <header className="reportHeader">
@@ -313,6 +315,7 @@ export default function ReportDetail({ report, onClose }) {
           </footer>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
