@@ -51,7 +51,7 @@ test("la nota la calcula el sistema con los niveles de GPT, el ratio medido y la
   const first = scoring.items.find((item) => item.ruleId === speech.rules[0].id);
   // Primera regla (5 pts) regular = 2,5; ratio al 75 % = Regular = 3 de 6; muletillas y resto completos.
   assert.equal(scoring.earned, 100 - 2.5 - 3);
-  assert.equal(scoring.score, 95);
+  assert.equal(scoring.score, 94.5);
   assert.equal(first.como_mejorar, "di esto");
   assert.equal(scoring.items.find((item) => item.ruleId === speech.rules[1].id).como_mejorar, "");
   assert.ok(!scoring.items.some((item) => item.ruleId === "inventada"));

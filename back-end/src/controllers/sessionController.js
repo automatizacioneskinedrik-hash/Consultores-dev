@@ -63,7 +63,7 @@ export const getAllSessions = async (req, res) => {
     // Seleccionar solo los campos necesarios para la tabla — excluye transcription y campos pesados
     const [snapshot, usersSnapshot] = await Promise.all([
       query.select(
-        "userEmail", "createdAt", "generalScore",
+        "userEmail", "createdAt", "generalScore", "scoring.format",
         "analysis.nombre_cliente",
         "analysis.participacion.duracion_total",
         "analysis.scorecard"
@@ -99,6 +99,7 @@ export const getAllSessions = async (req, res) => {
         date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
         duration: data.analysis?.participacion?.duracion_total || "00:00",
         score: generalScore,
+        scoreFormat: data.scoring?.format === "points" ? "points" : "percent",
         status: "procesado",
       };
     });

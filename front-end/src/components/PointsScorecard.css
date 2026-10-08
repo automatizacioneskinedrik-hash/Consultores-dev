@@ -34,6 +34,7 @@
 .psHeroCircles { display: flex; align-items: center; gap: 22px; }
 .psHeroCircles .profileAvatar { flex: 0 0 120px; width: 120px; height: 120px; border: 8px solid #eaf2ff; background: linear-gradient(135deg, #0040A4, #2885FF); color: #fff; }
 .psHeroCircles .profileAvatarInitials { font-size: 34px; font-weight: 900; }
+.psHeroCircles .psScoreValue { font-size: 28px; font-variant-numeric: tabular-nums; }
 .metricsGrid.psSingle { grid-template-columns: 1fr; }
 
 @media print {

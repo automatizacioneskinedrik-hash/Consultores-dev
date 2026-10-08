@@ -131,7 +131,7 @@ export default function History() {
                       <td className="clientName">{session.cliente}</td>
                       <td>
                         <div className={`scoreBadge ${session.score >= 70 ? 'high' : session.score >= 40 ? 'mid' : 'low'}`}>
-                          {session.score}%
+                          {session.scoreFormat === "points" ? `${Number(session.score).toLocaleString("es-CO")} pts` : `${session.score}%`}
                         </div>
                       </td>
                       <td>{session.duration}</td>

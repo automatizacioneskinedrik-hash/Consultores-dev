@@ -197,6 +197,7 @@ export function computeRulesScore(rules, evaluations = [], { isSale = false, tal
       missing: !evaluation,
     };
   });
-  const rulesScore = possible > 0 ? Math.round((earned / possible) * 100) : null;
+  // Points out of 100 with two decimals; "no aplica" rules are left out and the rest scaled back to 100.
+  const rulesScore = possible > 0 ? Math.round((earned / possible) * 100 * 100) / 100 : null;
   return { score: isSale ? 100 : rulesScore, rulesScore, saleOverride: isSale, earned, possible, items: [...ratioItems, ...items] };
 }

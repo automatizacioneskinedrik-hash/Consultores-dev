@@ -79,9 +79,13 @@ export default function ReportDetail({ report, onClose }) {
 
   // Usar el score persistido en Firestore (guardado al momento del análisis).
   // Si no existe (registros anteriores), lo calculamos como fallback.
-  const generalScore = report.generalScore ?? Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
   // Sessions graded with a points speech show the phase scorecard; older ones keep the four-card scorecard.
   const pointsReport = report.scoring?.format === "points";
+  // Points sessions show exact points out of 100, recomputed from the stored breakdown (early ones stored a rounded value).
+  const { earned = 0, possible = 0, saleOverride = false } = report.scoring || {};
+  const generalScore = pointsReport && possible > 0
+    ? (saleOverride ? 100 : Math.round((earned / possible) * 100 * 100) / 100)
+    : report.generalScore ?? Math.round(((100 - muletillasScore) + cierreScore + objecionesScore + valorScore) / 4);
   const generalColor = pointsReport
     ? levelForPercent(generalScore).color
     : generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
@@ -130,8 +134,8 @@ export default function ReportDetail({ report, onClose }) {
               ? <div className="psHeroCircles">
                 <UserAvatar name={report.userName} email={userEmail} picture={consultantPicture} />
                 <div className="generalScoreCircle" style={{ borderColor: generalColor }}>
-                  <span className="scoreValue">{generalScore}%</span>
-                  <span className="scoreLabel">Score General</span>
+                  <span className="scoreValue psScoreValue">{Number(generalScore).toLocaleString("es-CO")}</span>
+                  <span className="scoreLabel">Puntos de 100</span>
                 </div>
               </div>
               : <div className="generalScoreCircle" style={{ borderColor: generalColor }}>
