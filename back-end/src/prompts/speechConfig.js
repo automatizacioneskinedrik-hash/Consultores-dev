@@ -171,8 +171,6 @@ export async function publishSpeech(expectedRevision, publishedBy) {
     const draft = currentDraft(state.data());
     if (!draft) throw new Error("Guarda un borrador antes de publicar.");
     const config = validateSpeechConfig(draft);
-    // Until the analysis understands rule scoring, a points speech can be drafted but not published.
-    if (config.format === POINTS_FORMAT) throw new Error("La publicación por puntos se habilitará cuando el análisis de llamadas esté listo para calificar por puntos. Tu borrador queda guardado.");
     transaction.create(versionsRef().doc(versionId), { config, publishedAt: new Date(), publishedBy });
     transaction.set(stateRef(), { activeVersionId: versionId, [draftField(config)]: null, revision: revision + 1 }, { merge: true });
     return versionId;
