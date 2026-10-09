@@ -2,15 +2,30 @@ import { openai } from "../config/openai.js";
 import { DEFAULT_AI_MODEL, getActiveModel } from "../prompts/aiModelConfig.js";
 
 const isMissingModel = (error) => error?.status === 404 || error?.code === "model_not_found";
+// Some models (e.g. reasoning ones) reject sampling settings; those are dropped and the call retried.
+const OPTIONAL_PARAMS = ["temperature", "seed"];
+const rejectedParam = (error) => error?.status === 400
+  ? OPTIONAL_PARAMS.find((param) => error.param === param || String(error.message || "").includes(`'${param}'`))
+  : undefined;
 
 async function complete(prompt, model) {
-  const completion = await openai.chat.completions.create({
+  const params = {
     model,
     messages: [{ role: "user", content: prompt }],
     response_format: { type: "json_object" },
     temperature: 0,
     seed: 42,
-  });
+  };
+  let completion;
+  for (let attempt = 0; !completion; attempt++) {
+    try {
+      completion = await openai.chat.completions.create(params);
+    } catch (error) {
+      const param = rejectedParam(error);
+      if (!param || !(param in params) || attempt >= OPTIONAL_PARAMS.length) throw error;
+      delete params[param];
+    }
+  }
   const usage = completion.usage || {};
   return {
     json: JSON.parse(completion.choices[0].message.content),
