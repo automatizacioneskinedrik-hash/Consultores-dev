@@ -573,3 +573,9 @@ body.sidebar-collapsed .advancedPage {
   .acActions { justify-content: flex-start; }
   .acCompare, .acTwoCol { grid-template-columns: 1fr; }
 }
+.acChooserBody { display: grid; gap: 14px; }
+.acSearch { width: 100%; max-width: 360px; padding: 8px 10px; border: 1px solid #dce3ed; border-radius: 8px; color: #040025; background: #fff; font: 14px/1.4 Roboto, Helvetica, Arial, sans-serif; }
+.acSearch:focus { outline: none; border-color: #0040A4; box-shadow: 0 0 0 2px #eaf2ff; }
+.acFamily { display: grid; gap: 6px; }
+.acFamily h3 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #65728a; }
+.acChooserBody .acLink { justify-self: start; }

@@ -16,6 +16,57 @@ function LevelChip({ level }) {
   return <span className="acChip"><i style={{ background: info.color }} />{info.label}</span>;
 }
 
+// Dated snapshots and "chat-latest" aliases repeat a model under another name; recent families are 5.4+.
+const DUPLICATE_NAME = /(-\d{4}-\d{2}-\d{2}$|chat-latest$)/;
+const RECENT_FROM_VERSION = 5.4;
+
+function familyOf(model) {
+  const match = model.match(/^gpt-(\d+(?:\.\d+)?)/);
+  return match ? { key: match[1], label: `GPT-${match[1]}`, version: Number(match[1]) } : { key: "o", label: "Serie o (razonamiento)", version: 0 };
+}
+
+function groupByFamily(models) {
+  const groups = new Map();
+  for (const model of models) {
+    const family = familyOf(model);
+    if (!groups.has(family.key)) groups.set(family.key, { ...family, models: [] });
+    groups.get(family.key).models.push(model);
+  }
+  return [...groups.values()].sort((a, b) => b.version - a.version);
+}
+
+function ModelChooser({ available, active, selected, onChange }) {
+  const [query, setQuery] = useState("");
+  const [showOlder, setShowOlder] = useState(false);
+  const term = query.trim().toLowerCase();
+  const models = available.filter((model) => model === active || selected.includes(model) || !DUPLICATE_NAME.test(model));
+  const matching = term ? models.filter((model) => model.toLowerCase().includes(term)) : models;
+  const groups = groupByFamily(matching);
+  const recent = groups.filter((group) => group.version >= RECENT_FROM_VERSION);
+  const older = groups.filter((group) => group.version < RECENT_FROM_VERSION);
+  const olderCount = older.reduce((sum, group) => sum + group.models.length, 0);
+
+  const renderGroup = (group) => <div className="acFamily" key={group.key}>
+    <h3>{group.label}</h3>
+    <div className="acChooserList">
+      {group.models.map((model) => <label key={model} className="acCheck">
+        <input type="checkbox" checked={model === active || selected.includes(model)} disabled={model === active}
+          onChange={(event) => onChange(event.target.checked ? [...selected, model] : selected.filter((entry) => entry !== model))} />
+        <code>{model}</code>
+      </label>)}
+    </div>
+  </div>;
+
+  return <div className="acChooserBody">
+    <input className="acSearch" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar modelo, por ejemplo: luna" aria-label="Buscar modelo" />
+    {recent.map(renderGroup)}
+    {!recent.length && !older.length && <p className="acHint">Ningún modelo coincide con la búsqueda.</p>}
+    {olderCount > 0 && (term || showOlder
+      ? older.map(renderGroup)
+      : <button type="button" className="acLink" onClick={() => setShowOlder(true)}>Mostrar modelos anteriores ({olderCount})</button>)}
+  </div>;
+}
+
 // Configuración avanzada → Modelo de IA (superadmin only): choose, test and activate the GPT model.
 export default function AiModelTab({ authHeaders }) {
   const [config, setConfig] = useState(null);
@@ -107,13 +158,7 @@ export default function AiModelTab({ authHeaders }) {
       </div>
 
       {choosing && <div className="acChooser">
-        <div className="acChooserList">
-          {config.availableModels.map((model) => <label key={model} className="acCheck">
-            <input type="checkbox" checked={model === config.activeModel || visibleDraft.includes(model)} disabled={model === config.activeModel}
-              onChange={(event) => setVisibleDraft(event.target.checked ? [...visibleDraft, model] : visibleDraft.filter((entry) => entry !== model))} />
-            <code>{model}</code>
-          </label>)}
-        </div>
+        <ModelChooser available={config.availableModels} active={config.activeModel} selected={visibleDraft} onChange={setVisibleDraft} />
         <div className="acRowEnd"><button type="button" className="speechPrimaryButton" onClick={saveVisible} disabled={busy}>Guardar selección</button></div>
       </div>}
 
