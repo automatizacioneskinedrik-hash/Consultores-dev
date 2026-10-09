@@ -91,6 +91,9 @@ export default function ReportDetail({ report, onClose }) {
     : generalScore >= 71 ? "#22C55E" : generalScore >= 41 ? "#EAB308" : "#EF4444";
   const currentUser = getUser() || {};
   const consultantPicture = report.userPicture || (report.userEmail && report.userEmail === currentUser.email ? currentUser.picture : "");
+  // Admins compare AI models, so they see which one graded the session; consultants don't need it.
+  const canSeeModel = currentUser.role === "admin" || currentUser.role === "superadmin" || currentUser.email === "adminkinedrik@eadic.com";
+  const gradedWith = canSeeModel ? report.aiUsage?.model : null;
 
   // Rendered on <body> so printing (which hides the app shell) keeps the report visible from every page.
   return createPortal(
@@ -100,7 +103,7 @@ export default function ReportDetail({ report, onClose }) {
           <div className="headerLeft">
             <h2>Reporte de Sesión</h2>
             <span>{clienteNome} — {dateStr}</span>
-            <span style={{ display: "block", fontSize: 11, opacity: 0.75 }}>Speech: {report.speechSnapshot?.name || "Metodología original"}{report.speechSnapshot?.phases?.length ? ` · ${report.speechSnapshot.phases.length} fases` : ""}</span>
+            <span style={{ display: "block", fontSize: 11, opacity: 0.75 }}>Speech: {report.speechSnapshot?.name || "Metodología original"}{report.speechSnapshot?.phases?.length ? ` · ${report.speechSnapshot.phases.length} fases` : ""}{gradedWith ? ` · Calificado con ${gradedWith}` : ""}</span>
           </div>
           <div className="headerActions">
             {report.objectPath && (

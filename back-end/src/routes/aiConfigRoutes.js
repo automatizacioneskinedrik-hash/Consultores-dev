@@ -13,7 +13,5 @@ router.use(async (req, res, next) => {
 router.get("/", aiConfigController.getConfig);
 router.put("/visible-models", aiConfigController.putVisibleModels);
 router.post("/activate", aiConfigController.postActivate);
-router.get("/test-sessions", aiConfigController.getTestSessions);
-router.post("/test", aiConfigController.postTest);
 
 export default router;
