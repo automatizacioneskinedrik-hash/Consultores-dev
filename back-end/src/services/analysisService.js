@@ -8,7 +8,8 @@ import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
 import { transporter } from "../config/mailer.js";
 import { legacyPromptFromContext, loadAnalysisContext } from "../prompts/promptService.js";
-import { buildPointsPrompt, countMuletillas, scorePointsAnalysis, swapSpeakerLabels } from "../prompts/pointsEngine.js";
+import { askGpt } from "./gptClient.js";
+import { gradeWithPoints } from "./pointsGrading.js";
 import { POINTS_FORMAT } from "../prompts/speechRules.js";
 import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
@@ -30,28 +31,18 @@ function detectCedioPalabraTrasPrice(utterances, consultorSpeaker) {
   return null; // precio nunca mencionado
 }
 
-async function askGpt(prompt) {
-  const completion = await openai.chat.completions.create({
-    model: "gpt-5.4-mini",
-    messages: [{ role: "user", content: prompt }],
-    response_format: { type: "json_object" },
-    temperature: 0,
-    seed: 42,
-  });
-  return JSON.parse(completion.choices[0].message.content);
-}
-
 // Fixed-rules speech: GPT returns the four scorecard scores and the general score averages them.
 async function runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos }) {
   const { prompt, speech } = legacyPromptFromContext(context, durationStr, transcriptionText);
-  const analysis = applySpeechToAnalysis(await askGpt(prompt), speech);
+  const { json, usage } = await askGpt(prompt);
+  const analysis = applySpeechToAnalysis(json, speech);
   const sc = analysis.scorecard || {};
   const generalScore = Math.round(
     ((100 - (sc.muletillas?.score || 0)) + (sc.cierre_negociacion?.score || 0) + (sc.manejo_objeciones?.score || 0) + (sc.propuesta_valor?.score || 0)) / 4
   );
   const muletillasCount = typeof sc.muletillas?.count === "number" ? sc.muletillas.count : 0;
   const muletillas_por_minuto = consultorMinutos > 0 ? Math.round((muletillasCount / consultorMinutos) * 10) / 10 : null;
-  return { analysis, generalScore, muletillas_por_minuto };
+  return { analysis, generalScore, muletillas_por_minuto, usage };
 }
 
 const speakerMinutes = (utterances, isSpeaker) => utterances
@@ -60,24 +51,25 @@ const speakerMinutes = (utterances, isSpeaker) => utterances
 
 // Points speech: GPT judges each rule; the system measures ratio and muletillas and adds the points.
 async function runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker }) {
-  const { speech } = context;
-  const countWords = speech.muletillas?.count || [];
-  const muletillas = countMuletillas(transcriptionText, countWords, { minutes: consultorMinutos });
-  const analysis = await askGpt(buildPointsPrompt({ ...context, durationStr, transcriptionText, muletillas }));
-  if (analysis.error) return { analysis, generalScore: null, muletillas_por_minuto: null };
-
-  // GPT flags when the "most words" heuristic labelled the client as the consultant.
-  if (analysis.roles_invertidos === true) {
-    const swapped = swapSpeakerLabels(transcriptionText);
-    const realMinutes = speakerMinutes(utterances, (speaker) => speaker !== consultorSpeaker);
-    const realMuletillas = countMuletillas(swapped, countWords, { minutes: realMinutes });
-    const consultantPct = 100 - consultorPct;
-    const realSpeaker = utterances.find((u) => u.speaker !== consultorSpeaker)?.speaker ?? consultorSpeaker;
-    const scoring = scorePointsAnalysis(analysis, speech, { consultantPct, muletillas: realMuletillas });
-    return { analysis, scoring, generalScore: scoring.score, muletillas_por_minuto: realMuletillas.perMinute, transcriptionText: swapped, consultantPct, consultantSpeaker: realSpeaker };
-  }
-  const scoring = scorePointsAnalysis(analysis, speech, { consultantPct: consultorPct, muletillas });
-  return { analysis, scoring, generalScore: scoring.score, muletillas_por_minuto: muletillas.perMinute };
+  const result = await gradeWithPoints({
+    context, durationStr, transcriptionText,
+    consultantPct: consultorPct,
+    consultantMinutes: consultorMinutos,
+    otherMinutes: speakerMinutes(utterances, (speaker) => speaker !== consultorSpeaker),
+  });
+  const { analysis, scoring, usage } = result;
+  if (!scoring) return { analysis, generalScore: null, muletillas_por_minuto: null, usage };
+  const consultantSpeaker = result.rolesSwapped
+    ? utterances.find((u) => u.speaker !== consultorSpeaker)?.speaker ?? consultorSpeaker
+    : consultorSpeaker;
+  return {
+    analysis, scoring, usage,
+    generalScore: scoring.score,
+    muletillas_por_minuto: result.muletillas.perMinute,
+    transcriptionText: result.transcriptionText,
+    consultantPct: result.consultantPct,
+    consultantSpeaker,
+  };
 }
 
 async function transcribeWithDiarization(filePath) {
@@ -196,7 +188,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const result = pointsFormat
       ? await runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker })
       : await runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos });
-    const { analysis, generalScore, muletillas_por_minuto, scoring = null } = result;
+    const { analysis, generalScore, muletillas_por_minuto, scoring = null, usage = null } = result;
     const transcription = result.transcriptionText || transcriptionText;
     const consultantPct = result.consultantPct ?? consultorPct;
     const consultantSpeaker = result.consultantSpeaker ?? consultorSpeaker;
@@ -223,6 +215,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
         : { name: speech.name, phases: speech.phases, scoring: speech.scoring, rules: speech.rules || null, extraRules: speech.extraRules || "" },
       generalScore,
       scoring,
+      aiUsage: usage,
       monologo_mas_largo_seg,
       muletillas_por_minuto,
       cedio_palabra_tras_precio,

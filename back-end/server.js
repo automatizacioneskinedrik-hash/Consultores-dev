@@ -10,6 +10,7 @@ import sessionRoutes from "./src/routes/sessionRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import promptRoutes from "./src/routes/promptRoutes.js";
 import followUpRoutes from "./src/routes/followUpRoutes.js";
+import aiConfigRoutes from "./src/routes/aiConfigRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/followups", followUpRoutes);
+app.use("/api/ai-config", aiConfigRoutes);
 
 // Manejo de errores global
 app.use((err, req, res, next) => {

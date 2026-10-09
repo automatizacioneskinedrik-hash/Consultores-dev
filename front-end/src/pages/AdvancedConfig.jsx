@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import AiModelTab from "../components/AiModelTab";
 import { getUser } from "../utils/user";
+import "./SpeechConfig.css";
 import "./AdvancedConfig.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -45,8 +47,8 @@ export default function AdvancedConfig() {
   const [activatingId, setActivatingId] = useState(null);
   const [promptMsg, setPromptMsg] = useState({ type: "", text: "" });
 
-  const [openSections, setOpenSections] = useState({ email: true, whatsapp: true });
-  const toggleSection = (key) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  const isSuperAdmin = user?.role === "superadmin" || user?.email === "adminkinedrik@eadic.com";
+  const [activeTab, setActiveTab] = useState(isSuperAdmin ? "model" : "whatsapp");
 
   const loadEmailConfig = async () => {
     try {
@@ -80,11 +82,11 @@ export default function AdvancedConfig() {
     }
   };
 
-  const authHeaders = {
+  const authHeaders = useMemo(() => ({
     "X-Admin-Role": user.role || "user",
     "X-Admin-Email": user.email || "",
     "X-Auth-Token": user.authToken || "",
-  };
+  }), [user]);
 
   const loadFollowupPrompts = async () => {
     setIsLoadingFollowup(true);
@@ -274,218 +276,107 @@ export default function AdvancedConfig() {
     }
   };
 
+  const tabs = [
+    ...(isSuperAdmin ? [["model", "Modelo de IA"]] : []),
+    ["whatsapp", "Mensaje de WhatsApp"],
+    ["email", "Correos"],
+  ];
+  const currentTab = tabs.some(([id]) => id === activeTab) ? activeTab : tabs[0][0];
+
   return (
-    <>
+    <div className="speechConfigPage">
       <Sidebar />
-      <div className="advancedPage">
-        <main className="advancedContent">
-          <header className="advancedHeader">
-            <h1 className="pageTitle">
-              Configuracion <span className="titleAccent">avanzada</span>
-            </h1>
-            <p>
-              Define los correos que recibiran copia en los reportes automaticos.
-            </p>
-          </header>
+      <main className="speechConfigContent">
+        <header className="speechConfigHeader">
+          <div>
+            <h1 className="pageTitle">Configuración <span className="titleAccent">avanzada</span></h1>
+            <p>Ajusta cómo funciona el análisis de las llamadas.</p>
+          </div>
+        </header>
 
-          <section className="advancedPanel">
-            <div className="advancedPanelTop" onClick={() => toggleSection("email")}>
-              <h2>Configuracion de correo</h2>
-              <svg className={`panelChevron${openSections.email ? "" : " collapsed"}`} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
+        <nav className="speechTabs" role="tablist" aria-label="Secciones de configuración avanzada">
+          {tabs.map(([id, label]) => <button
+            key={id}
+            id={`advanced-tab-${id}`}
+            className="speechTab"
+            type="button"
+            role="tab"
+            aria-selected={currentTab === id}
+            aria-controls="advanced-tab-panel"
+            onClick={() => setActiveTab(id)}
+          >{label}{id === "model" && <small className="acTabBadge">SUPERADMIN</small>}</button>)}
+        </nav>
 
-            <div className={`panelBody${openSections.email ? "" : " collapsed"}`}>
-              {isLoading ? (
-                <div className="advancedLoading">Cargando configuracion...</div>
-              ) : (
-                <div className="advancedForm">
-                  <section className="emailBlock">
-                    <div className="emailBlockHeader">
-                      <h3>Correo con copia (CC)</h3>
-                      <span>{ccEmails.length} agregados</span>
-                    </div>
-                    <div className="emailInputRow">
-                      <input
-                        id="cc-input"
-                        type="text"
-                        value={ccInput}
-                        onChange={(e) => setCcInput(e.target.value)}
-                        onKeyDown={(e) => handleInputKeyDown(e, "cc")}
-                        placeholder="correo@gmail.com"
-                      />
-                      <button type="button" className="addEmailBtn" onClick={() => addEmailToList("cc")}>
-                        Agregar
-                      </button>
-                    </div>
-                    <small>Ingresa un correo por vez y presiona Enter o Agregar.</small>
-                    <ul className="emailList">
-                      {ccEmails.length === 0 ? (
-                        <li className="emailEmpty">No hay correos en copia.</li>
-                      ) : (
-                        ccEmails.map((email) => (
-                          <li key={email} className="emailItem">
-                            <span>{email}</span>
-                            <button type="button" className="emailRemoveBtn" onClick={() => removeEmailFromList("cc", email)}>
-                              Eliminar
-                            </button>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  </section>
+        <section className="speechTabPanel" id="advanced-tab-panel" role="tabpanel" aria-labelledby={`advanced-tab-${currentTab}`}>
+          {currentTab === "model" && <AiModelTab authHeaders={authHeaders} />}
 
-                  <section className="emailBlock">
-                    <div className="emailBlockHeader bcc">
-                      <h3>Correo con copia oculta (BCC)</h3>
-                      <span>{bccEmails.length} agregados</span>
-                    </div>
-                    <div className="emailInputRow">
-                      <input
-                        id="bcc-input"
-                        type="text"
-                        value={bccInput}
-                        onChange={(e) => setBccInput(e.target.value)}
-                        onKeyDown={(e) => handleInputKeyDown(e, "bcc")}
-                        placeholder="correo@gmail.com"
-                      />
-                      <button type="button" className="addEmailBtn" onClick={() => addEmailToList("bcc")}>
-                        Agregar
-                      </button>
-                    </div>
-                    <small>Estas direcciones no seran visibles para los demas destinatarios.</small>
-                    <ul className="emailList">
-                      {bccEmails.length === 0 ? (
-                        <li className="emailEmpty">No hay correos en copia oculta.</li>
-                      ) : (
-                        bccEmails.map((email) => (
-                          <li key={email} className="emailItem">
-                            <span>{email}</span>
-                            <button type="button" className="emailRemoveBtn" onClick={() => removeEmailFromList("bcc", email)}>
-                              Eliminar
-                            </button>
-                          </li>
-                        ))
-                      )}
-                    </ul>
-                  </section>
-                </div>
-              )}
-
-              {successMsg && <div className="advancedNotice">{successMsg}</div>}
-              {errorMsg && <div className="advancedError">{errorMsg}</div>}
-              {(updatedBy || updatedAt) && (
-                <div className="advancedMeta">
-                  {updatedBy && <span>Actualizado por: {updatedBy}</span>}
-                  {updatedAt && <span>Fecha: {updatedAt}</span>}
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="advancedPanel">
-            <div className="advancedPanelTop" onClick={() => toggleSection("whatsapp")}>
-              <h2>Prompt IA WhatsApp</h2>
-              <svg className={`panelChevron${openSections.whatsapp ? "" : " collapsed"}`} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </div>
-
-            <div className={`panelBody${openSections.whatsapp ? "" : " collapsed"}`}>
-              <div className="advancedForm">
-                {/* Columna izquierda: editor del nuevo prompt */}
-                <section className="emailBlock">
-                  <div className="emailBlockHeader">
-                    <h3>Prompt</h3>
-                  </div>
-                  <textarea
-                    className="followupPromptTextarea"
-                    value={followupDraft}
-                    onChange={(e) => setFollowupDraft(e.target.value)}
-                    rows={8}
-                    placeholder="Escribe la instrucción para el mensaje sugerido de WhatsApp..."
-                  />
-                  <div className="followupPromptActions">
-                    <button
-                      type="button"
-                      className="addEmailBtn promptSaveBtn"
-                      onClick={saveFollowupPrompt}
-                      disabled={isSavingPrompt || !followupDraft.trim()}
-                    >
-                      {isSavingPrompt ? "Guardando..." : "Guardar prompt"}
-                    </button>
-                  </div>
-                  <small>Al guardar se crea un nuevo prompt y se activa automáticamente.</small>
-                </section>
-
-                {/* Columna derecha: lista de prompts */}
-                <section className="emailBlock">
-                  <div className="emailBlockHeader">
-                    <h3>Prompts guardados</h3>
-                    <span>{followupPrompts.length} en total</span>
-                  </div>
-                  {isLoadingFollowup ? (
-                    <div className="advancedLoading">Cargando prompts...</div>
-                  ) : (
-                    <ul className="emailList promptVersionList">
-                      {followupPrompts.map((p) => (
-                        <li key={p.id} className={`emailItem promptVersionItem${p.isActive ? " promptItemActive" : ""}`}>
-                          <div className="promptVersionInfo">
-                            <div className="promptVersionMeta">
-                              {p.isDefault && <span className="promptBadgeDefault">Original</span>}
-                              {p.isActive && <span className="promptBadgeActive">Activo</span>}
-                              {p.createdAt?._seconds && (
-                                <span className="promptVersionDate">
-                                  {new Date(p.createdAt._seconds * 1000).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}
-                                </span>
-                              )}
-                            </div>
-                            <span className="promptVersionPreview">
-                              {p.instruction.slice(0, 80)}{p.instruction.length > 80 ? "…" : ""}
-                            </span>
-                            {p.createdBy && p.createdBy !== "system" && (
-                              <span className="promptVersionBy">{p.createdBy}</span>
-                            )}
-                          </div>
-                          <div className="promptItemActions">
-                            {!p.isActive && (
-                              <button
-                                type="button"
-                                className="emailRemoveBtn promptRestoreBtn"
-                                onClick={() => { activateFollowupPrompt(p.id); setFollowupDraft(p.instruction); }}
-                                disabled={activatingId === p.id}
-                              >
-                                {activatingId === p.id ? "..." : "Activar"}
-                              </button>
-                            )}
-                            {!p.isDefault && (
-                              <button
-                                type="button"
-                                className="emailRemoveBtn"
-                                onClick={() => deleteFollowupPrompt(p.id)}
-                                disabled={deletingId === p.id}
-                              >
-                                {deletingId === p.id ? "..." : "Eliminar"}
-                              </button>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
+          {currentTab === "whatsapp" && <div className="acPanel">
+            {promptMsg.text && <div role="status" className={`speechNotice ${promptMsg.type === "success" ? "" : "error"}`}>{promptMsg.text}</div>}
+            <section className="acCard">
+              <div className="acCardHead"><div><h2>Instrucción para el mensaje de WhatsApp</h2><p>La IA usa esta instrucción para redactar el mensaje de seguimiento que se sugiere al consultor.</p></div></div>
+              <textarea
+                className="acTextarea"
+                value={followupDraft}
+                onChange={(e) => setFollowupDraft(e.target.value)}
+                rows={7}
+                aria-label="Instrucción para el mensaje de WhatsApp"
+                placeholder="Escribe la instrucción para el mensaje sugerido de WhatsApp..."
+              />
+              <div className="acRowBetween">
+                <p className="acHint">Al guardar se crea una versión nueva y se activa.</p>
+                <button type="button" className="speechPrimaryButton" onClick={saveFollowupPrompt} disabled={isSavingPrompt || !followupDraft.trim()}>
+                  {isSavingPrompt ? "Guardando…" : "Guardar y activar"}
+                </button>
               </div>
+            </section>
 
-              {promptMsg.text && (
-                <div className={promptMsg.type === "success" ? "advancedNotice" : "advancedError"}>
-                  {promptMsg.text}
-                </div>
-              )}
-            </div>
-          </section>
-        </main>
-      </div>
-    </>
+            <section className="acCard">
+              <div className="acCardHead"><div><h2>Versiones guardadas</h2><p>Puedes volver a una versión anterior.</p></div><span className="acHint">{followupPrompts.length} versiones</span></div>
+              {isLoadingFollowup ? <p className="acHint">Cargando versiones…</p> : <div className="acVersions">
+                {followupPrompts.map((p) => <div className="acVersion" key={p.id}>
+                  <div>
+                    <strong>{p.isDefault ? "Original" : `Versión del ${p.createdAt?._seconds ? new Date(p.createdAt._seconds * 1000).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : "—"}`}</strong>
+                    {p.isActive && <span className="acPill">Activa</span>}
+                    <p>{p.instruction.slice(0, 140)}{p.instruction.length > 140 ? "…" : ""}</p>
+                    {p.createdBy && p.createdBy !== "system" && <span className="acHint">{p.createdBy}</span>}
+                  </div>
+                  <div className="acActions">
+                    {!p.isActive && <button type="button" className="speechSecondaryButton" onClick={() => { activateFollowupPrompt(p.id); setFollowupDraft(p.instruction); }} disabled={activatingId === p.id}>
+                      {activatingId === p.id ? "…" : "Volver a usar"}
+                    </button>}
+                    {!p.isDefault && !p.isActive && <button type="button" className="speechSecondaryButton acDanger" onClick={() => deleteFollowupPrompt(p.id)} disabled={deletingId === p.id}>
+                      {deletingId === p.id ? "…" : "Eliminar"}
+                    </button>}
+                  </div>
+                </div>)}
+              </div>}
+            </section>
+          </div>}
+
+          {currentTab === "email" && <div className="acPanel">
+            {successMsg && <div role="status" className="speechNotice">{successMsg}</div>}
+            {errorMsg && <div role="status" className="speechNotice error">{errorMsg}</div>}
+            <section className="acCard">
+              <div className="acCardHead"><div><h2>Copias de los reportes por correo</h2><p>Quién recibe copia de los reportes que se envían a los consultores.</p></div></div>
+              {isLoading ? <p className="acHint">Cargando configuración…</p> : <div className="acTwoCol">
+                {[["cc", "Con copia (CC)", ccEmails, ccInput, setCcInput], ["bcc", "Con copia oculta (CCO)", bccEmails, bccInput, setBccInput]].map(([type, label, emails, value, setValue]) => <div className="acEmailBlock" key={type}>
+                  <strong>{label}</strong>
+                  <div className="acChips">
+                    {emails.length
+                      ? emails.map((email) => <span key={email}>{email}<button type="button" aria-label={`Quitar ${email}`} onClick={() => removeEmailFromList(type, email)} disabled={isSaving}>✕</button></span>)
+                      : <span className="acEmpty">Sin correos</span>}
+                  </div>
+                  <div className="acAdd">
+                    <input id={`${type}-input`} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => handleInputKeyDown(e, type)} placeholder="correo@empresa.com" aria-label={`Añadir correo ${label}`} />
+                    <button type="button" className="speechSecondaryButton" onClick={() => addEmailToList(type)} disabled={isSaving}>Añadir</button>
+                  </div>
+                </div>)}
+              </div>}
+              {(updatedBy || updatedAt) && <p className="acHint">{updatedBy && `Actualizado por ${updatedBy}`}{updatedBy && updatedAt ? " · " : ""}{updatedAt}</p>}
+            </section>
+          </div>}
+        </section>
+      </main>
+    </div>
   );
 }
