@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import GuideTour from "../components/GuideTour";
+
+const SPEECH_TOUR = [
+  { title: "¡Hola! Yo cuido el speech comercial", text: "Aquí se define cómo se califica cada llamada. Te muestro sus partes, de arriba a abajo." },
+  { target: ".speechTabs", title: "Versión e Historial", text: "En Versión ves y editas el speech. En Historial están todas las versiones publicadas, por si quieres volver a una anterior." },
+  { target: ".speechFlow", title: "Primero lees, luego editas", text: "Para cambiar algo, crea una nueva versión: se abre un borrador que se guarda solo. Los consultores no notan nada hasta que lo publiques." },
+  { target: ".speechSummary", title: "El reparto de los 100 puntos", text: "Esta barra muestra cuánto vale cada fase. Para poder publicar, todo debe sumar exactamente 100." },
+  { target: ".speechPhaseHead", title: "Fases y reglas", text: "Cada fase agrupa reglas con su valor en puntos. Haz clic en una fase para ver su objetivo y sus reglas." },
+  { target: ".speechRatioHeadRow", title: "Ratio de habla", text: "Aquí defines hasta qué porcentaje puede hablar el consultor antes de perder puntos. Lo mide el sistema, no la IA." },
+  { target: ".speechPhaseCard:last-of-type .speechRatioHeadRow", title: "Muletillas", text: "Aquí están las muletillas que cuenta el sistema y las palabras que ignora porque son conectores normales, como «entonces» o «pues»." },
+  { title: "¡Listo, ya conoces el speech!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
+
 import { getUser } from "../utils/user";
 import "./SpeechConfig.css";
 
@@ -366,6 +379,7 @@ export default function SpeechConfig() {
   return (
     <div className="speechConfigPage">
       <Sidebar />
+      {!loading && <GuideTour id="speech" steps={SPEECH_TOUR} mascot="/mascots/dots/dot-lila-editor-speech-guia.webp" mascotName="el personaje lila" aura="rgba(187, 138, 255, .6)" />}
       <main className="speechConfigContent">
         <header className="speechConfigHeader">
           <div>

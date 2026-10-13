@@ -29,7 +29,7 @@ function placeGuide(rect) {
 
 // Guided tour: the section's mascot walks to each feature and explains it in a comic bubble.
 // It starts by itself the first time a user opens the section; clicking the mascot replays it.
-export default function GuideTour({ id, steps, mascot, mascotName, aura }) {
+export default function GuideTour({ id, steps, mascot, mascotName, aura, delay = 700 }) {
   const auraStyle = aura ? { "--tour-aura": aura } : undefined;
   const storageKey = `kinedrik_tour_${id}_${(getUser().email || "anon").toLowerCase()}`;
   const [active, setActive] = useState(false);
@@ -54,9 +54,9 @@ export default function GuideTour({ id, steps, mascot, mascotName, aura }) {
     let seen = false;
     try { seen = localStorage.getItem(storageKey) === "done"; } catch { /* treat as not seen */ }
     if (seen) return undefined;
-    const timer = setTimeout(() => { setIndex(0); setActive(true); }, 700);
+    const timer = setTimeout(() => { setIndex(0); setActive(true); }, delay);
     return () => clearTimeout(timer);
-  }, [storageKey]);
+  }, [storageKey, delay]);
 
   const measure = useCallback(() => {
     const el = step && visibleTarget(step.target);

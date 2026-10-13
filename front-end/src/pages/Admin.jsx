@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Mail, Shield, Edit2, Trash2, Search, UserPlus } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import GuideTour from "../components/GuideTour";
+
+const ADMIN_TOUR = [
+  { title: "¡Hola! Yo me encargo del equipo", text: "Aquí decides quién entra al sistema y qué puede hacer cada persona. Te muestro cómo." },
+  { target: ".adminActionsHeader .searchWrapper", title: "Busca a alguien", text: "Escribe el nombre o el correo y la lista se filtra al instante." },
+  { target: ".addBtn", title: "Añade a una persona nueva", text: "Registra su nombre, su correo y su rol. Con ese correo podrá entrar al sistema." },
+  { target: ".tableWrapper", title: "Tu equipo", text: "Aquí ves a cada persona con su correo y su rol: usuario, admin o superadmin. El rol define qué secciones puede ver." },
+  { target: ".actionIconBtn", title: "Editar o quitar", text: "Con estos botones cambias los datos o el rol de una persona, o la quitas del sistema." },
+  { title: "¡Listo, ya sabes gestionar el equipo!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
+
 import UserAvatar from "../components/UserAvatar";
 import "./Admin.css";
 
@@ -213,6 +224,7 @@ export default function Admin() {
   return (
     <>
       <Sidebar />
+      {!loading && <GuideTour id="admin" steps={ADMIN_TOUR} mascot="/mascots/dots/dot-verde-gestion-usuarios-guia.webp" mascotName="el personaje verde" aura="rgba(138, 188, 67, .6)" />}
       <div className="adminPage">
         <main className="adminContent">
           <div className="adminHeaderRow">

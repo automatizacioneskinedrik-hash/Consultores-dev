@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import GuideTour from "../components/GuideTour";
+
+const ADVANCED_TOUR = [
+  { title: "¡Hola! Aquí se toman las decisiones de fondo", text: "Esta sección controla cómo trabaja el sistema por dentro. Te muestro cada parte." },
+  { target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos. La de Modelo de IA solo la ve el superadmin." },
+  { target: ".acFlow", title: "El modelo que califica", text: "Es el modelo de IA que analiza todas las llamadas nuevas en este momento." },
+  { target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
+  { target: ".acHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
+  { title: "¡Listo, ya conoces la configuración!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
+
 import AiModelTab from "../components/AiModelTab";
 import { getUser } from "../utils/user";
 import "./SpeechConfig.css";
@@ -286,6 +297,7 @@ export default function AdvancedConfig() {
   return (
     <div className="speechConfigPage">
       <Sidebar />
+      <GuideTour id="advanced" steps={ADVANCED_TOUR} mascot="/mascots/dots/dot-naranja-ceo-guia.webp" mascotName="el personaje naranja" aura="rgba(255, 89, 0, .5)" delay={1500} />
       <main className="speechConfigContent">
         <header className="speechConfigHeader">
           <div>
