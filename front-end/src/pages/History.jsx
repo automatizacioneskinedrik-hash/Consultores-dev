@@ -13,7 +13,6 @@ const HISTORY_TOUR = [
   { target: ".historyTable", title: "Tus llamadas, de la más reciente a la más antigua", text: "Cada fila muestra la fecha, el cliente, la nota y cuánto duró la llamada." },
   { target: ".scoreBadge", title: "Tu nota", text: "Es la nota sobre 100 puntos según el speech comercial. El color te dice de un vistazo cómo te fue: verde desde 70, amarillo desde 40 y rojo por debajo." },
   { do: [{ hide: [".closeReport", ".reportOverlay"] }], wait: 0, target: ".viewSummaryBtn", title: "Abre tu reporte", text: "Aquí ves cómo te fue en cada fase, la frase de la llamada que lo prueba y qué decir distinto la próxima vez. Desde el reporte también puedes descargarlo en PDF." },
-  { do: [{ hide: [".closeReport", ".reportOverlay"] }], wait: 0, target: ".deleteSessionBtn", title: "Borrar una prueba", text: "Esta X solo aparece en tus llamadas de prueba y las quita del historial." },
   { do: [{ show: [".viewSummaryBtn", ".reportOverlay"] }], wait: 6000, target: ".reportHero", title: "Tu nota, de un vistazo", text: "Abrí tu llamada más reciente. Arriba ves tu foto junto a la nota, sobre 100 puntos." },
   { target: ".reportOverlay .metricCard.blue", title: "Cuánto duró", text: "La duración total de la llamada." },
   { target: ".reportOverlay .participationCard", title: "Quién habló más", text: "La barra reparte la llamada entre tú y tu cliente. Cuanto más hable el cliente, mejor." },
