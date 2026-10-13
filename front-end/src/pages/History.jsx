@@ -3,7 +3,7 @@ import "./History.css";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import { getUser } from "../utils/user";
-import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle } from "lucide-react";
+import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle, X } from "lucide-react";
 import UserAvatar from "../components/UserAvatar";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -62,7 +62,23 @@ export default function History() {
     }
   };
 
-  const filteredSessions = sessions.filter(s => 
+  // Only shown on the tester's own sessions (server sets canDelete) to clean up test uploads.
+  const handleDeleteSession = async (session) => {
+    if (!window.confirm(`¿Eliminar la sesión de ${session.cliente} (${new Date(session.date).toLocaleDateString()})? Se borran el reporte, su seguimiento de WhatsApp y el audio. No se puede deshacer.`)) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/${session.id}`, {
+        method: "DELETE",
+        headers: { "X-Admin-Email": user.email, "X-Auth-Token": user.authToken },
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar la sesión.");
+      setSessions((current) => current.filter((entry) => entry.id !== session.id));
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const filteredSessions = sessions.filter(s =>
     s.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.userName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
@@ -142,10 +158,17 @@ export default function History() {
                         </span>
                       </td>
                       <td>
-                        <button className="viewSummaryBtn" onClick={(e) => { e.stopPropagation(); handleOpenDetail(session); }}>
-                          <Eye size={14} />
-                          <span>Ver Resumen</span>
-                        </button>
+                        <div className="rowActions">
+                          <button className="viewSummaryBtn" onClick={(e) => { e.stopPropagation(); handleOpenDetail(session); }}>
+                            <Eye size={14} />
+                            <span>Ver Resumen</span>
+                          </button>
+                          {session.canDelete && (
+                            <button className="deleteSessionBtn" title="Eliminar sesión de prueba" aria-label={`Eliminar sesión de ${session.cliente}`} onClick={(e) => { e.stopPropagation(); handleDeleteSession(session); }}>
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

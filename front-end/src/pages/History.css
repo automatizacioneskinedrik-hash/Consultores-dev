@@ -296,3 +296,7 @@ body.sidebar-collapsed .historyContent {
     padding: 40px 20px;
   }
 }
+
+.rowActions { display: flex; align-items: center; gap: 8px; }
+.deleteSessionBtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #FF5900; border-radius: 50%; background: #fff; color: #FF5900; cursor: pointer; transition: background .15s, color .15s; }
+.deleteSessionBtn:hover { background: #FF5900; color: #fff; }

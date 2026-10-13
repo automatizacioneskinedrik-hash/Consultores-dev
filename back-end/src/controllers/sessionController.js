@@ -3,6 +3,12 @@ import { bucket } from "../config/storage.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 import { USER_CACHE, CACHE_TTL } from "../middleware/auth.js";
 
+// Profiles allowed to delete their own test sessions from the history (red X). Only their own sessions.
+const SESSION_CLEANUP_EMAILS = (process.env.SESSION_CLEANUP_EMAILS || "angelvera.eadic@gmail.com")
+  .split(",").map((email) => normalizeEmailValue(email)).filter(Boolean);
+const canCleanUp = (requesterEmail, sessionEmail) =>
+  SESSION_CLEANUP_EMAILS.includes(requesterEmail) && normalizeEmailValue(sessionEmail) === requesterEmail;
+
 export const getRecentSessions = async (req, res) => {
   try {
     const email = (req.query.email || "").toLowerCase().trim();
@@ -100,6 +106,7 @@ export const getAllSessions = async (req, res) => {
         duration: data.analysis?.participacion?.duracion_total || "00:00",
         score: generalScore,
         scoreFormat: data.scoring?.format === "points" ? "points" : "percent",
+        canDelete: canCleanUp(requesterEmail, data.userEmail),
         status: "procesado",
       };
     });
@@ -234,5 +241,29 @@ export const resendSessionEmail = async (req, res) => {
   } catch (err) {
     console.error("Error resending email:", err);
     return res.status(500).json({ ok: false, error: "Error resending" });
+  }
+};
+
+// Deletes one of the requester's own test sessions, with its WhatsApp follow-ups and audio file.
+export const deleteOwnSession = async (req, res) => {
+  try {
+    const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+    const ref = db.collection("meetings_analysis").doc(req.params.id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ ok: false, error: "La sesión no existe." });
+    const data = doc.data();
+    if (!canCleanUp(requesterEmail, data.userEmail)) {
+      return res.status(403).json({ ok: false, error: "Solo puedes eliminar tus propias sesiones de prueba." });
+    }
+    const followUps = await db.collection("followUps").where("sessionId", "==", doc.id).get();
+    await Promise.all(followUps.docs.map((followUp) => followUp.ref.delete()));
+    if (data.objectPath && bucket) {
+      await bucket.file(data.objectPath).delete().catch((err) => console.warn("Audio no eliminado:", err.message));
+    }
+    await ref.delete();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Error deleting session:", err);
+    return res.status(500).json({ ok: false, error: "No se pudo eliminar la sesión." });
   }
 };

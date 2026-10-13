@@ -268,13 +268,11 @@ export async function processAudioAnalysis(objectPath, userEmail) {
       await transporter.sendMail(mailOptions);
     }
 
+    // Same fields as the stored session (speech snapshot, model, audio path…), so the report shown
+    // right after the upload matches the one opened from the history, on screen and in the PDF.
     return {
       id: docRef.id,
-      userEmail,
-      transcription,
-      analysis,
-      generalScore,
-      scoring,
+      ...analysisData,
       createdAt: { _seconds: Math.floor(now.getTime() / 1000) },
     };
   } catch (err) {

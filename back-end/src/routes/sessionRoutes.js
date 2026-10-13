@@ -15,6 +15,7 @@ router.get("/by-path", sessionController.getSessionByPath);
 router.get("/audio-download", sessionController.getAudioDownloadUrl);
 router.get("/", sessionController.getAllSessions);
 router.get("/:id", sessionController.getSessionDetail);
+router.delete("/:id", sessionController.deleteOwnSession);
 router.post("/resend", sessionController.resendSessionEmail);
 
 export default router;
