@@ -690,7 +690,7 @@ export default function Upload() {
   return (
     <>
       <Sidebar />
-      <GuideTour id="upload" steps={UPLOAD_TOUR} mascot="/mascots/dots/dot-azul-escucha-guia.webp" mascotName="el personaje azul" />
+      <GuideTour id="upload" steps={UPLOAD_TOUR} mascot="/mascots/dots/dot-azul-escucha-guia.webp" mascotName="el personaje azul" aura="rgba(40, 133, 255, .5)" />
       <div className={`appShell${waOpen ? " waPanelActive" : ""}`}>
         <main className="mainContent">
           <div className="uploadBody">

@@ -29,7 +29,8 @@ function placeGuide(rect) {
 
 // Guided tour: the section's mascot walks to each feature and explains it in a comic bubble.
 // It starts by itself the first time a user opens the section; clicking the mascot replays it.
-export default function GuideTour({ id, steps, mascot, mascotName }) {
+export default function GuideTour({ id, steps, mascot, mascotName, aura }) {
+  const auraStyle = aura ? { "--tour-aura": aura } : undefined;
   const storageKey = `kinedrik_tour_${id}_${(getUser().email || "anon").toLowerCase()}`;
   const [active, setActive] = useState(false);
   const [index, setIndex] = useState(0);
@@ -94,7 +95,7 @@ export default function GuideTour({ id, steps, mascot, mascotName }) {
   const pad = 10;
 
   return <>
-    {!active && <button type="button" className="tourLauncher" onClick={start} aria-label={`Ver el recorrido de esta sección con ${mascotName}`}>
+    {!active && <button type="button" className="tourLauncher" style={auraStyle} onClick={start} aria-label={`Ver el recorrido de esta sección con ${mascotName}`}>
       <img src={mascot} alt="" />
       <span className="tourLauncherHint">¿Te explico esta sección?</span>
     </button>}
@@ -105,7 +106,7 @@ export default function GuideTour({ id, steps, mascot, mascotName }) {
         ? <div className="tourSpot" style={{ left: rect.left - pad, top: rect.top - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }} />
         : <div className="tourDim" />}
 
-      <div className={`tourGuide ${moving ? "isMoving" : ""}`} style={{ left: guide.left, top: guide.top, width: guide.width }}>
+      <div className={`tourGuide ${moving ? "isMoving" : ""}`} style={{ ...auraStyle, left: guide.left, top: guide.top, width: guide.width }}>
         <img className="tourMascot" src={mascot} alt={mascotName} />
         <div className="tourBubble" aria-live="polite">
           {step.title && <strong>{step.title}</strong>}

@@ -5,6 +5,16 @@ import ReportDetail from "../components/ReportDetail";
 import { getUser } from "../utils/user";
 import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle, X } from "lucide-react";
 import UserAvatar from "../components/UserAvatar";
+import GuideTour from "../components/GuideTour";
+
+const HISTORY_TOUR = [
+  { title: "¡Hola! Yo analizo tus resultados", text: "Aquí guardo todas tus llamadas analizadas. Te enseño a encontrarlas y a leer tu reporte." },
+  { target: ".searchWrapper", title: "Busca una llamada", text: "Escribe el nombre del cliente y la lista se filtra al instante, así no tienes que buscar fila por fila." },
+  { target: ".historyTable", title: "Tus llamadas, de la más reciente a la más antigua", text: "Cada fila muestra la fecha, el cliente, la nota y cuánto duró la llamada." },
+  { target: ".scoreBadge", title: "Tu nota", text: "Es la nota sobre 100 puntos según el speech comercial. El color te dice de un vistazo cómo te fue: verde desde 70, amarillo desde 40 y rojo por debajo." },
+  { target: ".viewSummaryBtn", title: "Abre tu reporte", text: "Aquí ves cómo te fue en cada fase, la frase de la llamada que lo prueba y qué decir distinto la próxima vez. Desde el reporte también puedes descargarlo en PDF." },
+  { title: "¡Listo, ya sabes leer tus resultados!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -87,6 +97,7 @@ export default function History() {
   return (
     <div className="historyContainer">
       <Sidebar />
+      {!loading && !selectedReportId && <GuideTour id="history" steps={HISTORY_TOUR} mascot="/mascots/dots/dot-amarillo-analitico-guia.webp" mascotName="el personaje amarillo" aura="rgba(251, 180, 42, .55)" />}
       <div className="historyContent">
         <header className="historyHeader">
           <div className="headerText">

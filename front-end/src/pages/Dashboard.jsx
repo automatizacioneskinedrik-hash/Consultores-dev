@@ -25,8 +25,18 @@ import {
 } from "recharts";
 import dayjs from "dayjs";
 import Sidebar from "../components/Sidebar";
+import GuideTour from "../components/GuideTour";
 import { getUser } from "../utils/user";
 import "./Dashboard.css";
+
+const DASHBOARD_TOUR = [
+  { title: "¡Hola! Aquí miramos al equipo completo", text: "En este panel ves cómo le va a todo el equipo comercial. Te muestro dónde está cada cosa." },
+  { target: ".dashboardTopFilters", title: "Elige qué periodo y quién", text: "Filtra por mes, semana o día, y por consultor si quieres ver a una sola persona. Todo el panel se actualiza con tu elección." },
+  { target: ".dashboardKpiRow5", title: "Las cifras clave", text: "Estos indicadores resumen el periodo elegido de un vistazo, antes de entrar al detalle." },
+  { target: ".dashboardPanel", title: "Cómo evoluciona en el tiempo", text: "Aquí ves cómo cambian los resultados a lo largo del periodo. Usa las pestañas de arriba a la derecha para cambiar de indicador." },
+  { target: ".dashboardTalkCard", title: "Quién habla más", text: "Muestra qué parte de la llamada habla el consultor y qué parte el cliente. Lo ideal es que el cliente hable bastante." },
+  { title: "¡Listo, ya conoces el panel!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -930,6 +940,7 @@ export default function Dashboard() {
   return (
     <div className="dashboardPage">
       <Sidebar />
+      <GuideTour id="dashboard" steps={DASHBOARD_TOUR} mascot="/mascots/dots/dot-amarillo-analitico-guia.webp" mascotName="el personaje amarillo" aura="rgba(251, 180, 42, .55)" />
       <main className="dashboardContent">
         <ConfigProvider
           theme={{

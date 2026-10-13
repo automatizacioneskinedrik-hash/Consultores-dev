@@ -4,7 +4,15 @@ import { getUser, clearUser } from "../utils/user";
 import { BookOpenText, ChartNoAxesCombined, CloudUpload, History, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
-const SIDEBAR_MASCOT = "/mascots/dot-listening.png";
+// Each section has its own mascot peeking over the sidebar.
+const SECTION_MASCOTS = {
+  "/upload": "/mascots/dots/dot-azul-asomado.webp",
+  "/history": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/dashboard": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/admin": "/mascots/dots/dot-verde-asomado.webp",
+  "/speech-comercial": "/mascots/dots/dot-lila-asomado.webp",
+  "/configuracion-avanzada": "/mascots/dots/dot-naranja-asomado.webp",
+};
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -126,7 +134,7 @@ export default function Sidebar() {
               <Menu size={23} strokeWidth={2} aria-hidden="true" />
             ) : (
               <span className="sidebarMascotViewport" aria-hidden="true">
-                <img src={SIDEBAR_MASCOT} alt="" className="sidebarMascot" />
+                <img key={location.pathname} src={SECTION_MASCOTS[location.pathname] || SECTION_MASCOTS["/upload"]} alt="" className="sidebarMascot" />
               </span>
             )}
           </button>
@@ -143,6 +151,16 @@ export default function Sidebar() {
             <span className="sidebarItemLabel">Historial</span>
           </button>
 
+          {isAuthorizedSuperAdmin && (
+            <button
+              className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
+              onClick={handleDashboardClick}
+              title="Panel"
+            >
+              <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel" translate="no">Panel</span>
+            </button>
+          )}
 
           {isAuthorizedAdmin && (
             <button
@@ -152,17 +170,6 @@ export default function Sidebar() {
             >
               <Users className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
               <span className="sidebarItemLabel">Gestionar Usuarios</span>
-            </button>
-          )}
-
-          {isAuthorizedSuperAdmin && (
-            <button
-              className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
-              onClick={handleDashboardClick}
-              title="Panel"
-            >
-              <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
-              <span className="sidebarItemLabel" translate="no">Panel</span>
             </button>
           )}
 
