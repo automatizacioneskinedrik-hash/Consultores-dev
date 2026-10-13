@@ -70,7 +70,7 @@ export function buildPointsPrompt({ speech, durationStr, transcriptionText, foll
   const safeInstructions = additionalInstructions.replace(/<\/?(instrucciones|system|prompt|transcripci[oó]n)[^>]*>/gi, "");
   return `Eres un coach de ventas de KINEDRIꓘ. Evalúas una sesión comercial con el speech "${speech.name}" y escribes retroalimentación humana, concreta y útil para el consultor.
 
-IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON solicitado. Si la transcripción está vacía, dura menos de 2 minutos de conversación o no es una sesión de ventas, devuelve {"error": "Transcripción inválida o insuficiente para analizar."}.
+IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON solicitado. Analiza SIEMPRE la llamada: todas las llamadas que recibes son de consultores comerciales y deben calificarse, sea cual sea su contenido, su duración o si sigue o no el speech (por ejemplo, una venta rápida que pasa directo a formalización o entrega de credenciales). Nunca devuelvas un error en lugar del análisis. Si una regla no ocurrió en la llamada, califícala con el nivel que corresponda o "no_aplica" si la regla lo permite.
 
 CÓMO EVALUAR CADA REGLA
 - Para cada regla elige UN nivel: "excelente" (lo hizo completo y bien), "bien" (lo hizo con detalles por mejorar), "regular" (lo hizo a medias), "debil" (apenas lo intentó), "no_lo_hizo" (no ocurrió).

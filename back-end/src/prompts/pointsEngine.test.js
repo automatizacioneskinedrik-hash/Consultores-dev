@@ -64,6 +64,9 @@ test("las muletillas se califican como indicador y el prompt explica que los con
   assert.match(prompt, /"en el momento" 2 veces/);
   assert.match(prompt, /"el", "es", "de", "que"/);
   assert.doesNotMatch(prompt, /TODA LA LLAMADA/);
+  // Every call is graded: the AI is never allowed to reject a transcription.
+  assert.doesNotMatch(prompt, /inválida o insuficiente|devuelve \{"error"/);
+  assert.match(prompt, /Analiza SIEMPRE la llamada/);
   const missing = scorePointsAnalysis({ reglas: [] }, speech, { consultantPct: 50, muletillas: { total: 0, perMinute: 0, byWord: [] } });
   assert.equal(missing.items.find((item) => item.ruleId === "muletillas").points, 3);
 });
