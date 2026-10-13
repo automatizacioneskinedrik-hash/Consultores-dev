@@ -528,14 +528,11 @@ body.sidebar-collapsed .advancedPage {
 .acModel { display: grid; grid-template-columns: minmax(0, 1fr) 240px auto; gap: 16px; align-items: center; padding: 14px 16px; border-top: 1px solid #e9edf3; }
 .acModel:first-child { border-top: 0; }
 .acModel.isActive { background: #fbfcfe; }
-.acModelName code, .acCheck code { font: 14px/1.4 ui-monospace, Consolas, monospace; color: #040025; font-weight: 600; }
+.acModelName span { font-size: 15px; font-weight: 600; color: #040025; }
 .acCost { font-size: 13px; color: #65728a; }
 .acActions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 .acConfirm { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: rgba(251, 180, 42, .16); font-size: 13px; color: #040025; }
 .acChooser { display: grid; gap: 10px; padding: 12px; border-radius: 10px; background: #f6f8fb; }
-.acChooserList { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 14px; }
-.acCheck { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.acCheck input { accent-color: #0040A4; }
 .acRowEnd { display: flex; justify-content: flex-end; }
 .acRowBetween { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .acHistory > div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid #dce3ed; font-size: 13px; }
@@ -560,9 +557,28 @@ body.sidebar-collapsed .advancedPage {
   .acActions { justify-content: flex-start; }
   .acTwoCol { grid-template-columns: 1fr; }
 }
-.acChooserBody { display: grid; gap: 14px; }
-.acSearch { width: 100%; max-width: 360px; padding: 8px 10px; border: 1px solid #dce3ed; border-radius: 8px; color: #040025; background: #fff; font: 14px/1.4 Roboto, Helvetica, Arial, sans-serif; }
+.acChooserBody { display: grid; gap: 20px; }
+.acSearch { width: 100%; max-width: 360px; padding: 9px 12px; border: 1px solid #dce3ed; border-radius: 10px; color: #040025; background: #fff; font: 14px/1.4 Roboto, Helvetica, Arial, sans-serif; }
 .acSearch:focus { outline: none; border-color: #0040A4; box-shadow: 0 0 0 2px #eaf2ff; }
-.acFamily { display: grid; gap: 6px; }
-.acFamily h3 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #65728a; }
 .acChooserBody .acLink { justify-self: start; }
+
+/* Selector de modelos: una tarjeta por tipo, clásicos debajo y anteriores plegados */
+.acTypeGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.acTypeCard { display: grid; align-content: start; gap: 10px; padding: 14px; border: 1px solid #dce3ed; border-radius: 14px; background: #fff; }
+.acTypeHead { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.acTypeHead h3 { margin: 0; font-size: 16px; font-weight: 700; color: #040025; }
+.acTypeHead span { font-size: 12px; color: #65728a; }
+.acTypeList { display: grid; gap: 6px; }
+.acGroup { display: grid; gap: 8px; }
+.acGroupTitle { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #65728a; }
+.acOptionGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.acOlder { display: grid; gap: 16px; padding-top: 4px; border-top: 1px solid #e3e8f0; }
+.acOlder > .acLink { margin-top: 12px; }
+.acOption { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #e3e8f0; border-radius: 10px; background: #fff; cursor: pointer; transition: border-color .15s ease, background .15s ease; }
+.acOption:hover { border-color: #b9c8e0; }
+.acOption.isChecked { border-color: #0040A4; background: #eaf2ff; }
+.acOption.isActive { cursor: default; }
+.acOption input { margin: 0; width: 16px; height: 16px; accent-color: #0040A4; flex-shrink: 0; }
+.acOptionName { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; color: #040025; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acOption.isChecked .acOptionName { font-weight: 700; }
+.acOption .acPill { margin-left: 0; }
