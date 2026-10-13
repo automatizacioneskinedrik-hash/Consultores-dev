@@ -3,7 +3,18 @@ import { Eye } from "lucide-react";
 import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
+import GuideTour from "../components/GuideTour";
 import "../App.css";
+
+const UPLOAD_TOUR = [
+  { title: "¡Hola! Yo escucho tus llamadas", text: "Te muestro en menos de un minuto cómo funciona esta pantalla. Puedes saltar el recorrido cuando quieras." },
+  { target: ".dropZone", title: "Aquí subes tu llamada", text: "Arrastra la grabación hasta este recuadro o haz clic en él para buscarla en tu computador." },
+  { target: ".formatTags", title: "Formatos que entiendo", text: "Acepto audios en MP3, WAV, M4A u OGG. Si tu archivo tiene otro formato, conviértelo primero a uno de estos." },
+  { target: ".dropZone", title: "Luego yo hago el resto", text: "Transcribo la llamada, la califico con el speech comercial y te muestro tu reporte: la nota de 100 y qué decir distinto la próxima vez." },
+  { target: '.sidebarItem[title="Historial de reportes"]', title: "Tus reportes quedan guardados", text: "En Historial encuentras todas tus llamadas analizadas, por si quieres volver a verlas o descargar el PDF." },
+  { target: ".waFloatBtn", title: "Seguimientos por WhatsApp", text: "Después de cada llamada te sugiero un mensaje de seguimiento para tu cliente. Lo encuentras aquí." },
+  { title: "¡Listo, ya sabes lo básico!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+];
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -679,6 +690,7 @@ export default function Upload() {
   return (
     <>
       <Sidebar />
+      <GuideTour id="upload" steps={UPLOAD_TOUR} mascot="/mascots/dots/dot-azul-escucha-guia.webp" mascotName="el personaje azul" />
       <div className={`appShell${waOpen ? " waPanelActive" : ""}`}>
         <main className="mainContent">
           <div className="uploadBody">
