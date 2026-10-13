@@ -2,13 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 
+const ADVANCED_TOUR_CLEANUP = [{ click: ".speechTabs .speechTab:first-child" }];
 const ADVANCED_TOUR = [
   { title: "¡Hola! Aquí se toman las decisiones de fondo", text: "Esta sección controla cómo trabaja el sistema por dentro. Te muestro cada parte." },
-  { target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos. La de Modelo de IA solo la ve el superadmin." },
+  { do: [{ click: ".speechTabs .speechTab:first-child" }], target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos. La de Modelo de IA solo la ve el superadmin." },
   { target: ".acFlow", title: "El modelo que califica", text: "Es el modelo de IA que analiza todas las llamadas nuevas en este momento." },
-  { target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
+  { do: [{ show: [".acCardHead .acLink", ".acChooser"] }], target: ".acChooser", title: "Elige qué modelos ver", text: "Aquí aparecen los modelos de tu cuenta de OpenAI, agrupados por tipo. Marca los que quieras tener a mano y guarda la selección." },
+  { do: [{ hide: [".acCardHead .acLink", ".acChooser"] }], target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
+  { target: ".acModel .speechPrimaryButton", title: "Activar", text: "Al pulsar Activar te pido confirmación antes de cambiar el modelo, para que no pase por error." },
   { target: ".acHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
-  { title: "¡Listo, ya conoces la configuración!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+  { do: [{ click: "#advanced-tab-whatsapp" }], target: ".acTextarea", title: "El mensaje de WhatsApp", text: "Aquí escribes la instrucción que sigue la IA para redactar el mensaje de seguimiento de cada llamada. Guárdala cuando la cambies." },
+  { target: ".acVersions", title: "Versiones del mensaje", text: "Cada instrucción guardada queda aquí. Puedes volver a una anterior o borrar las que ya no sirvan." },
+  { do: [{ click: "#advanced-tab-email" }], target: ".acTwoCol", title: "Copias por correo", text: "Aquí decides quién recibe copia de los reportes que se envían por correo." },
+  { do: [{ click: ".speechTabs .speechTab:first-child" }], title: "¡Listo, ya conoces la configuración!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
 
 import AiModelTab from "../components/AiModelTab";
@@ -297,7 +303,7 @@ export default function AdvancedConfig() {
   return (
     <div className="speechConfigPage">
       <Sidebar />
-      <GuideTour id="advanced" steps={ADVANCED_TOUR} mascot="/mascots/dots/dot-naranja-ceo-guia.webp" mascotName="el personaje naranja" aura="rgba(255, 89, 0, .5)" delay={1500} />
+      <GuideTour id="advanced" steps={ADVANCED_TOUR} cleanup={ADVANCED_TOUR_CLEANUP} mascot="/mascots/dots/dot-naranja-ceo-guia.webp" mascotName="el personaje naranja" aura="rgba(255, 89, 0, .5)" delay={1500} />
       <main className="speechConfigContent">
         <header className="speechConfigHeader">
           <div>

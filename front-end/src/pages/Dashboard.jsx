@@ -32,9 +32,15 @@ import "./Dashboard.css";
 const DASHBOARD_TOUR = [
   { title: "¡Hola! Aquí miramos al equipo completo", text: "En este panel ves cómo le va a todo el equipo comercial. Te muestro dónde está cada cosa." },
   { target: ".dashboardTopFilters", title: "Elige qué periodo y quién", text: "Filtra por mes, semana o día, y por consultor si quieres ver a una sola persona. Todo el panel se actualiza con tu elección." },
+  { target: ".dashboardClearBtn", title: "Vuelve a ver todo", text: "Con Limpiar quitas los filtros y regresas al histórico completo del equipo." },
   { target: ".dashboardKpiRow5", title: "Las cifras clave", text: "Estos indicadores resumen el periodo elegido de un vistazo, antes de entrar al detalle." },
-  { target: ".dashboardPanel", title: "Cómo evoluciona en el tiempo", text: "Aquí ves cómo cambian los resultados a lo largo del periodo. Usa las pestañas de arriba a la derecha para cambiar de indicador." },
-  { target: ".dashboardTalkCard", title: "Quién habla más", text: "Muestra qué parte de la llamada habla el consultor y qué parte el cliente. Lo ideal es que el cliente hable bastante." },
+  { do: [{ click: ".dashboardChartTab:nth-child(1)" }], target: '[data-tour="temporal"]', title: "Cómo evoluciona en el tiempo", text: "Aquí ves cómo cambian los resultados a lo largo del periodo. Usa las pestañas de arriba a la derecha para cambiar de indicador." },
+  { do: [{ click: ".dashboardChartTab:nth-child(2)" }], target: '[data-tour="temporal"]', title: "Tendencia de cierre", text: "Cambié a esta pestaña: así ves si el equipo cierra más o menos con el paso del tiempo." },
+  { do: [{ click: ".dashboardChartTab:nth-child(3)" }], target: '[data-tour="temporal"]', title: "Habla del cliente", text: "Y aquí ves si los clientes hablan más o menos en las llamadas a lo largo del periodo." },
+  { do: [{ click: ".dashboardChartTab:nth-child(1)" }], target: ".dashboardTalkCard", title: "Quién habla más", text: "Muestra qué parte de la llamada habla el consultor y qué parte el cliente. Lo ideal es que el cliente hable bastante." },
+  { target: '[data-tour="compromiso"]', title: "Cómo terminan las llamadas", text: "Muestra qué tipo de compromiso se logró al cierre de las llamadas." },
+  { target: '[data-tour="fases"]', title: "Hasta qué fase se llega", text: "Cuántas llamadas avanzan por cada fase del guion. Arriba puedes elegir la versión del speech." },
+  { target: '[data-tour="objeciones"]', title: "Lo que más frena a los clientes", text: "Las objeciones que más se repiten, para preparar mejores respuestas." },
   { title: "¡Listo, ya conoces el panel!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
 
@@ -459,6 +465,7 @@ function DashboardMultiLineCard({ tabs, data, bucket, loading }) {
     <Card
       className="dashboardPanel"
       title="Análisis temporal"
+      data-tour="temporal"
       extra={
         <div className="dashboardChartTabs">
           {tabs.map((t) => (
@@ -604,7 +611,7 @@ function DashboardCompromisoCard({ data, loading }) {
   }, [data]);
 
   return (
-    <Card className="dashboardPanel dashboardTalkCard" title="Tipo de compromiso de cierre">
+    <Card className="dashboardPanel dashboardTalkCard" title="Tipo de compromiso de cierre" data-tour="compromiso">
       <div className="dashboardTalkWrap">
         {loading ? (
           <div className="dashboardChartState"><Spin /></div>
@@ -637,7 +644,7 @@ function DashboardCompromisoCard({ data, loading }) {
 
 function DashboardFasesCard({ data, loading, speech, versions, selectedVersion, onSelectVersion }) {
   return (
-    <Card className="dashboardPanel" title="Avance por fase del guion">
+    <Card className="dashboardPanel" title="Avance por fase del guion" data-tour="fases">
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10, fontSize: 12, color: "#52627b" }}>
         <span>Versión:</span>
         <Select size="small" value={selectedVersion} onChange={onSelectVersion} style={{ minWidth: 190 }} options={[{ value: "active", label: "Versión activa" }, ...(versions || []).map((version) => ({ value: version.id, label: version.name }))]} />
@@ -684,7 +691,7 @@ function DashboardFasesCard({ data, loading, speech, versions, selectedVersion, 
 
 function DashboardObjecionesCard({ data, loading }) {
   return (
-    <Card className="dashboardPanel" title="Objeciones más frecuentes">
+    <Card className="dashboardPanel" title="Objeciones más frecuentes" data-tour="objeciones">
       <div className="dashboardChartWrap">
         {loading ? (
           <div className="dashboardChartState"><Spin /></div>

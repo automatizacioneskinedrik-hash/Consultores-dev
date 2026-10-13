@@ -3,15 +3,22 @@ import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 
+const SPEECH_TOUR_CLEANUP = [{ click: "#speech-tab-version" }];
 const SPEECH_TOUR = [
   { title: "¡Hola! Yo cuido el speech comercial", text: "Aquí se define cómo se califica cada llamada. Te muestro sus partes, de arriba a abajo." },
   { target: ".speechTabs", title: "Versión e Historial", text: "En Versión ves y editas el speech. En Historial están todas las versiones publicadas, por si quieres volver a una anterior." },
   { target: ".speechFlow", title: "Primero lees, luego editas", text: "Para cambiar algo, crea una nueva versión: se abre un borrador que se guarda solo. Los consultores no notan nada hasta que lo publiques." },
   { target: ".speechSummary", title: "El reparto de los 100 puntos", text: "Esta barra muestra cuánto vale cada fase. Para poder publicar, todo debe sumar exactamente 100." },
   { target: ".speechPhaseHead", title: "Fases y reglas", text: "Cada fase agrupa reglas con su valor en puntos. Haz clic en una fase para ver su objetivo y sus reglas." },
+  { do: [{ show: [".speechPhaseHead", ".speechPhaseCard.open .speechPhaseBody"] }], target: ".speechPhaseCard.open .speechObjective", title: "El objetivo de la fase", text: "Cada fase explica qué debe lograr el consultor en esa parte de la llamada." },
+  { target: ".speechPhaseCard.open .speechRules", title: "Sus reglas", text: "Cada regla dice qué se espera y cuántos puntos vale. Cuando editas, aparecen el lápiz para cambiarla, la papelera para quitarla y el botón para añadir otra." },
+  { title: "Ayuda para la IA", text: "Al editar una regla puedes escribirle a la IA qué cuenta y qué no. Así califica igual en todas las llamadas." },
   { target: ".speechRatioHeadRow", title: "Ratio de habla", text: "Aquí defines hasta qué porcentaje puede hablar el consultor antes de perder puntos. Lo mide el sistema, no la IA." },
+  { do: [{ show: [".speechRatioHeadRow .speechPhaseHead", ".speechRatio"] }], target: ".speechRatio", title: "Los cuatro límites", text: "Estas marcas dividen el ratio en cinco zonas, de excelente a no lo hizo. Al editar, las mueves para ajustar cada zona." },
   { target: ".speechPhaseCard:last-of-type .speechRatioHeadRow", title: "Muletillas", text: "Aquí están las muletillas que cuenta el sistema y las palabras que ignora porque son conectores normales, como «entonces» o «pues»." },
-  { title: "¡Listo, ya conoces el speech!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
+  { do: [{ show: [".speechPhaseCard:last-of-type .speechPhaseHead", ".speechMuletillasGrid"] }], target: ".speechMuletillasGrid", title: "Las dos listas", text: "A un lado, las que cuentan como muletilla; al otro, las que no cuentan. Al editar puedes añadir o quitar palabras." },
+  { do: [{ click: "#speech-tab-history" }], target: ".speechVersions", title: "Todas las versiones", text: "Aquí queda cada versión publicada con su fecha. Si algo no funcionó, puedes volver a una anterior con un clic." },
+  { do: [{ click: "#speech-tab-version" }], title: "¡Listo, ya conoces el speech!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
 
 import { getUser } from "../utils/user";
@@ -379,7 +386,7 @@ export default function SpeechConfig() {
   return (
     <div className="speechConfigPage">
       <Sidebar />
-      {!loading && <GuideTour id="speech" steps={SPEECH_TOUR} mascot="/mascots/dots/dot-lila-editor-speech-guia.webp" mascotName="el personaje lila" aura="rgba(187, 138, 255, .6)" />}
+      {!loading && <GuideTour id="speech" steps={SPEECH_TOUR} cleanup={SPEECH_TOUR_CLEANUP} mascot="/mascots/dots/dot-lila-editor-speech-guia.webp" mascotName="el personaje lila" aura="rgba(187, 138, 255, .6)" />}
       <main className="speechConfigContent">
         <header className="speechConfigHeader">
           <div>

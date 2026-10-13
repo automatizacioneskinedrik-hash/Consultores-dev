@@ -7,10 +7,14 @@ const ADMIN_TOUR = [
   { title: "¡Hola! Yo me encargo del equipo", text: "Aquí decides quién entra al sistema y qué puede hacer cada persona. Te muestro cómo." },
   { target: ".adminActionsHeader .searchWrapper", title: "Busca a alguien", text: "Escribe el nombre o el correo y la lista se filtra al instante." },
   { target: ".addBtn", title: "Añade a una persona nueva", text: "Registra su nombre, su correo y su rol. Con ese correo podrá entrar al sistema." },
-  { target: ".tableWrapper", title: "Tu equipo", text: "Aquí ves a cada persona con su correo y su rol: usuario, admin o superadmin. El rol define qué secciones puede ver." },
+  { do: [{ show: [".addBtn", ".modalOverlay .modal"] }], target: ".modalOverlay .modal", title: "El formulario", text: "Aquí escribes el nombre y el correo de la persona y eliges su rol: usuario, admin o superadmin." },
+  { target: ".modalOverlay .primaryBtn", title: "Guárdalo", text: "Cuando todo esté bien, con este botón la registras. Hasta entonces no se guarda nada." },
+  { do: [{ hide: [".modalOverlay .closeBtn", ".modalOverlay .modal"] }], target: ".tableWrapper", title: "Tu equipo", text: "Aquí ves a cada persona con su correo y su rol: usuario, admin o superadmin. El rol define qué secciones puede ver." },
   { target: ".actionIconBtn", title: "Editar o quitar", text: "Con estos botones cambias los datos o el rol de una persona, o la quitas del sistema." },
+  { target: ".pagination", title: "Más personas", text: "Si el equipo es grande, la lista se reparte en páginas. Muévete entre ellas con estos botones." },
   { title: "¡Listo, ya sabes gestionar el equipo!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
+const ADMIN_TOUR_CLEANUP = [{ hide: [".modalOverlay .closeBtn", ".modalOverlay .modal"] }];
 
 import UserAvatar from "../components/UserAvatar";
 import "./Admin.css";
@@ -224,7 +228,7 @@ export default function Admin() {
   return (
     <>
       <Sidebar />
-      {!loading && <GuideTour id="admin" steps={ADMIN_TOUR} mascot="/mascots/dots/dot-verde-gestion-usuarios-guia.webp" mascotName="el personaje verde" aura="rgba(138, 188, 67, .6)" />}
+      {!loading && <GuideTour id="admin" steps={ADMIN_TOUR} cleanup={ADMIN_TOUR_CLEANUP} mascot="/mascots/dots/dot-verde-gestion-usuarios-guia.webp" mascotName="el personaje verde" aura="rgba(138, 188, 67, .6)" />}
       <div className="adminPage">
         <main className="adminContent">
           <div className="adminHeaderRow">

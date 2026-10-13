@@ -11,10 +11,19 @@ const UPLOAD_TOUR = [
   { target: ".dropZone", title: "Aquí subes tu llamada", text: "Arrastra la grabación hasta este recuadro o haz clic en él para buscarla en tu computador." },
   { target: ".formatTags", title: "Formatos que entiendo", text: "Acepto audios en MP3, WAV, M4A u OGG. Si tu archivo tiene otro formato, conviértelo primero a uno de estos." },
   { target: ".dropZone", title: "Luego yo hago el resto", text: "Transcribo la llamada, la califico con el speech comercial y te muestro tu reporte: la nota de 100 y qué decir distinto la próxima vez." },
+  { target: ".recentSessionsContainer", title: "Tus llamadas de hoy", text: "Las llamadas que subes hoy aparecen aquí. Con Ver resumen abres su reporte sin salir de esta pantalla." },
   { target: '.sidebarItem[title="Historial de reportes"]', title: "Tus reportes quedan guardados", text: "En Historial encuentras todas tus llamadas analizadas, por si quieres volver a verlas o descargar el PDF." },
   { target: ".waFloatBtn", title: "Seguimientos por WhatsApp", text: "Después de cada llamada te sugiero un mensaje de seguimiento para tu cliente. Lo encuentras aquí." },
+  { do: [{ show: [".waFloatBtn", ".waPanel:not(.waPanelHidden)"] }], target: ".waPanel", title: "Tus mensajes pendientes", text: "Aquí se juntan los mensajes sugeridos. Cada tarjeta es un cliente y te recuerda enviarlo en las próximas 24 horas." },
+  { target: ".waCardMsg", title: "Revisa el mensaje", text: "Puedes leer el mensaje sugerido y cambiar lo que quieras antes de enviarlo." },
+  { target: ".waCardPhone", title: "El número del cliente", text: "Elige el país y escribe su número de WhatsApp. Sin número, el botón de enviar no se activa." },
+  { target: ".waCardBtn", title: "Envíalo con un clic", text: "Se abre WhatsApp con el mensaje ya escrito, listo para que lo mandes." },
+  { target: ".waCardDismiss", title: "¿No lo necesitas?", text: "Con la X descartas el mensaje y desaparece de tu lista." },
+  { do: [{ hide: [".waFloatBtn", ".waPanel:not(.waPanelHidden)"] }], target: ".accountAvatarButton", title: "Tu cuenta", text: "Aquí está tu foto. Haz clic en ella cuando quieras cerrar sesión." },
+  { target: ".sidebarBrandToggle", title: "Más espacio en pantalla", text: "Haz clic aquí para plegar o desplegar el menú lateral." },
   { title: "¡Listo, ya sabes lo básico!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
+const UPLOAD_TOUR_CLEANUP = [{ hide: [".waFloatBtn", ".waPanel:not(.waPanelHidden)"] }];
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -690,7 +699,7 @@ export default function Upload() {
   return (
     <>
       <Sidebar />
-      <GuideTour id="upload" steps={UPLOAD_TOUR} mascot="/mascots/dots/dot-azul-escucha-guia.webp" mascotName="el personaje azul" aura="rgba(40, 133, 255, .5)" />
+      <GuideTour id="upload" steps={UPLOAD_TOUR} cleanup={UPLOAD_TOUR_CLEANUP}mascot="/mascots/dots/dot-azul-escucha-guia.webp" mascotName="el personaje azul" aura="rgba(40, 133, 255, .5)" />
       <div className={`appShell${waOpen ? " waPanelActive" : ""}`}>
         <main className="mainContent">
           <div className="uploadBody">
