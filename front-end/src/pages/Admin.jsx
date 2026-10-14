@@ -17,6 +17,16 @@ const ADMIN_TOUR = [
 const ADMIN_TOUR_CLEANUP = [{ hide: [".modalOverlay .closeBtn", ".modalOverlay .modal"] }];
 
 import UserAvatar from "../components/UserAvatar";
+import { CARGOS, canManage, cargoOf } from "../utils/roles";
+
+const CARGO_ORDER = CARGOS.map((option) => option.id);
+
+const roleDescription = (id) => {
+  if (id === "ingeniero") return "Acceso total al sistema.";
+  return cargoOf({ cargo: id }).manages
+    ? "Ve todas las llamadas y métricas, y gestiona usuarios, speech comercial y configuración."
+    : "Ve solo sus propias llamadas y métricas.";
+};
 import "./Admin.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
@@ -30,11 +40,12 @@ export default function Admin() {
   const [editingId, setEditingId] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("user");
+  const [cargo, setCargo] = useState("kadvisor");
   const [formError, setFormError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const itemsPerPage = 8;
+  const [changes, setChanges] = useState([]);
 
   const currentUser = useMemo(() => {
     try {
@@ -43,6 +54,8 @@ export default function Admin() {
       return {};
     }
   }, []);
+
+  const isEngineer = cargoOf(currentUser).id === "ingeniero";
 
   const fetchUsers = async () => {
     try {
@@ -69,10 +82,24 @@ export default function Admin() {
     }
   };
 
+  // Every change made in the app, with the profile that made it.
+  const fetchChanges = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/admin/audit-log`, {
+        headers: { "X-Admin-Email": currentUser.email || "", "X-Auth-Token": currentUser.authToken || "" },
+      });
+      const data = await res.json();
+      if (data.ok) setChanges(data.changes);
+    } catch (error) {
+      console.debug("Historial no disponible:", error.message);
+    }
+  };
+
   useEffect(() => {
-    const isAuthorized = currentUser?.role === "admin" || currentUser?.role === "superadmin" || currentUser?.email === "adminkinedrik@eadic.com";
+    const isAuthorized = canManage(currentUser);
     if (isAuthorized) {
       fetchUsers();
+      fetchChanges();
     } else {
       setLoading(false);
     }
@@ -80,7 +107,6 @@ export default function Admin() {
 
   const filteredUsers = useMemo(() => {
     const q = queryStr.trim().toLowerCase();
-    const roleOrder = { "user": 1, "admin": 2, "superadmin": 3 };
     
     let list = q ? users.filter(
       (u) =>
@@ -88,8 +114,8 @@ export default function Admin() {
     ) : [...users];
 
     return list.sort((a, b) => {
-      const orderA = roleOrder[a.role || "user"] || 1;
-      const orderB = roleOrder[b.role || "user"] || 1;
+      const orderA = CARGO_ORDER.indexOf(cargoOf(a).id);
+      const orderB = CARGO_ORDER.indexOf(cargoOf(b).id);
       if (orderA !== orderB) return orderA - orderB;
       return (a.name || "").localeCompare(b.name || "");
     });
@@ -104,7 +130,7 @@ export default function Admin() {
     setEditingId(null);
     setName("");
     setEmail("");
-    setRole("user");
+    setCargo("kadvisor");
     setFormError("");
     setIsModalOpen(true);
   };
@@ -114,7 +140,7 @@ export default function Admin() {
     setEditingId(u.id);
     setName(u.name);
     setEmail(u.email);
-    setRole(u.role || "user");
+    setCargo(cargoOf(u).id);
     setFormError("");
     setIsModalOpen(true);
   };
@@ -166,12 +192,13 @@ export default function Admin() {
           "X-Admin-Email": currentUser.email || "",
           "X-Auth-Token": currentUser.authToken || ""
         },
-        body: JSON.stringify({ name: cleanName, email: cleanEmail, role }),
+        body: JSON.stringify({ name: cleanName, email: cleanEmail, cargo }),
       });
 
       const data = await res.json();
       if (data.ok) {
         await fetchUsers();
+        fetchChanges();
         closeModal();
       } else {
         setFormError(data.error || "Error al guardar");
@@ -199,6 +226,7 @@ export default function Admin() {
       const data = await res.json();
       if (data.ok) {
         await fetchUsers();
+        fetchChanges();
       } else {
         alert(data.error || "Error al eliminar");
       }
@@ -234,7 +262,7 @@ export default function Admin() {
           <div className="adminHeaderRow">
             <div className="adminTitleSection">
               <h1 className="pageTitle">Gestión de <span className="titleAccent">Usuarios</span></h1>
-              <p>Administra el acceso y roles de tu equipo</p>
+              <p>Administra el acceso y los roles de tu equipo</p>
             </div>
 
             <div className="adminActionsHeader">
@@ -287,7 +315,7 @@ export default function Admin() {
                         <div className="userRoleCol">
                           <div className={`roleBadge ${u.role || 'user'}`}>
                             <Shield size={12} className="cellIcon" />
-                            <span>{u.role === 'admin' ? 'ADMIN' : (u.role === 'superadmin' ? 'SUPERADMIN' : 'USUARIO')}</span>
+                            <span>{cargoOf(u).label}</span>
                           </div>
                         </div>
 
@@ -299,8 +327,8 @@ export default function Admin() {
                           >
                             <Edit2 size={16} />
                           </button>
-                          {/* Restricted Deletion: Admin cannot delete other Admins OR Super Admins */}
-                          {!(currentUser.role === 'admin' && (u.role === 'admin' || u.role === 'superadmin')) && (
+                          {/* Only an Ingeniero can remove another Ingeniero */}
+                          {(cargoOf(u).id !== "ingeniero" || isEngineer) && (
                             <button
                               className="actionIconBtn delete"
                               title="Eliminar"
@@ -360,7 +388,19 @@ export default function Admin() {
             )}
           </div>
 
-
+          <section className="auditCard" aria-labelledby="auditTitle">
+            <h2 id="auditTitle">Historial de cambios</h2>
+            <p>Cada cambio en usuarios, speech comercial y configuración, con quién lo hizo y cuándo.</p>
+            {changes.length === 0
+              ? <div className="auditEmpty">Todavía no hay cambios registrados.</div>
+              : <ul className="auditList">
+                  {changes.map((change) => <li key={change.id}>
+                    <span className="auditWhen">{change.changedAt ? new Date(change.changedAt).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
+                    <span className="auditWhat">{change.summary}</span>
+                    <span className="auditWho">{change.changedByName || change.changedBy}</span>
+                  </li>)}
+                </ul>}
+          </section>
         </main>
 
         {/* Loading overlay removed per user request */}
@@ -412,55 +452,16 @@ export default function Admin() {
                   />
                 </label>
                 <label className="field">
-                  <span className="labelText">Rol del usuario</span>
-                  <div className="roleSelector">
-                    <label className={`roleOption ${role === 'user' ? 'active' : ''}`}>
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="user" 
-                        checked={role === 'user'} 
-                        onChange={(e) => setRole(e.target.value)} 
-                        className="roleRadio"
-                      />
-                      <div className="roleInfo">
-                        <span className="roleText">Usuario normal</span>
-                        <span className="roleDescription">Acceso a carga y análisis básico</span>
-                      </div>
-                    </label>
-
-                    <label className={`roleOption ${role === 'admin' ? 'active' : ''}`}>
-                      <input 
-                        type="radio" 
-                        name="role" 
-                        value="admin" 
-                        checked={role === 'admin'} 
-                        onChange={(e) => setRole(e.target.value)}
-                        className="roleRadio"
-                      />
-                      <div className="roleInfo">
-                        <span className="roleText">Administrador</span>
-                        <span className="roleDescription">Gestión del equipo y configuraciones</span>
-                      </div>
-                    </label>
-
-                    {(currentUser.role === 'superadmin' || currentUser.email === 'adminkinedrik@eadic.com') && (
-                      <label className={`roleOption ${role === 'superadmin' ? 'active' : ''}`}>
-                        <input 
-                          type="radio" 
-                          name="role" 
-                          value="superadmin" 
-                          checked={role === 'superadmin'} 
-                          onChange={(e) => setRole(e.target.value)}
-                          className="roleRadio"
-                        />
-                        <div className="roleInfo">
-                          <span className="roleText">Super Admin</span>
-                          <span className="roleDescription">Control total del sistema</span>
-                        </div>
-                      </label>
-                    )}
-                  </div>
+                  <span className="labelText">Rol</span>
+                  <select className="input roleSelect" value={cargo} onChange={(e) => setCargo(e.target.value)}>
+                    {CARGOS.filter((option) => option.id !== "ingeniero" || isEngineer).map((option) => (
+                      <option key={option.id} value={option.id}>{option.label}</option>
+                    ))}
+                  </select>
+                  <span className="roleHint">
+                    <strong>{cargoOf({ cargo }).label}</strong>
+                    <span>{roleDescription(cargo)}</span>
+                  </span>
                 </label>
                 {formError && <div className="formError">{formError}</div>}
                 <div className="modalActions">

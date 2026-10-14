@@ -1,6 +1,7 @@
 import { db } from "../config/firebase.js";
 import { v4 as uuidv4 } from "uuid";
 import { GoogleIdentityError, verifyGoogleCredential } from "../utils/googleIdentity.js";
+import { cargoOf } from "../roles.js";
 
 export const login = async (req, res) => {
   try {
@@ -52,6 +53,7 @@ export const login = async (req, res) => {
         email: user.email,
         name: user.name || "",
         role: user.role || "user",
+        cargo: cargoOf(user).id,
         authToken,
         picture,
       },

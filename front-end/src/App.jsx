@@ -6,35 +6,17 @@ import AdvancedConfig from "./pages/AdvancedConfig";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
+import { getUser } from "./utils/user";
+import { canManage } from "./utils/roles";
 import "./App.css";
 
 function isLoggedIn() {
   return Boolean(localStorage.getItem("kinedrix_email"));
 }
 
-function isAdmin() {
-  try {
-    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
-    const userEmail = (user.email || "").toLowerCase();
-    return (
-      user.role === "admin" ||
-      user.role === "superadmin" ||
-      userEmail === "adminkinedrik@eadic.com" ||
-      userEmail === "admin123@eadic.com"
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isSuperAdmin() {
-  try {
-    const user = JSON.parse(localStorage.getItem("kinedrix_user") || "{}");
-    const userEmail = (user.email || "").toLowerCase();
-    return user.role === "superadmin" || userEmail === "adminkinedrik@eadic.com";
-  } catch {
-    return false;
-  }
+// Gestionar usuarios, Speech comercial and Configuración avanzada depend on the user's cargo.
+function managesApp() {
+  return canManage(getUser());
 }
 
 const ProtectedRoute = ({ children }) => {
@@ -44,13 +26,7 @@ const ProtectedRoute = ({ children }) => {
 
 const AdminRoute = ({ children }) => {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
-  if (!isAdmin()) return <Navigate to="/upload" replace />;
-  return children;
-};
-
-const SuperAdminRoute = ({ children }) => {
-  if (!isLoggedIn()) return <Navigate to="/login" replace />;
-  if (!isSuperAdmin()) return <Navigate to="/upload" replace />;
+  if (!managesApp()) return <Navigate to="/upload" replace />;
   return children;
 };
 
@@ -96,9 +72,9 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <SuperAdminRoute>
+            <ProtectedRoute>
               <Dashboard />
-            </SuperAdminRoute>
+            </ProtectedRoute>
           }
         />
 

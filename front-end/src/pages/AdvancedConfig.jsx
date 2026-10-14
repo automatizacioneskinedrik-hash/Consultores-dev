@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import { canManage } from "../utils/roles";
 import GuideTour from "../components/GuideTour";
 
 const ADVANCED_TOUR_CLEANUP = [{ click: ".speechTabs .speechTab:first-child" }];
 const ADVANCED_TOUR = [
   { title: "¡Hola! Aquí se toman las decisiones de fondo", text: "Esta sección controla cómo trabaja el sistema por dentro. Te muestro cada parte." },
-  { do: [{ click: ".speechTabs .speechTab:first-child" }], target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos. La de Modelo de IA solo la ve el superadmin." },
+  { do: [{ click: ".speechTabs .speechTab:first-child" }], target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos." },
   { target: ".acFlow", title: "El modelo que califica", text: "Es el modelo de IA que analiza todas las llamadas nuevas en este momento." },
   { do: [{ show: [".acCardHead .acLink", ".acChooser"] }], target: ".acChooser", title: "Elige qué modelos ver", text: "Aquí aparecen los modelos de tu cuenta de OpenAI, agrupados por tipo. Marca los que quieras tener a mano y guarda la selección." },
   { do: [{ hide: [".acCardHead .acLink", ".acChooser"] }], target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
@@ -64,8 +65,7 @@ export default function AdvancedConfig() {
   const [activatingId, setActivatingId] = useState(null);
   const [promptMsg, setPromptMsg] = useState({ type: "", text: "" });
 
-  const isSuperAdmin = user?.role === "superadmin" || user?.email === "adminkinedrik@eadic.com";
-  const [activeTab, setActiveTab] = useState(isSuperAdmin ? "model" : "whatsapp");
+  const [activeTab, setActiveTab] = useState("model");
 
   const loadEmailConfig = async () => {
     try {
@@ -180,7 +180,7 @@ export default function AdvancedConfig() {
   };
 
   useEffect(() => {
-    const isAuthorized = user?.role === "superadmin" || user?.email === "adminkinedrik@eadic.com";
+    const isAuthorized = canManage(user);
     if (isAuthorized) {
       loadEmailConfig();
       loadFollowupPrompts();
@@ -294,7 +294,7 @@ export default function AdvancedConfig() {
   };
 
   const tabs = [
-    ...(isSuperAdmin ? [["model", "Modelo de IA"]] : []),
+    ["model", "Modelo de IA"],
     ["whatsapp", "Mensaje de WhatsApp"],
     ["email", "Correos"],
   ];
@@ -322,7 +322,7 @@ export default function AdvancedConfig() {
             aria-selected={currentTab === id}
             aria-controls="advanced-tab-panel"
             onClick={() => setActiveTab(id)}
-          >{label}{id === "model" && <small className="acTabBadge">SUPERADMIN</small>}</button>)}
+          >{label}</button>)}
         </nav>
 
         <section className="speechTabPanel" id="advanced-tab-panel" role="tabpanel" aria-labelledby={`advanced-tab-${currentTab}`}>

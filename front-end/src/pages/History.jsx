@@ -3,6 +3,7 @@ import "./History.css";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import { getUser } from "../utils/user";
+import { seesAll } from "../utils/roles";
 import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle, X } from "lucide-react";
 import UserAvatar from "../components/UserAvatar";
 import GuideTour from "../components/GuideTour";
@@ -40,7 +41,8 @@ export default function History() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const isAdmin = user?.role === "admin" || user?.role === "superadmin";
+  // Cargos that see everyone get the consultant column and search.
+  const isAdmin = seesAll(user);
 
   const fetchHistory = async () => {
     setLoading(true);

@@ -1,31 +1,27 @@
 import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue, sanitizeEmailArray, isValidEmailValue } from "../utils/helpers.js";
 import { getEmailConfigFromFirestore } from "../services/emailService.js";
-import { MASTER_SUPERADMIN_EMAIL } from "../middleware/auth.js";
+import { CARGOS, cargoOf, isCargo, legacyRoleFor } from "../roles.js";
+import { listChanges, logChange } from "../services/auditLog.js";
+
 // --- Gestión de Usuarios ---
+// req.requester is set by adminRoutes. Only an Ingeniero can create, edit or remove another Ingeniero.
+
+const isEngineer = (requester) => requester.cargo.id === "ingeniero";
+const publicUser = (id, data) => {
+  const { password, authToken, ...safe } = data;
+  return { id, ...safe, cargo: cargoOf(data).id };
+};
+
+export const getCargos = (req, res) => res.json({ ok: true, cargos: CARGOS });
 
 export const getAllUsers = async (req, res) => {
   try {
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-    const userSnapReq = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    const isSuperAdmin = !userSnapReq.empty && (userSnapReq.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
-
     const snapshot = await db.collection("users").get();
     const users = snapshot.docs
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      .sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-        return dateB - dateA;
-      })
-      .filter(u => {
-        if (isSuperAdmin) return true;
-        return u.role !== "superadmin" && u.email !== MASTER_SUPERADMIN_EMAIL;
-      });
-
+      .map((doc) => publicUser(doc.id, doc.data()))
+      .filter((u) => isEngineer(req.requester) || u.cargo !== "ingeniero")
+      .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
     return res.json({ ok: true, users });
   } catch (err) {
     console.error(err);
@@ -35,27 +31,20 @@ export const getAllUsers = async (req, res) => {
 
 export const addUser = async (req, res) => {
   try {
-    const { name, email, role } = req.body;
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-
-    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
-
+    const { name } = req.body;
+    const email = normalizeEmailValue(req.body.email);
+    const cargo = isCargo(req.body.cargo) ? req.body.cargo : "kadvisor";
     if (!email) return res.status(400).json({ ok: false, error: "Email requerido" });
-
-    if (role === "superadmin" && !isSuperAdmin) {
-      return res.status(403).json({ ok: false, error: "No tienes permisos para crear un Super Admin" });
+    if (cargo === "ingeniero" && !isEngineer(req.requester)) {
+      return res.status(403).json({ ok: false, error: "Solo un Ingeniero puede crear otro Ingeniero." });
     }
+    const existing = await db.collection("users").where("email", "==", email).limit(1).get();
+    if (!existing.empty) return res.status(409).json({ ok: false, error: "Ya existe un usuario con ese correo." });
 
-    const newUser = {
-      name: name || "",
-      email: email.trim().toLowerCase(),
-      role: role || "user",
-      createdAt: new Date().toISOString(),
-    };
-
+    const newUser = { name: name || "", email, cargo, role: legacyRoleFor(cargo), createdAt: new Date().toISOString() };
     const docRef = await db.collection("users").add(newUser);
-    return res.json({ ok: true, id: docRef.id, user: newUser });
+    await logChange(req.requester, "user.create", `Creó a ${newUser.name || email} como ${cargoOf(newUser).label}`, { userId: docRef.id, email, cargo });
+    return res.json({ ok: true, id: docRef.id, user: publicUser(docRef.id, newUser) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ ok: false, error: "Error al agregar usuario" });
@@ -65,32 +54,31 @@ export const addUser = async (req, res) => {
 export const editUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-
-    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
-
     const userRef = db.collection("users").doc(id);
     const userDoc = await userRef.get();
     if (!userDoc.exists) return res.status(404).json({ ok: false, error: "Usuario no encontrado" });
 
-    const existingUser = userDoc.data();
-
-    if ((existingUser.role === "admin" || existingUser.role === "superadmin") && !isSuperAdmin) {
-      return res.status(403).json({ ok: false, error: "No tienes permisos para editar a este usuario" });
+    const before = userDoc.data();
+    const cargo = isCargo(req.body.cargo) ? req.body.cargo : cargoOf(before).id;
+    if ((cargoOf(before).id === "ingeniero" || cargo === "ingeniero") && !isEngineer(req.requester)) {
+      return res.status(403).json({ ok: false, error: "Solo un Ingeniero puede editar o nombrar Ingenieros." });
     }
 
-    if (role === "superadmin" && existingUser.role !== "superadmin" && !isSuperAdmin) {
-      return res.status(403).json({ ok: false, error: "Solo el Super Admin puede nombrar Super Admins" });
+    const update = {
+      name: req.body.name ?? before.name ?? "",
+      email: normalizeEmailValue(req.body.email) || before.email,
+      cargo,
+      role: legacyRoleFor(cargo),
+    };
+    await userRef.update(update);
+
+    const changes = [];
+    if (update.name !== (before.name || "")) changes.push(`nombre: ${before.name || "(vacío)"} → ${update.name}`);
+    if (update.email !== before.email) changes.push(`correo: ${before.email} → ${update.email}`);
+    if (cargo !== cargoOf(before).id) changes.push(`rol: ${cargoOf(before).label} → ${cargoOf(update).label}`);
+    if (changes.length) {
+      await logChange(req.requester, "user.update", `Editó a ${update.name || update.email}: ${changes.join("; ")}`, { userId: id, changes });
     }
-
-    await userRef.update({
-      name: name || "",
-      email: email.trim().toLowerCase(),
-      role: role || "user"
-    });
-
     return res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -101,25 +89,28 @@ export const editUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const requesterEmail = (req.headers["x-admin-email"] || "").toLowerCase();
-
-    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    const isSuperAdmin = !userSnapshot.empty && (userSnapshot.docs[0].data().role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL);
-
     const userDoc = await db.collection("users").doc(id).get();
     if (!userDoc.exists) return res.status(404).json({ ok: false, error: "Usuario no encontrado" });
 
     const userData = userDoc.data();
-
-    if ((userData.role === "admin" || userData.role === "superadmin") && !isSuperAdmin) {
-      return res.status(403).json({ ok: false, error: "No tienes permisos para eliminar a este Administrador" });
+    if (cargoOf(userData).id === "ingeniero" && !isEngineer(req.requester)) {
+      return res.status(403).json({ ok: false, error: "Solo un Ingeniero puede eliminar a otro Ingeniero." });
     }
-
     await db.collection("users").doc(id).delete();
+    await logChange(req.requester, "user.delete", `Eliminó a ${userData.name || userData.email} (${cargoOf(userData).label})`, { userId: id, email: userData.email });
     return res.json({ ok: true });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ ok: false, error: "Error al eliminar usuario" });
+  }
+};
+
+export const getAuditLog = async (req, res) => {
+  try {
+    return res.json({ ok: true, changes: await listChanges() });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ ok: false, error: "No se pudo cargar el historial de cambios" });
   }
 };
 
@@ -163,6 +154,7 @@ export const updateEmailConfig = async (req, res) => {
       },
       { merge: true }
     );
+    await logChange(req.requester, "email.update", "Actualizó las copias de los reportes por correo", { ccEmails, bccEmails });
 
     return res.json({ ok: true, message: "Configuracion de correo actualizada correctamente", config: { ccEmails, bccEmails, updatedBy: requesterEmail || "" } });
   } catch (err) {

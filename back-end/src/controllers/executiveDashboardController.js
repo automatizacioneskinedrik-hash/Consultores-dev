@@ -174,9 +174,12 @@ async function fetchMeetingsAnalysis({ startMs, endMs }) {
   return docs;
 }
 
+// Cargos that only see their own calls get their own email, whatever consultant the request asks for.
+const scopedConsultant = (req) => (req.requester?.cargo.seesAll ? normalizeEmailValue(req.query.consultantEmail) : req.requester.email);
+
 export const getConsultantAvailableDates = async (req, res) => {
   try {
-    const consultantEmail = normalizeEmailValue(req.query.consultantEmail);
+    const consultantEmail = scopedConsultant(req);
 
     if (!consultantEmail || consultantEmail === "all") {
       return res.json({ ok: true, dates: [] });
@@ -237,6 +240,7 @@ export const getDashboardConsultants = async (req, res) => {
         return { value: email, label };
       })
       .filter(Boolean)
+      .filter((consultant) => req.requester.cargo.seesAll || consultant.value === req.requester.email)
       .sort((a, b) => String(a.label).localeCompare(String(b.label), "es"));
 
     return res.json({ ok: true, consultants });
@@ -248,7 +252,7 @@ export const getDashboardConsultants = async (req, res) => {
 
 export const getExecutiveDashboardData = async (req, res) => {
   try {
-    const consultantEmail = normalizeEmailValue(req.query.consultantEmail);
+    const consultantEmail = scopedConsultant(req);
     const startMs = req.query.startMs != null ? Number(req.query.startMs) : null;
     const endMs = req.query.endMs != null ? Number(req.query.endMs) : null;
 

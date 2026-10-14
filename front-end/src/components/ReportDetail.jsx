@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { FileText, FileDown, Headphones, X } from "lucide-react";
 import { getUser } from "../utils/user";
+import { canManage } from "../utils/roles";
 import PointsScorecard from "./PointsScorecard";
 import { levelForPercent } from "../utils/scoreLevels";
 import UserAvatar from "./UserAvatar";
@@ -92,7 +93,7 @@ export default function ReportDetail({ report, onClose }) {
   const currentUser = getUser() || {};
   const consultantPicture = report.userPicture || (report.userEmail && report.userEmail === currentUser.email ? currentUser.picture : "");
   // Admins compare AI models, so they see which one graded the session; consultants don't need it.
-  const canSeeModel = currentUser.role === "admin" || currentUser.role === "superadmin" || currentUser.email === "adminkinedrik@eadic.com";
+  const canSeeModel = canManage(currentUser);
   const gradedWith = canSeeModel ? report.aiUsage?.model : null;
 
   // Rendered on <body> so printing (which hides the app shell) keeps the report visible from every page.

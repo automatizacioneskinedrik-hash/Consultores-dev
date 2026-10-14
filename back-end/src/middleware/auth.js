@@ -1,78 +1,36 @@
 import { db } from "../config/firebase.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
+import { cargoOf, MASTER_ENGINEER_EMAIL } from "../roles.js";
 
-const MASTER_SUPERADMIN_EMAIL = "adminkinedrik@eadic.com";
+const MASTER_SUPERADMIN_EMAIL = MASTER_ENGINEER_EMAIL;
 const USER_CACHE = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
 
-export async function isAuthRequest(req) {
-  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
+// Validated requester: { email, user, cargo } or null when the token does not match.
+export async function getRequester(req) {
+  const email = normalizeEmailValue(req.headers["x-admin-email"]);
   const authToken = req.headers["x-auth-token"];
-
-  if (!requesterEmail || !authToken) return false;
+  if (!email || !authToken) return null;
 
   try {
-    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    if (userSnapshot.empty) return false;
-
-    const userData = userSnapshot.docs[0].data();
-    return userData.authToken === authToken;
+    const snapshot = await db.collection("users").where("email", "==", email).limit(1).get();
+    if (snapshot.empty) return null;
+    const user = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+    if (user.authToken !== authToken) return null;
+    return { email, user, cargo: cargoOf(user) };
   } catch (err) {
     console.error("Auth validation error:", err);
-    return false;
+    return null;
   }
 }
 
-export async function isAdminOrSuperadminRequest(req) {
-  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
-  const authToken = req.headers["x-auth-token"];
+export async function isAuthRequest(req) {
+  return Boolean(await getRequester(req));
+}
 
-  if (!requesterEmail || !authToken) return false;
-
-  try {
-    const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-    if (userSnapshot.empty) return false;
-
-    const userData = userSnapshot.docs[0].data();
-    if (userData.authToken !== authToken) return false;
-
-    return (
-      userData.role === "admin" ||
-      userData.role === "superadmin" ||
-      requesterEmail === MASTER_SUPERADMIN_EMAIL
-    );
-  } catch (err) {
-    console.error("Auth validation error:", err);
-    return false;
-  }
+// Gestionar usuarios, Speech comercial and Configuración avanzada.
+export async function canManageRequest(req) {
+  return Boolean((await getRequester(req))?.cargo.manages);
 }
 
 export { USER_CACHE, CACHE_TTL, MASTER_SUPERADMIN_EMAIL };
-
-export async function isSuperAdminRequest(req) {
-  const requesterEmail = normalizeEmailValue(req.headers["x-admin-email"]);
-  const authToken = req.headers["x-auth-token"];
-
-  if (!requesterEmail || !authToken) return false;
-
-  try {
-    let userData;
-
-    const cached = USER_CACHE.get(requesterEmail);
-    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-      userData = cached.data;
-    } else {
-      const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
-      if (userSnapshot.empty) return false;
-      userData = userSnapshot.docs[0].data();
-      USER_CACHE.set(requesterEmail, { data: userData, timestamp: Date.now() });
-    }
-
-    if (userData.authToken !== authToken) return false;
-
-    return userData.role === "superadmin" || requesterEmail === MASTER_SUPERADMIN_EMAIL;
-  } catch (err) {
-    console.error("Auth validation error:", err);
-    return false;
-  }
-}

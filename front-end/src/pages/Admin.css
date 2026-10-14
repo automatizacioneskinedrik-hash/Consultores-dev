@@ -439,3 +439,24 @@ body.sidebar-collapsed .adminPage .adminContent {
     padding-top: 10px;
   }
 }
+
+/* Historial de cambios (quién hizo qué y cuándo) */
+.auditCard { margin-top: 28px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, .05); padding: 22px 24px; display: grid; gap: 10px; }
+.auditCard h2 { margin: 0; font-size: 18px; font-weight: 700; color: #040025; }
+.auditCard > p { margin: 0; font-size: 14px; color: #64748b; }
+.auditEmpty { font-size: 14px; color: #64748b; padding: 12px 0; }
+.auditList { list-style: none; margin: 0; padding: 0; display: grid; max-height: 360px; overflow-y: auto; }
+.auditList li { display: grid; grid-template-columns: 130px minmax(0, 1fr) 200px; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eef1f5; font-size: 14px; }
+.auditWhen { color: #64748b; font-variant-numeric: tabular-nums; }
+.auditWhat { color: #040025; }
+.auditWho { color: #0040A4; font-weight: 500; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  .auditList li { grid-template-columns: 1fr; gap: 2px; }
+  .auditWho { text-align: left; }
+}
+
+/* Selector de rol: desplegable y descripción del rol elegido */
+.roleSelect { background: #fff; color: #040025; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; }
+.roleHint { display: grid; gap: 2px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #f8fafc; font-family: Roboto, Helvetica, Arial, sans-serif; }
+.roleHint strong { color: #0040A4; font-size: 14px; font-weight: 700; }
+.roleHint span { color: #64748b; font-size: 13px; line-height: 1.45; }

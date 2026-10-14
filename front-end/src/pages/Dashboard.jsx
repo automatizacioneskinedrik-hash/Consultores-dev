@@ -27,6 +27,7 @@ import dayjs from "dayjs";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import { getUser } from "../utils/user";
+import { seesAll } from "../utils/roles";
 import "./Dashboard.css";
 
 const DASHBOARD_TOUR = [
@@ -733,8 +734,9 @@ function DashboardObjecionesCard({ data, loading }) {
 export default function Dashboard() {
   const user = useMemo(() => getUser() || {}, []);
   const email = String(user.email || "").toLowerCase();
-  const isAuthorizedSuperAdmin =
-    user?.role === "superadmin" || email === "adminkinedrik@eadic.com";
+  // Every cargo opens the Panel; those that only see their own calls get their own metrics.
+  const canViewPanel = Boolean(email);
+  const viewsEveryone = seesAll(user);
 
   const disableFutureDate = useMemo(
     () => (current) => Boolean(current && current.isAfter(dayjs(), "day")),
@@ -744,7 +746,7 @@ export default function Dashboard() {
   const [month, setMonth] = useState(null);
   const [week, setWeek] = useState(null);
   const [day, setDay] = useState(null);
-  const [consultant, setConsultant] = useState("all");
+  const [consultant, setConsultant] = useState(viewsEveryone ? "all" : email);
   const [speechVersionId, setSpeechVersionId] = useState("active");
   const [consultantOptions, setConsultantOptions] = useState(DEFAULT_CONSULTANT_OPTIONS);
 
@@ -799,12 +801,12 @@ export default function Dashboard() {
     setMonth(null);
     setWeek(null);
     setDay(null);
-    setConsultant("all");
+    setConsultant(viewsEveryone ? "all" : email);
     setSpeechVersionId("active");
   };
 
   useEffect(() => {
-    if (!isAuthorizedSuperAdmin || !consultant || consultant === "all") {
+    if (!canViewPanel || !consultant || consultant === "all") {
       setAvailableDates(null);
       return;
     }
@@ -836,10 +838,10 @@ export default function Dashboard() {
       ignore = true;
       controller.abort();
     };
-  }, [authHeaders, consultant, isAuthorizedSuperAdmin]);
+  }, [authHeaders, consultant, canViewPanel]);
 
   useEffect(() => {
-    if (!isAuthorizedSuperAdmin) return;
+    if (!canViewPanel) return;
     const controller = new AbortController();
     let ignore = false;
 
@@ -868,10 +870,10 @@ export default function Dashboard() {
       ignore = true;
       controller.abort();
     };
-  }, [authHeaders, isAuthorizedSuperAdmin]);
+  }, [authHeaders, canViewPanel]);
 
   useEffect(() => {
-    if (!isAuthorizedSuperAdmin) return;
+    if (!canViewPanel) return;
     const controller = new AbortController();
     let ignore = false;
 
@@ -919,7 +921,7 @@ export default function Dashboard() {
       ignore = true;
       controller.abort();
     };
-  }, [authHeaders, consultant, speechVersionId, isAuthorizedSuperAdmin, refetchToken, timeRange.endMs, timeRange.startMs]);
+  }, [authHeaders, consultant, speechVersionId, canViewPanel, refetchToken, timeRange.endMs, timeRange.startMs]);
 
   const kpiValues = useMemo(() => {
     const k = dashboardData.kpis || {};
@@ -955,8 +957,7 @@ export default function Dashboard() {
               colorPrimary: "#0040A4",
               colorInfo: "#0040A4",
               borderRadius: 18,
-              fontFamily:
-                "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+              fontFamily: "Roboto, Helvetica, Arial, sans-serif",
             },
           }}
         >
@@ -1013,7 +1014,7 @@ export default function Dashboard() {
                     setWeek(null);
                   }}
                 />
-                <Select
+                {viewsEveryone && <Select
                   className="dashboardFilterControl"
                   value={consultant}
                   onChange={setConsultant}
@@ -1022,14 +1023,14 @@ export default function Dashboard() {
                   showSearch
                   optionFilterProp="label"
                   placeholder="Consultor"
-                />
+                />}
               </div>
               <div className="dashboardFiltersFooter">
                 <Button
                   type="text"
                   size="small"
                   onClick={clearAllFilters}
-                  disabled={!month && !week && !day && consultant === "all"}
+                  disabled={!month && !week && !day && consultant === (viewsEveryone ? "all" : email)}
                   className="dashboardClearBtn"
                 >
                   Limpiar
@@ -1043,7 +1044,7 @@ export default function Dashboard() {
             </div>
           </header>
 
-          {!isAuthorizedSuperAdmin ? (
+          {!canViewPanel ? (
             <section className="dashboardDenied" role="alert">
               No tienes permiso para acceder a esta sección.
             </section>

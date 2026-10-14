@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
+import { canManage, cargoOf } from "../utils/roles";
 import { BookOpenText, ChartNoAxesCombined, CloudUpload, History, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
@@ -18,7 +19,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getUser() || {};
-  const { fullName, email, role } = user;
+  const { fullName, email } = user;
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -34,14 +35,9 @@ export default function Sidebar() {
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
   const isSpeechConfigPage = location.pathname === "/speech-comercial";
 
-  const isAuthorizedAdmin =
-    user?.role === "admin" ||
-    user?.role === "superadmin" ||
-    (email && email.toLowerCase() === "adminkinedrik@eadic.com") ||
-    (email && email.toLowerCase() === "admin123@eadic.com");
-
-  const isAuthorizedSuperAdmin = role === "superadmin" || (email && email.toLowerCase() === "adminkinedrik@eadic.com");
-  const storedName = fullName || (role === "superadmin" ? "SUPERADMIN" : role === "admin" ? "ADMIN" : "");
+  // Every cargo sees Subir archivo, Historial and Panel; the managing cargos also see the rest.
+  const managesApp = canManage(user);
+  const storedName = fullName || cargoOf(user).label;
 
   const sidebarClassName = `sidebar ${isMobileSidebarOpen ? "open" : ""} uploadSidebar ${isSidebarCollapsed ? "collapsed" : ""}`.trim();
 
@@ -151,18 +147,16 @@ export default function Sidebar() {
             <span className="sidebarItemLabel">Historial</span>
           </button>
 
-          {isAuthorizedSuperAdmin && (
-            <button
-              className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
-              onClick={handleDashboardClick}
-              title="Panel"
-            >
-              <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
-              <span className="sidebarItemLabel" translate="no">Panel</span>
-            </button>
-          )}
+          <button
+            className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
+            onClick={handleDashboardClick}
+            title="Panel"
+          >
+            <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+            <span className="sidebarItemLabel" translate="no">Panel</span>
+          </button>
 
-          {isAuthorizedAdmin && (
+          {managesApp && (
             <button
               className={`sidebarItem ${isAdminPage ? "active" : ""}`}
               onClick={handleAdminClick}
@@ -173,14 +167,14 @@ export default function Sidebar() {
             </button>
           )}
 
-          {isAuthorizedAdmin && (
+          {managesApp && (
             <button className={`sidebarItem ${isSpeechConfigPage ? "active" : ""}`} onClick={() => { navigate("/speech-comercial"); setIsMobileSidebarOpen(false); }} title="Speech comercial">
               <BookOpenText className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
               <span className="sidebarItemLabel">Speech Comercial</span>
             </button>
           )}
 
-          {isAuthorizedSuperAdmin && (
+          {managesApp && (
             <button
               className={`sidebarItem ${isAdvancedConfigPage ? "active" : ""}`}
               onClick={handleAdvancedConfigClick}

@@ -2,6 +2,7 @@ import { db } from "../config/firebase.js";
 import { bucket } from "../config/storage.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 import { USER_CACHE, CACHE_TTL } from "../middleware/auth.js";
+import { cargoOf } from "../roles.js";
 
 // Profiles allowed to delete their own test sessions from the history (red X). Only their own sessions.
 const SESSION_CLEANUP_EMAILS = (process.env.SESSION_CLEANUP_EMAILS || "angelvera.eadic@gmail.com")
@@ -60,7 +61,7 @@ export const getAllSessions = async (req, res) => {
     const { filterEmail } = req.query;
     let query = db.collection("meetings_analysis");
 
-    if (userData.role !== "admin" && userData.role !== "superadmin") {
+    if (!cargoOf(userData).seesAll) {
       query = query.where("userEmail", "==", userData.email.toLowerCase().trim());
     } else if (filterEmail) {
       query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
@@ -137,7 +138,7 @@ export const getSessionDetail = async (req, res) => {
 
     const data = doc.data();
 
-    if (userData.role !== "admin" && userData.role !== "superadmin" && data.userEmail !== userData.email) {
+    if (!cargoOf(userData).seesAll && data.userEmail !== userData.email) {
       return res.status(403).json({ ok: false, error: "No tienes permiso para ver este reporte" });
     }
 
@@ -196,7 +197,7 @@ export const getAudioDownloadUrl = async (req, res) => {
     const userSnapshot = await db.collection("users").where("email", "==", requesterEmail).limit(1).get();
     if (!userSnapshot.empty) {
       const userData = userSnapshot.docs[0].data();
-      if (userData.role !== "admin" && userData.role !== "superadmin" && normalizeEmailValue(data.userEmail) !== requesterEmail) {
+      if (!cargoOf(userData).seesAll && normalizeEmailValue(data.userEmail) !== requesterEmail) {
         return res.status(403).json({ ok: false, error: "No autorizado" });
       }
     }
