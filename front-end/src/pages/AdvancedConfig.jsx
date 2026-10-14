@@ -8,6 +8,7 @@ const ADVANCED_TOUR = [
   { title: "¡Hola! Aquí se toman las decisiones de fondo", text: "Esta sección controla cómo trabaja el sistema por dentro. Te muestro cada parte." },
   { do: [{ click: ".speechTabs .speechTab:first-child" }], target: ".speechTabs", title: "Tres pestañas", text: "Modelo de IA, Mensaje de WhatsApp y Correos." },
   { target: ".acFlow", title: "El modelo que califica", text: "Es el modelo de IA que analiza todas las llamadas nuevas en este momento." },
+  { target: ".acProviders", title: "OpenAI o Claude", text: "Toca un logo para ver los modelos de cada proveedor. El que dice En uso es el que califica hoy." },
   { do: [{ show: [".acCardHead .acLink", ".acChooser"] }], target: ".acChooser", title: "Elige qué modelos ver", text: "Aquí aparecen los modelos de tu cuenta de OpenAI, agrupados por tipo. Marca los que quieras tener a mano y guarda la selección." },
   { do: [{ hide: [".acCardHead .acLink", ".acChooser"] }], target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
   { target: ".acModel .speechPrimaryButton", title: "Activar", text: "Al pulsar Activar te pido confirmación antes de cambiar el modelo, para que no pase por error." },

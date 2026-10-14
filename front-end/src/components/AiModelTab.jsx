@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-const PRICING_URL = "https://developers.openai.com/api/docs/pricing";
+
+// The two AI providers, shown as buttons with their official logos.
+const PROVIDERS = {
+  openai: { label: "OpenAI", logo: "/logos/openai-chatgpt-oficial.webp", pricing: "https://developers.openai.com/api/docs/pricing", search: "luna" },
+  anthropic: { label: "Claude", logo: "/logos/claude-oficial.png", pricing: "https://www.anthropic.com/pricing", search: "sonnet" },
+};
+const providerOf = (model) => (/^claude-/i.test(String(model)) ? "anthropic" : "openai");
 
 const formatDate = (value) => {
   const date = value?._seconds ? new Date(value._seconds * 1000) : value ? new Date(value) : null;
@@ -10,34 +16,48 @@ const formatDate = (value) => {
 
 // Dated snapshots and "chat-latest" aliases repeat a model under another name.
 const DUPLICATE_NAME = /(-\d{4}-\d{2}-\d{2}$|chat-latest$)/;
-const RECENT_FROM_VERSION = 5.4;
+const RECENT_GPT_FROM = 5.4;
+const RECENT_CLAUDE_FROM = 4.5;
 // Size or edition suffixes are not a model type ("gpt-5.4-mini" is a classic GPT, "gpt-6-luna" is type Luna).
 const EDITION_SUFFIXES = new Set(["mini", "nano", "pro", "turbo", "preview", "latest", "instruct"]);
 
-const versionOf = (model) => Number(model.match(/^gpt-(\d+(?:\.\d+)?)/)?.[1] || 0);
+// Claude ids come as claude-opus-5-5 (family, then version) or, for older ones, claude-3-5-sonnet-….
+function claudeInfo(model) {
+  const current = model.match(/^claude-([a-z]+)-(\d+)(?:-(\d))?(?:-|$)/);
+  if (current) return { family: current[1], version: Number(`${current[2]}.${current[3] || 0}`) };
+  const legacy = model.match(/^claude-(\d+)(?:-(\d))?-([a-z]+)/);
+  if (legacy) return { family: legacy[3], version: Number(`${legacy[1]}.${legacy[2] || 0}`) };
+  return { family: null, version: 0 };
+}
+
+const versionOf = (model) => (providerOf(model) === "anthropic"
+  ? claudeInfo(model).version
+  : Number(model.match(/^gpt-(\d+(?:\.\d+)?)/)?.[1] || 0));
 const typeOf = (model) => {
+  if (providerOf(model) === "anthropic") return claudeInfo(model).version >= RECENT_CLAUDE_FROM ? claudeInfo(model).family : null;
   const suffix = model.match(/^gpt-\d+(?:\.\d+)?-([a-z]+)$/)?.[1];
   return suffix && !EDITION_SUFFIXES.has(suffix) ? suffix : null;
 };
 const capitalize = (word) => word.charAt(0).toUpperCase() + word.slice(1);
 const byNewest = (a, b) => versionOf(b) - versionOf(a) || a.localeCompare(b);
 
-// Named types (Luna, Sol, Astra, Terra… and any new one OpenAI adds) get their own card; recent classics
-// go below; everything older stays folded.
+// Named types (Luna, Sol… for OpenAI; Opus, Sonnet, Haiku… for Claude) get their own card; recent
+// classic GPTs go below; everything older stays folded.
 function classify(models) {
   const types = new Map();
   const recent = [];
   const older = new Map();
   for (const model of models) {
     const type = typeOf(model);
+    const claude = providerOf(model) === "anthropic";
     if (type) {
       if (!types.has(type)) types.set(type, []);
       types.get(type).push(model);
-    } else if (versionOf(model) >= RECENT_FROM_VERSION) {
+    } else if (!claude && versionOf(model) >= RECENT_GPT_FROM) {
       recent.push(model);
     } else {
       const version = versionOf(model);
-      const label = version ? `GPT-${model.match(/^gpt-(\d+(?:\.\d+)?)/)[1]}` : "Serie o";
+      const label = claude ? `Claude ${version || ""}`.trim() : version ? `GPT-${model.match(/^gpt-(\d+(?:\.\d+)?)/)[1]}` : "Serie o";
       if (!older.has(label)) older.set(label, { label, version, models: [] });
       older.get(label).models.push(model);
     }
@@ -59,7 +79,7 @@ function ModelOption({ model, active, checked, onToggle }) {
   </label>;
 }
 
-function ModelChooser({ available, active, selected, onChange }) {
+function ModelChooser({ available, active, selected, onChange, searchHint }) {
   const [query, setQuery] = useState("");
   const [showOlder, setShowOlder] = useState(false);
   const term = query.trim().toLowerCase();
@@ -72,7 +92,7 @@ function ModelChooser({ available, active, selected, onChange }) {
   const option = (model) => <ModelOption key={model} model={model} active={active} checked={isChecked(model)} onToggle={toggle} />;
 
   return <div className="acChooserBody">
-    <input className="acSearch" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar modelo, por ejemplo: luna" aria-label="Buscar modelo" />
+    <input className="acSearch" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Buscar modelo, por ejemplo: ${searchHint}`} aria-label="Buscar modelo" />
 
     {typeCards.length > 0 && <div className="acTypeGrid">
       {typeCards.map((card) => <div className="acTypeCard" key={card.type}>
@@ -100,7 +120,7 @@ function ModelChooser({ available, active, selected, onChange }) {
   </div>;
 }
 
-// Configuración avanzada → Modelo de IA (superadmin only): choose and activate the GPT model that grades calls.
+// Configuración avanzada → Modelo de IA: choose the provider (OpenAI or Claude) and the model that grades calls.
 export default function AiModelTab({ authHeaders }) {
   const [config, setConfig] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -108,6 +128,7 @@ export default function AiModelTab({ authHeaders }) {
   const [choosing, setChoosing] = useState(false);
   const [visibleDraft, setVisibleDraft] = useState([]);
   const [confirming, setConfirming] = useState(null);
+  const [provider, setProvider] = useState(null);
 
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(`${API_BASE_URL}/api/ai-config${path}`, {
@@ -149,42 +170,76 @@ export default function AiModelTab({ authHeaders }) {
 
   if (!config) return <div className="acCard">{notice ? <div className="speechNotice error">{notice.text}</div> : "Cargando modelos…"}</div>;
 
+  const activeProvider = config.activeProvider || providerOf(config.activeModel);
+  const shown = provider || activeProvider;
+  const shownInfo = (config.providers || []).find((entry) => entry.id === shown) || { models: config.availableModels || [], error: null };
+  const visibleHere = config.visibleModels.filter((model) => providerOf(model) === shown);
+
+  const chooseProvider = (id) => { setProvider(id); setChoosing(false); setConfirming(null); };
+
   return <div className="acPanel">
     {notice && <div role="status" className={`speechNotice ${notice.error ? "error" : ""}`}>{notice.text}</div>}
 
     <div className="acFlow">
-      <div><strong>Modelo activo: {config.activeModel}</strong><p>Analiza todas las llamadas nuevas. El costo real aparecerá cuando se conecte la facturación de OpenAI.</p></div>
+      <div><strong>Modelo activo: {config.activeModel}</strong><p>Analiza todas las llamadas nuevas con {PROVIDERS[activeProvider].label}.</p></div>
     </div>
 
     <section className="acCard">
+      <div className="acCardHead"><div><h2>¿Con qué IA califica el sistema?</h2><p>Toca un logo para ver sus modelos.</p></div></div>
+      <div className="acProviders" role="tablist" aria-label="Proveedor de IA">
+        {Object.entries(PROVIDERS).map(([id, info]) => {
+          const entry = (config.providers || []).find((item) => item.id === id);
+          return <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={shown === id}
+            className={`acProvider acProvider-${id} ${shown === id ? "isShown" : ""} ${activeProvider === id ? "isActive" : ""}`}
+            onClick={() => chooseProvider(id)}
+          >
+            <img src={info.logo} alt="" />
+            <span className="acProviderName">{info.label}</span>
+            {activeProvider === id
+              ? <span className="acPill">En uso · {config.activeModel}</span>
+              : entry?.error ? <span className="acProviderWarn">No disponible</span> : <span className="acProviderHint">{entry?.models.length || 0} modelos</span>}
+          </button>;
+        })}
+      </div>
+    </section>
+
+    <section className="acCard">
       <div className="acCardHead">
-        <div><h2>Modelos disponibles</h2><p>Lista leída de tu cuenta de OpenAI. Elige cuáles quieres tener a mano aquí.</p></div>
-        <button type="button" className="acLink" onClick={() => { setVisibleDraft(config.visibleModels); setChoosing(!choosing); }}>{choosing ? "Cerrar" : "Elegir qué modelos mostrar"}</button>
+        <div><h2>Modelos de {PROVIDERS[shown].label}</h2><p>Lista leída de tu cuenta de {PROVIDERS[shown].label}. Elige cuáles quieres tener a mano aquí.</p></div>
+        {!shownInfo.error && <button type="button" className="acLink" onClick={() => { setVisibleDraft(config.visibleModels); setChoosing(!choosing); }}>{choosing ? "Cerrar" : "Elegir qué modelos mostrar"}</button>}
       </div>
 
+      {shownInfo.error && <div className="speechNotice error">{PROVIDERS[shown].label} no está disponible: {shownInfo.error}</div>}
+
       {choosing && <div className="acChooser">
-        <ModelChooser available={config.availableModels} active={config.activeModel} selected={visibleDraft} onChange={setVisibleDraft} />
+        <ModelChooser available={shownInfo.models} active={config.activeModel} selected={visibleDraft} onChange={setVisibleDraft} searchHint={PROVIDERS[shown].search} />
         <div className="acRowEnd"><button type="button" className="speechPrimaryButton" onClick={saveVisible} disabled={busy}>Guardar selección</button></div>
       </div>}
 
-      <div className="acModels">
-        {config.visibleModels.map((model) => {
+      {!shownInfo.error && <div className="acModels">
+        {visibleHere.length === 0 && <div className="acModel"><div className="acModelName"><span>Todavía no hay modelos elegidos.</span></div><div /><div className="acActions" /></div>}
+        {visibleHere.map((model) => {
           const isActive = model === config.activeModel;
+          const switchesProvider = providerOf(model) !== activeProvider;
           return <div className={`acModel ${isActive ? "isActive" : ""}`} key={model}>
             <div className="acModelName"><span>{model}</span>{isActive && <span className="acPill">Activo</span>}</div>
-            <div className="acCost">{isActive ? "Costo real: pendiente de conectar la facturación" : "Costo real: sin datos todavía"}</div>
+            <div className="acCost">{isActive ? "Califica las llamadas nuevas" : ""}</div>
             <div className="acActions">
               {!isActive && <button type="button" className="speechPrimaryButton" onClick={() => setConfirming(model)} disabled={busy}>Activar</button>}
             </div>
             {confirming === model && <div className="acConfirm">
-              ¿Activar {model}? Las llamadas nuevas se analizarán con este modelo. Las anteriores no cambian.
+              ¿Activar {model}?{switchesProvider ? ` El sistema pasará de ${PROVIDERS[activeProvider].label} a ${PROVIDERS[shown].label}.` : ""} Las llamadas nuevas se analizarán con este modelo. Las anteriores no cambian.
               <button type="button" className="speechSecondaryButton" onClick={() => setConfirming(null)}>Cancelar</button>
               <button type="button" className="speechPrimaryButton" onClick={() => activate(model)} disabled={busy}>Sí, activar</button>
             </div>}
           </div>;
         })}
-      </div>
-      <p className="acHint">Precios oficiales: <a href={PRICING_URL} target="_blank" rel="noopener noreferrer">página de precios de OpenAI</a>.</p>
+      </div>}
+      <p className="acHint">Precios oficiales: <a href={PROVIDERS[shown].pricing} target="_blank" rel="noopener noreferrer">página de precios de {PROVIDERS[shown].label}</a>.</p>
     </section>
 
     <section className="acCard">

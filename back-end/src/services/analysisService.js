@@ -8,7 +8,7 @@ import { bucket } from "../config/storage.js";
 import { openai } from "../config/openai.js";
 import { transporter } from "../config/mailer.js";
 import { legacyPromptFromContext, loadAnalysisContext } from "../prompts/promptService.js";
-import { askGpt } from "./gptClient.js";
+import { askAi } from "./aiClient.js";
 import { gradeWithPoints } from "./pointsGrading.js";
 import { POINTS_FORMAT } from "../prompts/speechRules.js";
 import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
@@ -34,7 +34,7 @@ function detectCedioPalabraTrasPrice(utterances, consultorSpeaker) {
 // Fixed-rules speech: GPT returns the four scorecard scores and the general score averages them.
 async function runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos }) {
   const { prompt, speech } = legacyPromptFromContext(context, durationStr, transcriptionText);
-  const { json, usage } = await askGpt(prompt);
+  const { json, usage } = await askAi(prompt);
   const analysis = applySpeechToAnalysis(json, speech);
   const sc = analysis.scorecard || {};
   const generalScore = Math.round(

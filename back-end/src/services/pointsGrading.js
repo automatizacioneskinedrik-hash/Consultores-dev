@@ -1,13 +1,13 @@
 // Grades a labelled transcription with the published points speech. Shared by the call analysis
 // and by the "Probar con una sesión" check in Configuración avanzada.
 import { buildPointsPrompt, countMuletillas, scorePointsAnalysis, swapSpeakerLabels } from "../prompts/pointsEngine.js";
-import { askGpt } from "./gptClient.js";
+import { askAi } from "./aiClient.js";
 
 export async function gradeWithPoints({ context, durationStr, transcriptionText, consultantPct, consultantMinutes, otherMinutes, model }) {
   const { speech } = context;
   const countWords = speech.muletillas?.count || [];
   const muletillas = countMuletillas(transcriptionText, countWords, { minutes: consultantMinutes });
-  const { json: analysis, usage, fallbackFrom } = await askGpt(buildPointsPrompt({ ...context, durationStr, transcriptionText, muletillas }), { model });
+  const { json: analysis, usage, fallbackFrom } = await askAi(buildPointsPrompt({ ...context, durationStr, transcriptionText, muletillas }), { model });
   if (analysis.error) return { analysis, scoring: null, usage, fallbackFrom, transcriptionText, consultantPct, rolesSwapped: false, muletillas };
 
   // GPT flags when the "most words" heuristic labelled the client as the consultant.

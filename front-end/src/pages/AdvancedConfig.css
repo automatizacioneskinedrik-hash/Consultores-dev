@@ -582,3 +582,17 @@ body.sidebar-collapsed .advancedPage {
 .acOptionName { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; color: #040025; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .acOption.isChecked .acOptionName { font-weight: 700; }
 .acOption .acPill { margin-left: 0; }
+
+/* Proveedor de IA: botones grandes con el logo oficial */
+.acProviders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.acProvider { display: grid; justify-items: center; gap: 8px; padding: 20px 16px; border: 2px solid #dce3ed; border-radius: 18px; background: #fff; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.acProvider:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(4, 0, 37, .08); }
+.acProvider:focus-visible { outline: 3px solid #2885FF; outline-offset: 2px; }
+.acProvider img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; }
+.acProvider-openai img { background: #fff; padding: 4px; }
+.acProvider.isShown { border-color: #0040A4; box-shadow: 0 0 0 3px #eaf2ff; }
+.acProviderName { font-size: 18px; font-weight: 700; color: #040025; }
+.acProviderHint { font-size: 13px; color: #65728a; }
+.acProviderWarn { font-size: 12px; font-weight: 700; color: #9a3412; background: #fff1e6; padding: 2px 10px; border-radius: 100px; }
+.acProvider .acPill { margin-left: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) { .acProviders { grid-template-columns: 1fr; } }
