@@ -147,7 +147,7 @@ async function transcribeWithDiarization(filePath) {
   };
 }
 
-export async function processAudioAnalysis(objectPath, userEmail) {
+export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy = userEmail } = {}) {
   console.log(`Starting analysis for ${objectPath} (User: ${userEmail})`);
 
   // GUARDIA ANTI-DUPLICADOS: si este audio ya fue analizado, no re-procesar.
@@ -206,6 +206,7 @@ export async function processAudioAnalysis(objectPath, userEmail) {
     const now = new Date();
     const analysisData = {
       userEmail,
+      uploadedBy: normalizeEmailValue(uploadedBy),
       objectPath,
       transcription,
       analysis,

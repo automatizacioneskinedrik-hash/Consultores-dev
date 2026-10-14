@@ -1,0 +1,19 @@
+/* ¿De quién es esta llamada? — solo para los roles que ven todo */
+.ownerPicker { width: 100%; max-width: 720px; margin: 0 auto 16px; display: grid; gap: 8px; font-family: Roboto, Helvetica, Arial, sans-serif; text-align: left; }
+.ownerLabel { font-size: 13px; font-weight: 700; color: #040025; }
+.ownerChosen { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; border: 1px solid #dce3ed; border-radius: 12px; background: #fff; color: #0040A4; }
+.ownerChosen strong { color: #040025; font-size: 15px; }
+.ownerEmail { color: #64748b; font-size: 13px; }
+.ownerChange { margin-left: auto; border: 0; background: none; color: #0040A4; font: 700 14px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; padding: 0; }
+.ownerReset { border: 0; background: #f1f5f9; color: #64748b; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+.ownerChange:disabled, .ownerReset:disabled { opacity: .5; cursor: not-allowed; }
+.ownerSearch { display: grid; gap: 6px; padding: 10px; border: 1px solid #0040A4; border-radius: 12px; background: #fff; }
+.ownerSearch input { width: 100%; padding: 10px 12px; border: 1px solid #dce3ed; border-radius: 10px; font: 14px Roboto, Helvetica, Arial, sans-serif; color: #040025; outline: none; }
+.ownerSearch input:focus { border-color: #0040A4; box-shadow: 0 0 0 2px #eaf2ff; }
+.ownerList { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
+.ownerList button { width: 100%; display: grid; gap: 1px; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; }
+.ownerList button:hover, .ownerList button:focus-visible, .ownerList button[aria-selected="true"] { background: #eaf2ff; outline: none; }
+.ownerList strong { font-size: 14px; color: #040025; }
+.ownerList span { font-size: 12px; color: #64748b; }
+.ownerEmpty { padding: 8px 10px; font-size: 13px; color: #64748b; }
+.ownerCancel { justify-self: end; border: 0; background: none; color: #64748b; font: 700 13px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; }

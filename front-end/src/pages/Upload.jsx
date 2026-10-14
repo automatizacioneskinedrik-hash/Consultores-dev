@@ -4,10 +4,13 @@ import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import GuideTour from "../components/GuideTour";
+import OwnerPicker from "../components/OwnerPicker";
+import { seesAll } from "../utils/roles";
 import "../App.css";
 
 const UPLOAD_TOUR = [
   { title: "¡Hola! Yo escucho tus llamadas", text: "Te muestro en menos de un minuto cómo funciona esta pantalla. Puedes saltar el recorrido cuando quieras." },
+  { target: ".ownerPicker", title: "¿De quién es la llamada?", text: "Si subes la llamada de otra persona, elígela aquí antes de subirla. Quedará en su historial y en sus métricas." },
   { target: ".dropZone", title: "Aquí subes tu llamada", text: "Arrastra la grabación hasta este recuadro o haz clic en él para buscarla en tu computador." },
   { target: ".formatTags", title: "Formatos que entiendo", text: "Acepto audios en MP3, WAV, M4A u OGG. Si tu archivo tiene otro formato, conviértelo primero a uno de estos." },
   { target: ".dropZone", title: "Luego yo hago el resto", text: "Transcribo la llamada, la califico con el speech comercial y te muestro tu reporte: la nota de 100 y qué decir distinto la próxima vez." },
@@ -233,6 +236,11 @@ export default function Upload() {
   const inputRef = useRef(null);
   const pollingRef = useRef(null);
   const [user] = useState(() => getUser() || {});
+  // Roles that see everyone may upload a call for someone else; read at upload time through a ref.
+  const canChooseOwner = seesAll(user);
+  const [ownerEmail, setOwnerEmail] = useState(user.email || "");
+  const ownerRef = useRef(ownerEmail);
+  const chooseOwner = (email) => { ownerRef.current = email; setOwnerEmail(email); };
 
   useEffect(() => {
     if (user && user.fullName) {
@@ -563,7 +571,7 @@ export default function Upload() {
           "X-Admin-Email": user?.email || "",
           "X-Auth-Token": user?.authToken || ""
         },
-        body: JSON.stringify({ objectPath: currentObjectPath, userEmail: user?.email || "anonymous" }),
+        body: JSON.stringify({ objectPath: currentObjectPath, ownerEmail: ownerRef.current }),
       });
 
       const completeData = await completeRes.json();
@@ -606,7 +614,7 @@ export default function Upload() {
         "X-Admin-Email": user?.email || "",
         "X-Auth-Token": user?.authToken || ""
       },
-      body: JSON.stringify({ objectPath: currentObjectPath, userEmail: user?.email || "anonymous" }),
+      body: JSON.stringify({ objectPath: currentObjectPath, ownerEmail: ownerRef.current }),
     }).catch((err) => console.error("Background analysis trigger:", err));
   };
 
@@ -728,6 +736,7 @@ export default function Upload() {
               </div>
             )}
 
+            {canChooseOwner && successStep !== 2 && <OwnerPicker user={user} value={ownerEmail} onChange={chooseOwner} />}
             {successStep === 2 ? (
               <div className="analyzingWidget">
                 <div className="spinnerGlow"></div>

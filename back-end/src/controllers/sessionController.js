@@ -150,7 +150,14 @@ export const getSessionDetail = async (req, res) => {
       consultant = consultantSnapshot.empty ? {} : consultantSnapshot.docs[0].data();
     }
 
-    return res.json({ ok: true, report: { id: doc.id, ...data, userName: consultant.name || "", userPicture: consultant.picture || consultant.photoURL || "" } });
+    // A coordinator may have uploaded the call for the consultant: show who did it.
+    let uploadedByName = "";
+    if (data.uploadedBy && normalizeEmailValue(data.uploadedBy) !== sessionEmail) {
+      const uploader = await db.collection("users").where("email", "==", normalizeEmailValue(data.uploadedBy)).limit(1).get();
+      uploadedByName = uploader.empty ? data.uploadedBy : uploader.docs[0].data().name || data.uploadedBy;
+    }
+
+    return res.json({ ok: true, report: { id: doc.id, ...data, userName: consultant.name || "", userPicture: consultant.picture || consultant.photoURL || "", uploadedByName } });
   } catch (err) {
     console.error("Error fetching report detail:", err);
     return res.status(500).json({ ok: false, error: "Error al obtener detalle" });

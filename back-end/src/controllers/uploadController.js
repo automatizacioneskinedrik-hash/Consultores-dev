@@ -1,7 +1,9 @@
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { bucket, BUCKET_NAME } from "../config/storage.js";
-import { slugify } from "../utils/helpers.js";
+import { db } from "../config/firebase.js";
+import { normalizeEmailValue, slugify } from "../utils/helpers.js";
+import { logChange } from "../services/auditLog.js";
 import { processAudioAnalysis } from "../services/analysisService.js";
 
 export const getSignedUrl = async (req, res) => {
@@ -53,8 +55,22 @@ export const getSignedUrl = async (req, res) => {
 
 export const completeUpload = async (req, res) => {
   try {
-    const { objectPath, userEmail } = req.body;
+    const { objectPath } = req.body;
     if (!objectPath) return res.status(400).json({ ok: false, error: "objectPath requerido" });
+
+    // The call belongs to whoever uploads it, unless a role that sees everyone uploads it for someone else.
+    const uploadedBy = req.requester.email;
+    let userEmail = uploadedBy;
+    const requestedOwner = normalizeEmailValue(req.body.ownerEmail);
+    if (requestedOwner && requestedOwner !== uploadedBy) {
+      if (!req.requester.cargo.seesAll) {
+        return res.status(403).json({ ok: false, error: "Tu rol no permite subir llamadas a nombre de otra persona." });
+      }
+      const owner = await db.collection("users").where("email", "==", requestedOwner).limit(1).get();
+      if (owner.empty) return res.status(400).json({ ok: false, error: "La persona elegida no está registrada." });
+      userEmail = requestedOwner;
+      await logChange(req.requester, "session.upload_for", `Subió una llamada a nombre de ${owner.docs[0].data().name || requestedOwner}`, { objectPath, ownerEmail: requestedOwner });
+    }
 
     if (!bucket) {
       return res.status(503).json({ ok: false, error: "Servicio de almacenamiento no configurado" });
@@ -71,14 +87,14 @@ export const completeUpload = async (req, res) => {
     if (isLargeFile) {
       // Long audio: return immediately so Cloud Run doesn't hit the request timeout.
       // Processing continues in the background container.
-      processAudioAnalysis(objectPath, userEmail).catch((err) => {
+      processAudioAnalysis(objectPath, userEmail, { uploadedBy }).catch((err) => {
         console.error("Background analysis error:", err);
       });
       return res.json({ ok: true, isLargeFile: true });
     }
 
     // Short audio: wait for completion so the frontend can show the report immediately.
-    const report = await processAudioAnalysis(objectPath, userEmail);
+    const report = await processAudioAnalysis(objectPath, userEmail, { uploadedBy });
     return res.json({ ok: true, isLargeFile: false, report: report || null });
   } catch (err) {
     console.error("Error en complete:", err);

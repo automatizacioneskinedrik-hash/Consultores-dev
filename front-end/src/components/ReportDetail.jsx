@@ -94,6 +94,11 @@ export default function ReportDetail({ report, onClose }) {
   const consultantPicture = report.userPicture || (report.userEmail && report.userEmail === currentUser.email ? currentUser.picture : "");
   // Admins compare AI models, so they see which one graded the session; consultants don't need it.
   const canSeeModel = canManage(currentUser);
+  // Set when a coordinator uploaded the call for the consultant.
+  const uploadedBy = report.uploadedByName
+    || (report.uploadedBy && report.uploadedBy !== String(report.userEmail || "").toLowerCase()
+      ? (report.uploadedBy === String(currentUser.email || "").toLowerCase() ? "ti" : report.uploadedBy)
+      : "");
   const gradedWith = canSeeModel ? report.aiUsage?.model : null;
 
   // Rendered on <body> so printing (which hides the app shell) keeps the report visible from every page.
@@ -104,7 +109,7 @@ export default function ReportDetail({ report, onClose }) {
           <div className="headerLeft">
             <h2>Reporte de Sesión</h2>
             <span>{clienteNome} — {dateStr}</span>
-            <span style={{ display: "block", fontSize: 11, opacity: 0.75 }}>Speech: {report.speechSnapshot?.name || "Metodología original"}{report.speechSnapshot?.phases?.length ? ` · ${report.speechSnapshot.phases.length} fases` : ""}{gradedWith ? ` · Calificado con ${gradedWith}` : ""}</span>
+            <span style={{ display: "block", fontSize: 11, opacity: 0.75 }}>Speech: {report.speechSnapshot?.name || "Metodología original"}{report.speechSnapshot?.phases?.length ? ` · ${report.speechSnapshot.phases.length} fases` : ""}{gradedWith ? ` · Calificado con ${gradedWith}` : ""}{uploadedBy ? ` · Subida por ${uploadedBy}` : ""}</span>
           </div>
           <div className="headerActions">
             {report.objectPath && (
