@@ -180,12 +180,8 @@ export default function AiModelTab({ authHeaders }) {
   return <div className="acPanel">
     {notice && <div role="status" className={`speechNotice ${notice.error ? "error" : ""}`}>{notice.text}</div>}
 
-    <div className="acFlow">
-      <div><strong>Modelo activo: {config.activeModel}</strong><p>Analiza todas las llamadas nuevas con {PROVIDERS[activeProvider].label}.</p></div>
-    </div>
-
     <section className="acCard">
-      <div className="acCardHead"><div><h2>¿Con qué IA califica el sistema?</h2><p>Toca un logo para ver sus modelos.</p></div></div>
+      <h2 className="acProvidersTitle">¿Con qué IA califica el sistema?</h2>
       <div className="acProviders" role="tablist" aria-label="Proveedor de IA">
         {Object.entries(PROVIDERS).map(([id, info]) => {
           const entry = (config.providers || []).find((item) => item.id === id);
@@ -197,11 +193,13 @@ export default function AiModelTab({ authHeaders }) {
             className={`acProvider acProvider-${id} ${shown === id ? "isShown" : ""} ${activeProvider === id ? "isActive" : ""}`}
             onClick={() => chooseProvider(id)}
           >
-            <img src={info.logo} alt="" />
-            <span className="acProviderName">{info.label}</span>
-            {activeProvider === id
-              ? <span className="acPill">En uso · {config.activeModel}</span>
-              : entry?.error ? <span className="acProviderWarn">No disponible</span> : <span className="acProviderHint">{entry?.models.length || 0} modelos</span>}
+            <span className="acProviderLogo"><img src={info.logo} alt="" /></span>
+            <span className="acProviderText">
+              <span className="acProviderName">{info.label}</span>
+              {activeProvider === id
+                ? <span className="acPill">En uso · {config.activeModel}</span>
+                : entry?.error ? <span className="acProviderWarn">No disponible</span> : <span className="acProviderHint">{entry?.models.length || 0} modelos</span>}
+            </span>
           </button>;
         })}
       </div>

@@ -583,16 +583,21 @@ body.sidebar-collapsed .advancedPage {
 .acOption.isChecked .acOptionName { font-weight: 700; }
 .acOption .acPill { margin-left: 0; }
 
-/* Proveedor de IA: botones grandes con el logo oficial */
-.acProviders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.acProvider { display: grid; justify-items: center; gap: 8px; padding: 20px 16px; border: 2px solid #dce3ed; border-radius: 18px; background: #fff; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
-.acProvider:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(4, 0, 37, .08); }
+/* Proveedor de IA: botones bajos y horizontales con el logo oficial */
+.acProvidersTitle { margin: 0 0 12px; font-size: 16px; color: #040025; }
+.acProviders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.acProvider { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 2px solid #dce3ed; border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: Roboto, Helvetica, Arial, sans-serif; transition: border-color .15s ease, box-shadow .15s ease; }
+.acProvider:hover { border-color: #b9c8e0; }
 .acProvider:focus-visible { outline: 3px solid #2885FF; outline-offset: 2px; }
-.acProvider img { width: 64px; height: 64px; object-fit: contain; border-radius: 16px; }
-.acProvider-openai img { background: #fff; padding: 4px; }
 .acProvider.isShown { border-color: #0040A4; box-shadow: 0 0 0 3px #eaf2ff; }
-.acProviderName { font-size: 18px; font-weight: 700; color: #040025; }
+.acProviderLogo { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; overflow: hidden; display: grid; place-items: center; }
+.acProviderLogo img { width: 100%; height: 100%; object-fit: contain; }
+/* El logo de OpenAI va en blanco sobre un recuadro negro, igual que el de Claude va sobre naranja */
+.acProvider-openai .acProviderLogo { background: #000; padding: 6px; }
+.acProvider-openai .acProviderLogo img { filter: invert(1); }
+.acProviderText { display: grid; gap: 2px; min-width: 0; }
+.acProviderName { font-size: 16px; font-weight: 700; color: #040025; }
 .acProviderHint { font-size: 13px; color: #65728a; }
-.acProviderWarn { font-size: 12px; font-weight: 700; color: #9a3412; background: #fff1e6; padding: 2px 10px; border-radius: 100px; }
-.acProvider .acPill { margin-left: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acProviderWarn { justify-self: start; font-size: 12px; font-weight: 700; color: #9a3412; background: #fff1e6; padding: 2px 10px; border-radius: 100px; }
+.acProvider .acPill { justify-self: start; margin-left: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) { .acProviders { grid-template-columns: 1fr; } }
