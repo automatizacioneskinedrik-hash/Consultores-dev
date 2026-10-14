@@ -180,9 +180,7 @@ export default function AiModelTab({ authHeaders }) {
   return <div className="acPanel">
     {notice && <div role="status" className={`speechNotice ${notice.error ? "error" : ""}`}>{notice.text}</div>}
 
-    <section className="acCard">
-      <h2 className="acProvidersTitle">¿Con qué IA califica el sistema?</h2>
-      <div className="acProviders" role="tablist" aria-label="Proveedor de IA">
+    <div className="acProviders" role="tablist" aria-label="Proveedor de IA">
         {Object.entries(PROVIDERS).map(([id, info]) => {
           const entry = (config.providers || []).find((item) => item.id === id);
           return <button
@@ -202,8 +200,7 @@ export default function AiModelTab({ authHeaders }) {
             </span>
           </button>;
         })}
-      </div>
-    </section>
+    </div>
 
     <section className="acCard">
       <div className="acCardHead">

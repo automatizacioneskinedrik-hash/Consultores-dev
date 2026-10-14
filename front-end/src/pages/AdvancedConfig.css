@@ -584,7 +584,6 @@ body.sidebar-collapsed .advancedPage {
 .acOption .acPill { margin-left: 0; }
 
 /* Proveedor de IA: botones bajos y horizontales con el logo oficial */
-.acProvidersTitle { margin: 0 0 12px; font-size: 16px; color: #040025; }
 .acProviders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .acProvider { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 2px solid #dce3ed; border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: Roboto, Helvetica, Arial, sans-serif; transition: border-color .15s ease, box-shadow .15s ease; }
 .acProvider:hover { border-color: #b9c8e0; }
@@ -601,3 +600,7 @@ body.sidebar-collapsed .advancedPage {
 .acProviderWarn { justify-self: start; font-size: 12px; font-weight: 700; color: #9a3412; background: #fff1e6; padding: 2px 10px; border-radius: 100px; }
 .acProvider .acPill { justify-self: start; margin-left: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) { .acProviders { grid-template-columns: 1fr; } }
+
+/* Las tarjetas por tipo se ajustan a su ancho: los nombres largos (claude-sonnet-4-5-20250929) bajan de línea en vez de desbordar */
+.acTypeCard, .acTypeList, .acTypeList > *, .acOptionGrid > * { min-width: 0; }
+.acOptionName { white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
