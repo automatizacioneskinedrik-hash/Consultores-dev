@@ -1,4 +1,3 @@
-.costsUpdated { margin: 6px 0 0; font-size: 13px; color: #52627b; }
 .costsRange { min-width: 280px; }
 .costsLegend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: #040025; }
 .costsLegend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -25,4 +24,6 @@
   .costsRow > span:nth-child(2), .costsRow > span:nth-child(3), .costsRow > span:nth-child(5) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .costsChevron { transition: none; } }
-.costsAlert { margin-bottom: 16px; }
+.costsUpdated { margin: 6px 0 0; font-size: 13px; color: #52627b; }
+.costsError { color: #b42318; }
+.costsStale { font-style: normal; font-size: 12px; margin-left: 8px; color: #b45309; white-space: nowrap; }

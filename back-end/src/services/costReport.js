@@ -13,7 +13,8 @@ const BILLING_TABLE = `${GCP_PROJECT_ID}.billing_export.gcp_billing_export_v1_*`
 export const ASSEMBLY_RATES = Object.freeze({ "Transcripción (Universal-2)": 0.15, "Separar quién habla": 0.02 });
 export const PROVIDER_IDS = ["assembly", "openai", "claude", "google"];
 const COLLECT_HOUR_UTC = 3; // 10:00 p. m. in Colombia, early morning in Spain.
-const REFRESH_DAYS = 3; // Google can report a day late, so the last days are read again every time.
+// Google reports late and fills the previous month when its export is turned on, so the last 45 days are read again.
+const REFRESH_DAYS = 45;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const usageRef = (day) => db.collection("assembly_usage").doc(day);

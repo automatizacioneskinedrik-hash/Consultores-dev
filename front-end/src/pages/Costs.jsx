@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Spin } from "antd";
+import { Button, Card, Col, ConfigProvider, DatePicker, Empty, Row, Spin } from "antd";
 import { CalendarOutlined, DollarOutlined, PhoneOutlined, RiseOutlined } from "@ant-design/icons";
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import dayjs from "dayjs";
@@ -23,23 +23,29 @@ const PROVIDERS = [
 
 const COSTS_TOUR = [
   { title: "¡Hola! Yo llevo las cuentas", text: "Aquí ves cuánto cuesta procesar las llamadas, proveedor por proveedor. Te muestro dónde está cada cosa." },
-  { target: ".dashboardTopFilters", title: "Elige las fechas", text: "Escoge desde y hasta qué día quieres ver. Todo se actualiza con tu elección." },
+  { target: ".dashboardTopFilters", title: "Elige el periodo", text: "Escoge un mes, una semana o fechas exactas. Todo se actualiza con tu elección." },
   { target: ".costsKpis", title: "Las cifras clave", text: "El total del periodo, lo del último día, cuánto cuesta en promedio cada llamada y cuántas se procesaron." },
   { target: '[data-tour="costs-daily"]', title: "Día por día", text: "Cada barra es un día y cada color, un proveedor. Encima ves el total del día." },
   { target: '[data-tour="costs-providers"]', title: "Por proveedor", text: "Aquí ves de dónde sale cada número. AssemblyAI aparece como calculado porque no tiene forma de reportar su costo." },
 ];
 
-// The most recent day that can have costs is yesterday; the default view is its last 14 days.
-const latestDay = () => {
-  const yesterday = dayjs().subtract(1, "day");
-  return yesterday.isBefore(COSTS_START, "day") ? COSTS_START : yesterday;
-};
-const defaultRange = () => {
-  const end = latestDay();
-  const start = end.subtract(13, "day");
-  return [start.isBefore(COSTS_START, "day") ? COSTS_START : start, end];
-};
 const short = (date, format = "D MMM") => dayjs(date).locale("es").format(format);
+
+// The period is a month, a calendar week (Monday to Sunday) or exact dates; picking one clears the others.
+const mondayOf = (date) => date.subtract((date.day() + 6) % 7, "day").startOf("day");
+const notAfterToday = (date) => (date.isAfter(dayjs(), "day") ? dayjs() : date);
+function rangeOf({ kind, value }) {
+  if (kind === "month") return [value.startOf("month"), notAfterToday(value.endOf("month"))];
+  if (kind === "week") return [mondayOf(value), notAfterToday(mondayOf(value).add(6, "day"))];
+  return value;
+}
+const formatWeek = (value) => `${short(mondayOf(value))} – ${short(mondayOf(value).add(6, "day"))}`;
+const WEEK_PRESETS = [
+  { label: "Esta semana", value: () => dayjs() },
+  { label: "Semana pasada", value: () => dayjs().subtract(1, "week") },
+];
+const outsideDays = (date) => date.isBefore(COSTS_START, "day") || date.isAfter(dayjs(), "day");
+const outsideMonths = (date) => date.endOf("month").isBefore(COSTS_START, "day") || date.startOf("month").isAfter(dayjs(), "day");
 
 const money = (value) => `US$${(value || 0).toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const providerAmount = (day, id) => day?.providers?.[id]?.amount || 0;
@@ -62,7 +68,10 @@ function KpiCard({ label, legend, icon, value, loading }) {
 
 export default function Costs() {
   const [user] = useState(() => getUser() || {});
-  const [range, setRange] = useState(defaultRange);
+  const [selection, setSelection] = useState(() => ({ kind: "month", value: dayjs() }));
+  const range = rangeOf(selection);
+  const from = range[0].format("YYYY-MM-DD");
+  const to = range[1].format("YYYY-MM-DD");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,7 +79,7 @@ export default function Costs() {
 
   useEffect(() => {
     let cancelled = false;
-    const params = new URLSearchParams({ from: range[0].format("YYYY-MM-DD"), to: range[1].format("YYYY-MM-DD") });
+    const params = new URLSearchParams({ from, to });
     fetch(`${API_BASE_URL}/api/costs?${params}`, { headers: { "X-Admin-Email": user.email || "", "X-Auth-Token": user.authToken || "" } })
       .then((response) => response.json())
       .then((body) => {
@@ -81,7 +90,7 @@ export default function Costs() {
       .catch((err) => { if (!cancelled) setError(err.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [range, user.email, user.authToken]);
+  }, [from, to, user.email, user.authToken]);
 
   const days = data?.days || [];
   const latest = data?.latest || null;
@@ -93,13 +102,15 @@ export default function Costs() {
     total: dayTotal(day),
     ...Object.fromEntries(PROVIDERS.map((provider) => [provider.id, providerAmount(day, provider.id)])),
   }));
-  const failed = Object.entries(data?.errors || {});
-  function changeRange(value) {
+  // A provider that could not be read keeps its last values; its row just says it is not up to date.
+  const stale = new Set(Object.keys(data?.errors || {}));
+  function choose(kind, value) {
     if (!value) return;
     setLoading(true);
     setError("");
-    setRange(value);
+    setSelection({ kind, value });
   }
+  const valueFor = (kind) => (selection.kind === kind ? selection.value : null);
   const toggle = (id) => setOpen((current) => {
     const next = new Set(current);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -115,35 +126,27 @@ export default function Costs() {
           <div className="dashboardHeaderTitle">
             <div className="dashboardHeaderText">
               <h1 className="pageTitle">Costos de <span className="titleAccent">procesamiento</span></h1>
-              <p className="costsUpdated">
-                Se actualiza cada día después de las 10:00 p. m. de Colombia (madrugada en España).
-                {data?.collectedAt ? ` Último corte: ${short(data.collectedAt, "D MMM, h:mm a")}` : ""}
-              </p>
+              {data?.collectedAt && <p className="costsUpdated">Último corte: {short(data.collectedAt, "D [de] MMMM")}</p>}
+              {error && <p className="costsUpdated costsError">{error}</p>}
             </div>
           </div>
           <div className="dashboardTopFilters">
-            <div className="dashboardFiltersLabels"><div className="dashboardFilterLabel">Fechas</div></div>
+            <div className="dashboardFiltersLabels">
+              <div className="dashboardFilterLabel">Mes</div>
+              <div className="dashboardFilterLabel">Semana</div>
+              <div className="dashboardFilterLabel">Fechas</div>
+            </div>
             <div className="dashboardFiltersInputs">
-              <DatePicker.RangePicker
-                className="dashboardFilterControl costsRange"
-                value={range}
-                onChange={changeRange}
-                format="D MMM YYYY"
-                allowClear={false}
-                disabledDate={(date) => date.isBefore(COSTS_START, "day") || date.isAfter(dayjs(), "day")}
-                placeholder={["Desde", "Hasta"]}
-              />
+              <DatePicker className="dashboardFilterControl" picker="month" placeholder="Mes" allowClear={false} value={valueFor("month")} onChange={(value) => choose("month", value)} disabledDate={outsideMonths} format={(value) => short(value, "MMMM YYYY")} />
+              <DatePicker className="dashboardFilterControl" picker="week" placeholder="Semana" allowClear={false} value={valueFor("week")} onChange={(value) => choose("week", value)} disabledDate={outsideDays} presets={WEEK_PRESETS} format={formatWeek} />
+              <DatePicker.RangePicker className="dashboardFilterControl costsRange" placeholder={["Desde", "Hasta"]} allowClear={false} value={valueFor("range")} onChange={(value) => choose("range", value)} disabledDate={outsideDays} format="D MMM YYYY" />
             </div>
             <div className="dashboardFiltersFooter">
-              <Button type="text" size="small" className="dashboardClearBtn" onClick={() => changeRange([COSTS_START, dayjs()])}>Ver todo</Button>
+              <Button type="text" size="small" className="dashboardClearBtn" onClick={() => choose("range", [COSTS_START, dayjs()])}>Ver todo</Button>
             </div>
           </div>
         </header>
 
-        {error && <Alert type="error" showIcon message={error} className="costsAlert" />}
-        {failed.length > 0 && <Alert type="warning" showIcon className="costsAlert"
-          message="En el último corte no se pudo leer algún proveedor; se muestran sus últimos valores."
-          description={failed.map(([id, message]) => `${PROVIDERS.find((provider) => provider.id === id)?.name || id}: ${message}`).join(" · ")} />}
 
         <section className="dashboardSection">
           <Row gutter={[16, 16]} className="costsKpis">
@@ -160,7 +163,7 @@ export default function Costs() {
               {loading
                 ? <div className="dashboardChartState"><Spin /></div>
                 : !days.length
-                  ? <div className="dashboardChartState"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Todavía no hay datos para estas fechas. Cada día se suma el anterior después de las 10:00 p. m. de Colombia." /></div>
+                  ? <div className="dashboardChartState"><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Sin datos para estas fechas." /></div>
                   : <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={chartData} margin={{ left: 4, right: 8, top: 26, bottom: 4 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(4,0,37,0.08)" />
@@ -191,7 +194,7 @@ export default function Costs() {
                 return <div key={provider.id}>
                   <button type="button" className="costsRow" aria-expanded={isOpen} onClick={() => toggle(provider.id)}>
                     <span className="costsProvider"><i style={{ background: provider.color }} />{provider.name}</span>
-                    <span><em className={`costsSource ${provider.calculated ? "calculated" : ""}`}>{provider.source}</em></span>
+                    <span><em className={`costsSource ${provider.calculated ? "calculated" : ""}`}>{provider.source}</em>{stale.has(provider.id) && <em className="costsStale" title="En el último corte no respondió; se muestran sus valores anteriores.">Sin actualizar</em>}</span>
                     <span>{money(providerAmount(latest, provider.id))}</span>
                     <span><b>{money(sum)}</b></span>
                     <span className="costsPct">{total ? Math.round((sum / total) * 100) : 0} %</span>
