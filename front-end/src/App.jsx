@@ -6,6 +6,7 @@ import AdvancedConfig from "./pages/AdvancedConfig";
 import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
+import Costs from "./pages/Costs";
 import { getUser } from "./utils/user";
 import { canManage } from "./utils/roles";
 import "./App.css";
@@ -68,6 +69,7 @@ export default function App() {
           }
         />
         <Route path="/speech-comercial" element={<AdminRoute><SpeechConfig /></AdminRoute>} />
+        <Route path="/costos" element={<AdminRoute><Costs /></AdminRoute>} />
 
         <Route
           path="/dashboard"

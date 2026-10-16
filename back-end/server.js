@@ -11,6 +11,7 @@ import adminRoutes from "./src/routes/adminRoutes.js";
 import promptRoutes from "./src/routes/promptRoutes.js";
 import followUpRoutes from "./src/routes/followUpRoutes.js";
 import aiConfigRoutes from "./src/routes/aiConfigRoutes.js";
+import costRoutes from "./src/routes/costRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -50,6 +51,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptRoutes);
 app.use("/api/followups", followUpRoutes);
 app.use("/api/ai-config", aiConfigRoutes);
+app.use("/api/costs", costRoutes);
 
 // Manejo de errores global
 app.use((err, req, res, next) => {

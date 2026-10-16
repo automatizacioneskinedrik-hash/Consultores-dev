@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import { canManage, cargoOf } from "../utils/roles";
-import { BookOpenText, ChartNoAxesCombined, CloudUpload, History, Menu, Settings, Users } from "lucide-react";
+import { BookOpenText, ChartNoAxesCombined, CloudUpload, Coins, History, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
 // Each section has its own mascot peeking over the sidebar.
@@ -13,6 +13,7 @@ const SECTION_MASCOTS = {
   "/admin": "/mascots/dots/dot-verde-asomado.webp",
   "/speech-comercial": "/mascots/dots/dot-lila-asomado.webp",
   "/configuracion-avanzada": "/mascots/dots/dot-naranja-asomado.webp",
+  "/costos": "/mascots/dots/dot-azul-costos-asomado.webp",
 };
 
 export default function Sidebar() {
@@ -34,6 +35,7 @@ export default function Sidebar() {
   const isDashboardPage = location.pathname === "/dashboard";
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
   const isSpeechConfigPage = location.pathname === "/speech-comercial";
+  const isCostsPage = location.pathname === "/costos";
 
   // Every cargo sees Subir archivo, Historial and Panel; the managing cargos also see the rest.
   const managesApp = canManage(user);
@@ -182,6 +184,12 @@ export default function Sidebar() {
             >
               <Settings className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
               <span className="sidebarItemLabel">Configuración<br />Avanzada</span>
+            </button>
+          )}
+          {managesApp && (
+            <button className={`sidebarItem ${isCostsPage ? "active" : ""}`} onClick={() => { navigate("/costos"); setIsMobileSidebarOpen(false); }} title="Costos">
+              <Coins className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel">Costos</span>
             </button>
           )}
         </nav>

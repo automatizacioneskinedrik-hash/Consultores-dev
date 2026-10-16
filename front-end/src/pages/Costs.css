@@ -1,0 +1,28 @@
+.costsUpdated { margin: 6px 0 0; font-size: 13px; color: #52627b; }
+.costsRange { min-width: 280px; }
+.costsLegend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: #040025; }
+.costsLegend span { display: inline-flex; align-items: center; gap: 6px; }
+.costsLegend i { width: 10px; height: 10px; border-radius: 3px; }
+.costsTable { display: grid; }
+.costsRow { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) 110px 120px 100px 24px; gap: 12px; align-items: center; padding: 14px 6px; border: 0; border-top: 1px solid #e2e8f0; background: none; width: 100%; text-align: left; font: inherit; font-size: 14px; color: #040025; cursor: pointer; }
+.costsRow > span:nth-child(3), .costsRow > span:nth-child(4), .costsRow > span:nth-child(5) { text-align: right; font-variant-numeric: tabular-nums; }
+.costsRow:focus-visible { outline: 3px solid #9cc0f5; outline-offset: 2px; border-radius: 8px; }
+.costsHead { cursor: default; border-top: 0; padding-top: 0; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #52627b; }
+.costsFoot { cursor: default; font-weight: 900; }
+.costsProvider { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+.costsProvider i { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.costsSource { font-style: normal; font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px; background: #eaf2ff; color: #0040A4; white-space: nowrap; }
+.costsSource.calculated { background: #f3ecff; color: #6b3fc4; }
+.costsPct { color: #52627b; }
+.costsChevron { color: #52627b; transition: transform .15s; }
+.costsRow[aria-expanded="true"] .costsChevron { transform: rotate(90deg); }
+.costsDetail { padding-bottom: 10px; }
+.costsDetail p { margin: 0 0 0 28px; font-size: 13px; color: #52627b; }
+.costsSub { cursor: default; border-top: 0; padding-block: 6px; color: #334155; }
+.costsSub > span:first-child { padding-left: 22px; }
+@media (max-width: 760px) {
+  .costsRow { grid-template-columns: minmax(0, 1fr) 100px 24px; }
+  .costsRow > span:nth-child(2), .costsRow > span:nth-child(3), .costsRow > span:nth-child(5) { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .costsChevron { transition: none; } }
+.costsAlert { margin-bottom: 16px; }

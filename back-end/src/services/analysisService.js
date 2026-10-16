@@ -14,6 +14,7 @@ import { POINTS_FORMAT } from "../prompts/speechRules.js";
 import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
+import { recordAssemblyUsage } from "./costReport.js";
 
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 
@@ -85,6 +86,8 @@ async function transcribeWithDiarization(filePath) {
   if (transcript.status === "error") {
     throw new Error(`AssemblyAI error: ${transcript.error}`);
   }
+  // AssemblyAI has no cost API: the Costos section multiplies these seconds by its rate.
+  await recordAssemblyUsage(transcript.audio_duration).catch((error) => console.error("No se pudo anotar el uso de AssemblyAI:", error.message));
 
   const utterances = transcript.utterances || [];
 
