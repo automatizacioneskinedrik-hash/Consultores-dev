@@ -29,7 +29,7 @@ export default function OwnerPicker({ user, value, onChange, disabled }) {
   const matches = useMemo(() => {
     const term = query.trim().toLowerCase();
     const list = term ? people.filter((p) => p.name.toLowerCase().includes(term) || p.email.toLowerCase().includes(term)) : people;
-    return list.slice(0, 8);
+    return list;
   }, [people, query]);
 
   const choose = (email) => { onChange(email); setQuery(""); setOpen(false); };
