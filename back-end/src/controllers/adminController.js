@@ -2,7 +2,7 @@ import admin, { db } from "../config/firebase.js";
 import { normalizeEmailValue, sanitizeEmailArray, isValidEmailValue } from "../utils/helpers.js";
 import { getEmailConfigFromFirestore } from "../services/emailService.js";
 import { CARGOS, cargoOf, isCargo, legacyRoleFor } from "../roles.js";
-import { listChanges, logChange } from "../services/auditLog.js";
+import { AUDIT_SECTIONS, listChanges, logChange } from "../services/auditLog.js";
 
 // --- Gestión de Usuarios ---
 // req.requester is set by adminRoutes. Only an Ingeniero can create, edit or remove another Ingeniero.
@@ -107,7 +107,8 @@ export const deleteUser = async (req, res) => {
 
 export const getAuditLog = async (req, res) => {
   try {
-    return res.json({ ok: true, changes: await listChanges() });
+    const section = AUDIT_SECTIONS.includes(req.query.section) ? req.query.section : "users";
+    return res.json({ ok: true, changes: await listChanges(section) });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ ok: false, error: "No se pudo cargar el historial de cambios" });

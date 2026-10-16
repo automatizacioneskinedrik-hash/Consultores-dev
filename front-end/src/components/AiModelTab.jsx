@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import ChangeHistory from "./ChangeHistory";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
@@ -9,10 +10,6 @@ const PROVIDERS = {
 };
 const providerOf = (model) => (/^claude-/i.test(String(model)) ? "anthropic" : "openai");
 
-const formatDate = (value) => {
-  const date = value?._seconds ? new Date(value._seconds * 1000) : value ? new Date(value) : null;
-  return date ? date.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : "";
-};
 
 // Dated snapshots and "chat-latest" aliases repeat a model under another name.
 const DUPLICATE_NAME = /(-\d{4}-\d{2}-\d{2}$|chat-latest$)/;
@@ -237,13 +234,6 @@ export default function AiModelTab({ authHeaders }) {
       <p className="acHint">Precios oficiales: <a href={PROVIDERS[shown].pricing} target="_blank" rel="noopener noreferrer">página de precios de {PROVIDERS[shown].label}</a>.</p>
     </section>
 
-    <section className="acCard">
-      <div className="acCardHead"><div><h2>Historial de cambios</h2><p>Quién cambió el modelo y cuándo.</p></div></div>
-      <div className="acHistory">
-        {config.history.length
-          ? config.history.map((entry, index) => <div key={`${entry.model}-${index}`}><strong>{entry.model} activado</strong><span>{entry.changedBy} · {formatDate(entry.changedAt)}</span></div>)
-          : <div><strong>{config.activeModel}</strong><span>Modelo inicial del sistema</span></div>}
-      </div>
-    </section>
+    <ChangeHistory section="ai" description="Quién cambió el modelo de IA y cuándo." refreshKey={`${config.activeModel}-${(config.visibleModels || []).join(",")}`} />
   </div>;
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { canManage } from "../utils/roles";
 import GuideTour from "../components/GuideTour";
+import ChangeHistory from "../components/ChangeHistory";
 
 const ADVANCED_TOUR_CLEANUP = [{ click: ".speechTabs .speechTab:first-child" }];
 const ADVANCED_TOUR = [
@@ -11,7 +12,7 @@ const ADVANCED_TOUR = [
   { do: [{ show: [".acCardHead .acLink", ".acChooser"] }], target: ".acChooser", title: "Elige qué modelos ver", text: "Aquí aparecen los modelos de tu cuenta de OpenAI, agrupados por tipo. Marca los que quieras tener a mano y guarda la selección." },
   { do: [{ hide: [".acCardHead .acLink", ".acChooser"] }], target: ".acModels", title: "Cambiar de modelo", text: "Elige otro modelo de la lista y actívalo. Las llamadas que ya se analizaron conservan su nota; solo cambian las nuevas." },
   { target: ".acModel .speechPrimaryButton", title: "Activar", text: "Al pulsar Activar te pido confirmación antes de cambiar el modelo, para que no pase por error." },
-  { target: ".acHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
+  { target: ".changeHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
   { do: [{ click: "#advanced-tab-whatsapp" }], target: ".acTextarea", title: "El mensaje de WhatsApp", text: "Aquí escribes la instrucción que sigue la IA para redactar el mensaje de seguimiento de cada llamada. Guárdala cuando la cambies." },
   { target: ".acVersions", title: "Versiones del mensaje", text: "Cada instrucción guardada queda aquí. Puedes volver a una anterior o borrar las que ya no sirvan." },
   { do: [{ click: "#advanced-tab-email" }], target: ".acTwoCol", title: "Copias por correo", text: "Aquí decides quién recibe copia de los reportes que se envían por correo." },
@@ -369,6 +370,7 @@ export default function AdvancedConfig() {
                 </div>)}
               </div>}
             </section>
+            <ChangeHistory section="whatsapp" description="Cambios en las instrucciones del mensaje de WhatsApp." refreshKey={promptMsg.text} />
           </div>}
 
           {currentTab === "email" && <div className="acPanel">
@@ -392,6 +394,7 @@ export default function AdvancedConfig() {
               </div>}
               {(updatedBy || updatedAt) && <p className="acHint">{updatedBy && `Actualizado por ${updatedBy}`}{updatedBy && updatedAt ? " · " : ""}{updatedAt}</p>}
             </section>
+            <ChangeHistory section="email" description="Cambios en las copias de los reportes por correo." refreshKey={successMsg} />
           </div>}
         </section>
       </main>

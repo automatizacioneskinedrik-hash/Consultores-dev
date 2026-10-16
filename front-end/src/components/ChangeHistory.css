@@ -1,0 +1,14 @@
+.changeHistory { margin-top: 28px; background: #fff; border: 1px solid #e2e8f0; border-radius: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, .05); padding: 22px 24px; display: grid; gap: 10px; }
+.changeHistory h2 { margin: 0; font-size: 18px; font-weight: 700; color: #040025; }
+.changeHistory > p { margin: 0; font-size: 14px; color: #64748b; }
+.changeEmpty { font-size: 14px; color: #64748b; padding: 12px 0; }
+.changeList { list-style: none; margin: 0; padding: 0; display: grid; max-height: 360px; overflow-y: auto; }
+.changeList li { display: grid; grid-template-columns: 140px minmax(0, 1fr) 220px; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #eef1f5; font-size: 14px; }
+.changeWhen { color: #64748b; font-variant-numeric: tabular-nums; }
+.changeWhat { color: #040025; overflow-wrap: anywhere; }
+.changeWho { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; color: #0040A4; font-weight: 500; }
+.changeWho > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) {
+  .changeList li { grid-template-columns: 1fr; gap: 4px; }
+  .changeWho { justify-content: flex-start; }
+}

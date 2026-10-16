@@ -17,6 +17,7 @@ const ADMIN_TOUR = [
 const ADMIN_TOUR_CLEANUP = [{ hide: [".modalOverlay .closeBtn", ".modalOverlay .modal"] }];
 
 import UserAvatar from "../components/UserAvatar";
+import ChangeHistory from "../components/ChangeHistory";
 import { CARGOS, canManage, cargoOf } from "../utils/roles";
 
 const CARGO_ORDER = CARGOS.map((option) => option.id);
@@ -45,7 +46,7 @@ export default function Admin() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const itemsPerPage = 8;
-  const [changes, setChanges] = useState([]);
+  const [changesVersion, setChangesVersion] = useState(0);
 
   const currentUser = useMemo(() => {
     try {
@@ -82,24 +83,13 @@ export default function Admin() {
     }
   };
 
-  // Every change made in the app, with the profile that made it.
-  const fetchChanges = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/audit-log`, {
-        headers: { "X-Admin-Email": currentUser.email || "", "X-Auth-Token": currentUser.authToken || "" },
-      });
-      const data = await res.json();
-      if (data.ok) setChanges(data.changes);
-    } catch (error) {
-      console.debug("Historial no disponible:", error.message);
-    }
-  };
+  // Reloads the user change history after a create, edit or delete.
+  const fetchChanges = () => setChangesVersion((version) => version + 1);
 
   useEffect(() => {
     const isAuthorized = canManage(currentUser);
     if (isAuthorized) {
       fetchUsers();
-      fetchChanges();
     } else {
       setLoading(false);
     }
@@ -388,22 +378,7 @@ export default function Admin() {
             )}
           </div>
 
-          <section className="auditCard" aria-labelledby="auditTitle">
-            <h2 id="auditTitle">Historial de cambios</h2>
-            <p>Cada cambio en usuarios, speech comercial y configuración, con quién lo hizo y cuándo.</p>
-            {changes.length === 0
-              ? <div className="auditEmpty">Todavía no hay cambios registrados.</div>
-              : <ul className="auditList">
-                  {changes.map((change) => <li key={change.id}>
-                    <span className="auditWhen">{change.changedAt ? new Date(change.changedAt).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
-                    <span className="auditWhat">{change.summary}</span>
-                    <span className="auditWho">
-                      <UserAvatar name={change.changedByName} email={change.changedBy} picture={users.find((u) => u.email === change.changedBy)?.picture} className="avatarSm" />
-                      {change.changedByName || change.changedBy}
-                    </span>
-                  </li>)}
-                </ul>}
-          </section>
+          <ChangeHistory section="users" description="Cada cambio en los usuarios, con quién lo hizo y cuándo." refreshKey={changesVersion} />
         </main>
 
         {/* Loading overlay removed per user request */}

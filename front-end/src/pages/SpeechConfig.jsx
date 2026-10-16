@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
+import ChangeHistory from "../components/ChangeHistory";
+import UserAvatar from "../components/UserAvatar";
 import { DEFAULT_GAPS, GAP_KINDS, GAP_STOPS, formatGap, stopIndex } from "../utils/muletillaGaps";
 
 const SPEECH_TOUR_CLEANUP = [{ click: "#speech-tab-version" }];
@@ -544,12 +546,17 @@ export default function SpeechConfig() {
                       {version.legacy ? "Versión original" : version.publishedAt?._seconds ? new Date(version.publishedAt._seconds * 1000).toLocaleDateString("es-CO") : "Publicada"}
                       {" · "}{version.changeNote || (version.format === "points" ? "Versión por puntos" : `${version.phaseCount} fases, formato anterior`)}
                     </span>
+                    {version.publishedBy && <span className="speechVersionBy">
+                      <UserAvatar name={version.publishedByName} email={version.publishedBy} picture={version.publishedByPicture} className="avatarXs" />
+                      Publicada por {version.publishedByName || version.publishedBy}
+                    </span>}
                   </div>
                   {active.id === version.id
                     ? <span className="speechActivePill">Activa</span>
                     : <button type="button" className="speechSecondaryButton" onClick={() => activate(version)} disabled={busy || editing}>Volver a usar esta versión</button>}
                 </div>)}
               </div>
+              <ChangeHistory section="speech" description="Publicaciones, borradores descartados y vueltas a versiones anteriores." refreshKey={`${active?.id}-${versions.length}-${Boolean(draft)}`} />
               {editing && <p className="speechHint">Para cambiar la versión activa, primero publica o descarta el borrador.</p>}
             </section>}
           </section>

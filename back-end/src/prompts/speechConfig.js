@@ -125,9 +125,12 @@ export async function getSpeechVersion(versionId) {
 }
 
 export async function getSpeechEditorData() {
-  const [state, versions, active] = await Promise.all([
-    stateRef().get(), versionsRef().orderBy("publishedAt", "desc").limit(30).get(), getActiveSpeech(),
+  const [state, versions, active, users] = await Promise.all([
+    stateRef().get(), versionsRef().orderBy("publishedAt", "desc").limit(30).get(), getActiveSpeech(), db.collection("users").get(),
   ]);
+  // Who published each version, with the name and photo of their profile.
+  const people = new Map(users.docs.map((doc) => doc.data()).filter((user) => user.email).map((user) => [String(user.email).toLowerCase(), user]));
+  const publisher = (email) => { const person = people.get(String(email || "").toLowerCase()) || {}; return { publishedByName: person.name || "", publishedByPicture: person.picture || person.photoURL || "" }; };
   return {
     active,
     draft: currentDraft(state.data()) ? withNormalizedRules(currentDraft(state.data())) : null,
@@ -135,7 +138,7 @@ export async function getSpeechEditorData() {
     pointsTemplate: POINTS_TEMPLATE,
     ruleLevels: RULE_LEVELS,
     versions: [
-      ...versions.docs.map((doc) => ({ id: doc.id, name: doc.data().config.name, changeNote: doc.data().config.changeNote || "", format: doc.data().config.format || "", publishedAt: doc.data().publishedAt, publishedBy: doc.data().publishedBy, phaseCount: doc.data().config.phases.length })),
+      ...versions.docs.map((doc) => ({ id: doc.id, name: doc.data().config.name, changeNote: doc.data().config.changeNote || "", format: doc.data().config.format || "", publishedAt: doc.data().publishedAt, publishedBy: doc.data().publishedBy, ...publisher(doc.data().publishedBy), phaseCount: doc.data().config.phases.length })),
       { id: LEGACY_VERSION_ID, name: DEFAULT_SPEECH.name, phaseCount: 5, legacy: true },
     ],
   };
