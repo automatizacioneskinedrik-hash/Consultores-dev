@@ -12,7 +12,7 @@ import "./Costs.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 // Mirrors back-end/src/services/costReport.js (COSTS_START_DATE and PROVIDER_IDS).
-const COSTS_START = dayjs("2026-10-16");
+const COSTS_START = dayjs("2026-09-01");
 
 const PROVIDERS = [
   { id: "assembly", name: "AssemblyAI", color: "#BB8AFF", source: "Calculado: minutos × US$0,17/h", calculated: true },

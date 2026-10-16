@@ -4,7 +4,7 @@
 import { BigQuery } from "@google-cloud/bigquery";
 import admin, { db } from "../config/firebase.js";
 
-export const COSTS_START_DATE = "2026-10-16";
+export const COSTS_START_DATE = "2026-09-01";
 const OPENAI_PROJECT_ID = "proj_RGj0l6my7TKzEFsyGPVecYBk";
 const ANTHROPIC_WORKSPACE_ID = "wrkspc_01Y8aP9nCbQPJjbjhG5hFWQV";
 const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID || "consultores-dev";
@@ -170,7 +170,7 @@ export async function collectCosts(now = new Date(), lastStoredDay = null) {
     }
     batch.set(costsCollection.doc(day), { date: day, ...usage[day], providers, collectedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
   }
-  batch.set(metaRef, { collectedAt: now, lastDay: toDay, errors });
+  batch.set(metaRef, { collectedAt: now, lastDay: toDay, startDate: COSTS_START_DATE, errors });
   await batch.commit();
   if (Object.keys(errors).length) console.warn("Costos: proveedores con error", errors);
 }
@@ -182,8 +182,10 @@ export async function ensureCollected(now = new Date()) {
   const meta = await metaRef.get();
   const last = meta.exists ? meta.data().collectedAt?.toDate?.() : null;
   const failed = meta.exists && Object.keys(meta.data().errors || {}).length > 0;
-  if (last && last >= latestCutoff(now) && (!failed || now - last < 60 * 60 * 1000)) return;
-  running ||= collectCosts(now, meta.exists ? meta.data().lastDay : null).finally(() => { running = null; });
+  // A new start date (or a reset) reads every day again from the start.
+  const fromStart = !meta.exists || meta.data().startDate !== COSTS_START_DATE;
+  if (!fromStart && last && last >= latestCutoff(now) && (!failed || now - last < 60 * 60 * 1000)) return;
+  running ||= collectCosts(now, fromStart ? null : meta.data().lastDay).finally(() => { running = null; });
   await running;
 }
 
