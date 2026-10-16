@@ -11,9 +11,10 @@
 .ownerSearch input { width: 100%; padding: 10px 12px; border: 1px solid #dce3ed; border-radius: 10px; font: 14px Roboto, Helvetica, Arial, sans-serif; color: #040025; outline: none; }
 .ownerSearch input:focus { border-color: #0040A4; box-shadow: 0 0 0 2px #eaf2ff; }
 .ownerList { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 260px; overflow-y: auto; }
-.ownerList button { width: 100%; display: grid; gap: 1px; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; }
+.ownerList button { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 8px; cursor: pointer; font-family: Roboto, Helvetica, Arial, sans-serif; }
 .ownerList button:hover, .ownerList button:focus-visible, .ownerList button[aria-selected="true"] { background: #eaf2ff; outline: none; }
+.ownerPerson { display: grid; gap: 1px; min-width: 0; }
 .ownerList strong { font-size: 14px; color: #040025; }
-.ownerList span { font-size: 12px; color: #64748b; }
+.ownerPerson > span { font-size: 12px; color: #64748b; overflow-wrap: anywhere; }
 .ownerEmpty { padding: 8px 10px; font-size: 13px; color: #64748b; }
 .ownerCancel { justify-self: end; border: 0; background: none; color: #64748b; font: 700 13px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; }

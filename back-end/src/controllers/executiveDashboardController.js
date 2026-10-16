@@ -237,7 +237,7 @@ export const getDashboardConsultants = async (req, res) => {
         if (!email) return null;
         if (!activeEmails.has(email)) return null;
         const label = user.name || formatConsultantLabel(email);
-        return { value: email, label };
+        return { value: email, label, picture: user.picture || user.photoURL || "" };
       })
       .filter(Boolean)
       .filter((consultant) => req.requester.cargo.seesAll || consultant.value === req.requester.email)

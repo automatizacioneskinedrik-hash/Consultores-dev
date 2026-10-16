@@ -397,7 +397,10 @@ export default function Admin() {
                   {changes.map((change) => <li key={change.id}>
                     <span className="auditWhen">{change.changedAt ? new Date(change.changedAt).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
                     <span className="auditWhat">{change.summary}</span>
-                    <span className="auditWho">{change.changedByName || change.changedBy}</span>
+                    <span className="auditWho">
+                      <UserAvatar name={change.changedByName} email={change.changedBy} picture={users.find((u) => u.email === change.changedBy)?.picture} className="avatarSm" />
+                      {change.changedByName || change.changedBy}
+                    </span>
                   </li>)}
                 </ul>}
           </section>

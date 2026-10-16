@@ -449,10 +449,10 @@ body.sidebar-collapsed .adminPage .adminContent {
 .auditList li { display: grid; grid-template-columns: 130px minmax(0, 1fr) 200px; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px solid #eef1f5; font-size: 14px; }
 .auditWhen { color: #64748b; font-variant-numeric: tabular-nums; }
 .auditWhat { color: #040025; }
-.auditWho { color: #0040A4; font-weight: 500; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.auditWho { color: #0040A4; font-weight: 500; display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 760px) {
   .auditList li { grid-template-columns: 1fr; gap: 2px; }
-  .auditWho { text-align: left; }
+  .auditWho { justify-content: flex-start; }
 }
 
 /* Selector de rol: desplegable y descripción del rol elegido */

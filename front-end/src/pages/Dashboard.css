@@ -552,3 +552,8 @@ body.sidebar-collapsed .dashboardContent {
     font-size: 11px;
   }
 }
+
+/* Consultant selector: photo or initials beside each name. */
+.consultantOption { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; vertical-align: middle; }
+.consultantOptionName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.consultantAllIcon { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #eaf2ff; color: #0040A4; font-size: 13px; }
