@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
+import { DEFAULT_GAPS, GAP_KINDS, GAP_STOPS, formatGap, stopIndex } from "../utils/muletillaGaps";
 
 const SPEECH_TOUR_CLEANUP = [{ click: "#speech-tab-version" }];
 const SPEECH_TOUR = [
@@ -117,6 +118,37 @@ function TalkRatioSlider({ ratio, editable, onChange }) {
       </li>)}
       <li><i className="none" /><b>Sin puntos</b><span>más de {limits[limits.length - 1]} %</span><b>0 pts</b></li>
     </ul>
+  </div>;
+}
+
+// One slicer for every muletilla: under the first handle a repetition is a tic, over the second it is normal use.
+function MuletillaGapSlider({ gaps = DEFAULT_GAPS, editable, onChange }) {
+  const last = GAP_STOPS.length - 1;
+  const ticIndex = stopIndex(gaps.tic);
+  const normalIndex = stopIndex(gaps.normal);
+  const at = (index) => `${(index / last) * 100}%`;
+  const zones = [["tic", 0, ticIndex], ["alerta", ticIndex, normalIndex], ["normal", normalIndex, last]];
+  function move(handle, index) {
+    const tic = handle === "tic" ? Math.min(index, normalIndex - 1) : ticIndex;
+    const normal = handle === "normal" ? Math.max(index, ticIndex + 1) : normalIndex;
+    onChange({ tic: GAP_STOPS[tic], normal: GAP_STOPS[normal] });
+  }
+  return <div className="speechGap">
+    <strong className="speechGapTitle">Tiempo entre repeticiones de la misma muletilla</strong>
+    <div className={`speechGapSlider ${editable ? "editable" : ""}`}>
+      <span className="speechGapBubble" style={{ left: at(ticIndex) }}>{formatGap(GAP_STOPS[ticIndex])}</span>
+      <span className="speechGapBubble" style={{ left: at(normalIndex) }}>{formatGap(GAP_STOPS[normalIndex])}</span>
+      <div className="speechGapBar" aria-hidden="true">
+        {zones.map(([kind, from, to]) => <span key={kind} style={{ width: at(to - from), background: GAP_KINDS[kind].color, color: GAP_KINDS[kind].text }}>
+          {GAP_KINDS[kind].label}<small>{GAP_KINDS[kind].effect}</small>
+        </span>)}
+      </div>
+      {editable && <>
+        <input type="range" min={0} max={last} value={ticIndex} aria-label={`Tic: menos de ${formatGap(GAP_STOPS[ticIndex])}`} onChange={(event) => move("tic", Number(event.target.value))} />
+        <input type="range" min={0} max={last} value={normalIndex} aria-label={`Normal: más de ${formatGap(GAP_STOPS[normalIndex])}`} onChange={(event) => move("normal", Number(event.target.value))} />
+      </>}
+    </div>
+    <div className="speechGapScale" aria-hidden="true"><span>0 s</span><span>10 min</span></div>
   </div>;
 }
 
@@ -517,7 +549,8 @@ export default function SpeechConfig() {
                       </span>}
                     </div>
                     {expanded.has("muletillas") && <div className="speechPhaseBody">
-                      <p className="speechMuletillasHow">El sistema cuenta cuántas veces el consultor dice las palabras de la lista y la IA juzga si son un tic o un uso normal. La IA también avisa de otras repeticiones que no estén en la lista.</p>
+                      <p className="speechMuletillasHow">El sistema mide cuánto tiempo pasa entre una repetición y la siguiente de cada palabra de la lista. Con eso la IA decide la nota: los tics restan fuerte, las alertas restan poco y el uso normal no resta. La IA también avisa de otras repeticiones que no estén en la lista.</p>
+                      <MuletillaGapSlider gaps={shown.muletillas.gaps} editable={editing} onChange={(gaps) => change({ muletillas: { ...draft.muletillas, gaps } })} />
                       <div className="speechMuletillasGrid">
                         <WordList id="muletillasCount" label="Cuentan como muletilla" help="Rellenos que algunos consultores repiten como un tic." words={shown.muletillas.count} editable={editing} onChange={(count) => change({ muletillas: { ...draft.muletillas, count } })} />
                         <WordList id="muletillasIgnore" label="No cuentan" help="Conectores normales del español. Nunca restan." words={shown.muletillas.ignore} muted editable={editing} onChange={(ignore) => change({ muletillas: { ...draft.muletillas, ignore } })} />

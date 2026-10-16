@@ -1,6 +1,6 @@
 // Points speech engine: builds the GPT prompt from the published speech and turns GPT's
 // per-rule judgement into a score. GPT never returns numbers for the score; the system adds them up.
-import { computeRulesScore, MULETILLAS_RULE_ID, NOT_APPLICABLE, RULE_LEVELS } from "./speechRules.js";
+import { computeRulesScore, DEFAULT_MULETILLAS, MULETILLAS_RULE_ID, NOT_APPLICABLE, RULE_LEVELS } from "./speechRules.js";
 
 const LEVEL_IDS = [...RULE_LEVELS.map((level) => level.id), NOT_APPLICABLE];
 const SPEAKER_LINE = /^(CONSULTOR|CLIENTE):\s*/;
@@ -29,6 +29,49 @@ export function countMuletillas(transcriptionText, words = [], { speaker = "CONS
   }).filter((entry) => entry.count > 0).sort((a, b) => b.count - a.count);
   const total = byWord.reduce((sum, entry) => sum + entry.count, 0);
   return { total, perMinute: minutes > 0 ? Math.round((total / minutes) * 10) / 10 : null, byWord };
+}
+
+// Finds the second in which the consultant said each muletilla, from AssemblyAI's word timestamps.
+// Same matching as countMuletillas: whole words, longest phrases first, each word used once.
+export function muletillaTimeline(utterances = [], words = [], { isConsultant, durationSec = 0, gaps = DEFAULT_MULETILLAS.gaps } = {}) {
+  const tokens = utterances
+    .filter((utterance) => isConsultant(utterance.speaker))
+    .flatMap((utterance) => (utterance.words || []).flatMap((word) => normalize(word.text || "").split(" ").filter(Boolean)
+      .map((token) => ({ token, second: Math.round((word.start || 0) / 1000) }))));
+  if (!tokens.length) return null;
+  const used = tokens.map(() => false);
+  const entries = [...words].sort((a, b) => normalize(b).length - normalize(a).length).map((word) => {
+    const parts = normalize(word).split(" ").filter(Boolean);
+    const times = [];
+    for (let i = 0; parts.length && i + parts.length <= tokens.length; i++) {
+      if (!parts.every((part, k) => !used[i + k] && tokens[i + k].token === part)) continue;
+      times.push(tokens[i].second);
+      parts.forEach((_, k) => { used[i + k] = true; });
+      i += parts.length - 1;
+    }
+    return { word, times };
+  }).filter((entry) => entry.times.length > 0).sort((a, b) => b.times.length - a.times.length);
+  return { gaps: { tic: gaps.tic, normal: gaps.normal }, durationSec: Math.round(durationSec), words: entries };
+}
+
+// Each repetition is judged by the time since the previous one of the same muletilla; the first one is normal.
+export function muletillaGapKinds(times, { tic, normal }) {
+  return times.map((second, index) => {
+    const gap = index ? second - times[index - 1] : null;
+    if (gap == null || gap >= normal) return "normal";
+    return gap < tic ? "tic" : "alerta";
+  });
+}
+
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+const gapLabel = (seconds) => seconds < 60 ? `${seconds} s` : `${clock(seconds)} min`;
+
+function timelineLines(timeline) {
+  return timeline.words.map(({ word, times }) => {
+    const kinds = muletillaGapKinds(times, timeline.gaps);
+    const count = (kind) => kinds.filter((entry) => entry === kind).length;
+    return `     "${word}" ${times.length} veces: ${count("tic")} tics, ${count("alerta")} alertas, ${count("normal")} normales (en ${times.map(clock).join(", ")})`;
+  }).join("\n");
 }
 
 export function swapSpeakerLabels(transcriptionText) {
@@ -63,7 +106,10 @@ function muletillasSection(speech, muletillas) {
    - Conteo exacto hecho por el sistema sobre las líneas CONSULTOR (no lo recalcules): ${counted}. Total ${muletillas.total}${muletillas.perMinute != null ? `, ${muletillas.perMinute} por minuto de habla del consultor` : ""}.
    - Palabras que NO son muletillas aunque se repitan (conectores normales del español): ${(speech.muletillas?.ignore || []).join(", ") || "ninguna"}. Tampoco lo son artículos, preposiciones o verbos comunes ("el", "es", "de", "que").
    - Juzga el contexto: una palabra usada como respuesta genuina ("¿Me envías los documentos?" "Listo") no es un tic; la misma palabra repetida por reflejo una y otra vez sí lo es.
-   - Si el consultor repite como tic otras palabras o frases que no están en la lista (por ejemplo, "bueno, te propongo" una y otra vez), inclúyelas en "muletillas_no_listadas" con cuántas veces aparecen y tenlas en cuenta en el nivel.`;
+${muletillas.timeline?.words.length ? `   - Momento de cada repetición (minuto:segundo), medido por el sistema. Límites del speech: si repite la misma muletilla en menos de ${gapLabel(muletillas.timeline.gaps.tic)} es un tic; entre ${gapLabel(muletillas.timeline.gaps.tic)} y ${gapLabel(muletillas.timeline.gaps.normal)}, una alerta; con más de ${gapLabel(muletillas.timeline.gaps.normal)} de separación, uso normal. La primera vez que dice cada una cuenta como normal.
+${timelineLines(muletillas.timeline)}
+   - El nivel depende de esta clasificación: los tics restan fuerte, las alertas restan poco y los usos normales no restan.
+` : ""}   - Si el consultor repite como tic otras palabras o frases que no están en la lista (por ejemplo, "bueno, te propongo" una y otra vez), inclúyelas en "muletillas_no_listadas" con cuántas veces aparecen y tenlas en cuenta en el nivel.`;
 }
 
 export function buildPointsPrompt({ speech, durationStr, transcriptionText, followupInstruction, additionalInstructions = "", muletillas }) {

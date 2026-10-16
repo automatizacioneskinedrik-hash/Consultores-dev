@@ -29,7 +29,10 @@ export const DEFAULT_MULETILLAS = Object.freeze({
     "¿cierto?", "¿me entiendes?", "listo", "ok", "okay", "vale", "perfecto", "genial", "súper", "fenomenal",
   ]),
   ignore: Object.freeze(["entonces", "pues", "este", "sí", "bueno", "claro", "mira", "a ver", "tipo", "correcto", "por ejemplo"]),
+  // Seconds between two repetitions of the same muletilla: under "tic" is a tic, over "normal" is normal use.
+  gaps: Object.freeze({ tic: 20, normal: 60 }),
 });
+export const MULETILLA_GAP_MAX = 600;
 
 // Talk ratio is measured by the system (words per speaker), never judged by the AI.
 // Four "up to" limits on the consultant's share split it into five levels: Excelente … No lo hizo.
@@ -129,6 +132,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     points: muletillasPoints,
     count: wordList(value.muletillas?.count, "Muletilla"),
     ignore: wordList(value.muletillas?.ignore, "Palabra ignorada"),
+    gaps: validateMuletillaGaps(value.muletillas?.gaps ?? DEFAULT_MULETILLAS.gaps),
   };
   if (muletillas.count.some((word) => muletillas.ignore.includes(word))) throw new Error("Una palabra no debe estar a la vez en muletillas y en palabras ignoradas.");
 
@@ -145,6 +149,14 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     talkRatio,
     muletillas,
   };
+}
+
+function validateMuletillaGaps(value) {
+  const tic = Number(value?.tic);
+  const normal = Number(value?.normal);
+  const valid = [tic, normal].every((seconds) => Number.isInteger(seconds) && seconds >= 0 && seconds <= MULETILLA_GAP_MAX);
+  if (!valid || tic >= normal) throw new Error("Muletillas: el límite de tic debe ser menor que el de uso normal, entre 0 segundos y 10 minutos.");
+  return { tic, normal };
 }
 
 function validateTalkRatio(value) {

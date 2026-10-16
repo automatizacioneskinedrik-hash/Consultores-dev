@@ -30,6 +30,20 @@
 .psWords { display: flex; flex-wrap: wrap; gap: 6px; }
 .psWords span { font-size: 13px; padding: 3px 10px; border-radius: 100px; background: #f1f5f9; color: #040025; }
 
+.psTimeline { display: grid; gap: 12px; padding-top: 4px; }
+.psTimelineRow { display: grid; grid-template-columns: 110px minmax(0, 1fr) 210px; gap: 14px; align-items: center; }
+.psTimelineRow > strong { font-size: 14px; color: #040025; overflow-wrap: anywhere; }
+.psTimelineBar { position: relative; height: 24px; border-radius: 6px; background: #f1f5f9; }
+.psTimelineDot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; transform: translate(-50%, -50%); cursor: default; outline: none; }
+.psTimelineDot:hover, .psTimelineDot:focus-visible { z-index: 2; box-shadow: 0 0 0 2px #040025; }
+.psTimelineDot:hover::after, .psTimelineDot:focus-visible::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: #040025; color: #fff; font-size: 12px; font-weight: 500; padding: 6px 10px; border-radius: 8px; white-space: nowrap; pointer-events: none; }
+.psTimelineSum { font-size: 13px; color: #64748b; font-variant-numeric: tabular-nums; }
+.psTimelineSum b { color: #040025; }
+.psTimelineAxisRow > span:first-child { font-size: 12px; color: #64748b; }
+.psTimelineAxis { position: relative; height: 18px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; font-variant-numeric: tabular-nums; }
+.psTimelineAxis span { position: absolute; top: 2px; transform: translateX(-50%); }
+.psTimelineLegend { display: flex; flex-wrap: wrap; gap: 14px; }
+
 /* Report hero for points sessions: consultant photo beside the score. */
 .psHeroCircles { display: flex; align-items: center; gap: 22px; }
 .psHeroCircles .profileAvatar { flex: 0 0 120px; width: 120px; height: 120px; border: 8px solid #eaf2ff; background: linear-gradient(135deg, #0040A4, #2885FF); color: #fff; }
@@ -46,4 +60,7 @@
   .psHeroCircles { gap: 12px; }
   .psHeroCircles .profileAvatar { flex-basis: 100px; width: 100px; height: 100px; }
   .psRuleTop { flex-direction: column; gap: 4px; }
+  .psTimelineRow { grid-template-columns: 80px minmax(0, 1fr); }
+  .psTimelineSum { grid-column: 2; }
+  .psTimelineAxisRow > span:last-child { display: none; }
 }

@@ -128,3 +128,16 @@ test("ya no se aceptan reglas sueltas fuera de una fase", () => {
   speech.rules[0].phaseId = GENERAL_GROUP_ID;
   assert.throws(() => validatePointsSpeech(speech), /fase existente/);
 });
+
+test("el slicer de muletillas usa 20 s y 60 s por defecto y exige tic menor que normal", () => {
+  const base = structuredClone(POINTS_TEMPLATE);
+  delete base.muletillas.gaps;
+  assert.deepEqual(validatePointsSpeech(base).muletillas.gaps, { tic: 20, normal: 60 });
+  const custom = structuredClone(POINTS_TEMPLATE);
+  custom.muletillas.gaps = { tic: 30, normal: 240 };
+  assert.deepEqual(validatePointsSpeech(custom).muletillas.gaps, { tic: 30, normal: 240 });
+  custom.muletillas.gaps = { tic: 60, normal: 60 };
+  assert.throws(() => validatePointsSpeech(custom), /límite de tic debe ser menor/);
+  custom.muletillas.gaps = { tic: 10, normal: 700 };
+  assert.throws(() => validatePointsSpeech(custom), /límite de tic debe ser menor/);
+});

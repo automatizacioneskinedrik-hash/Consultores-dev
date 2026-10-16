@@ -50,12 +50,13 @@ const speakerMinutes = (utterances, isSpeaker) => utterances
   .reduce((sum, u) => sum + ((u.end || 0) - (u.start || 0)) / 60000, 0);
 
 // Points speech: GPT judges each rule; the system measures ratio and muletillas and adds the points.
-async function runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker }) {
+async function runPointsAnalysis({ context, durationStr, durationSec, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker }) {
   const result = await gradeWithPoints({
     context, durationStr, transcriptionText,
     consultantPct: consultorPct,
     consultantMinutes: consultorMinutos,
     otherMinutes: speakerMinutes(utterances, (speaker) => speaker !== consultorSpeaker),
+    utterances, consultantSpeaker: consultorSpeaker, durationSec,
   });
   const { analysis, scoring, usage } = result;
   if (!scoring) return { analysis, generalScore: null, muletillas_por_minuto: null, usage };
@@ -186,7 +187,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     const { speech } = context;
     const pointsFormat = speech.format === POINTS_FORMAT;
     const result = pointsFormat
-      ? await runPointsAnalysis({ context, durationStr, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker })
+      ? await runPointsAnalysis({ context, durationStr, durationSec, transcriptionText, consultorPct, consultorMinutos, utterances, consultorSpeaker })
       : await runLegacyAnalysis({ context, durationStr, transcriptionText, consultorMinutos });
     const { analysis, generalScore, muletillas_por_minuto, scoring = null, usage = null } = result;
     const transcription = result.transcriptionText || transcriptionText;

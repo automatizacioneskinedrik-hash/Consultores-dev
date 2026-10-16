@@ -172,6 +172,21 @@ body.sidebar-collapsed .speechConfigContent { margin-left: 88px; }
 .speechWordAdd input:focus { outline: none; border-color: #0040a4; }
 .speechActivePill { border-radius: 100px; padding: 4px 10px; font-size: 12px; font-weight: 700; background: #8ABC43; color: #040025; }
 .speechVersions .speechHint { margin-top: 12px; }
+.speechGap { display: grid; gap: 6px; padding: 4px 0 6px; }
+.speechGapTitle { font-size: 14px; color: #040025; }
+.speechGapSlider { position: relative; height: 82px; margin: 0 14px; }
+.speechGapBar { position: absolute; left: 0; right: 0; top: 40px; height: 34px; border-radius: 8px; overflow: hidden; display: flex; background: #E7E7E7; }
+.speechGapBar span { display: flex; align-items: center; justify-content: center; gap: 5px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: 700; }
+.speechGapBar small { font-size: 12px; font-weight: 400; }
+.speechGapBubble { position: absolute; top: 0; transform: translateX(-50%); background: #040025; color: #fff; font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 8px; white-space: nowrap; font-variant-numeric: tabular-nums; pointer-events: none; }
+.speechGapBubble::after { content: ""; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: #040025; }
+.speechGapSlider input { position: absolute; left: -14px; top: 40px; width: calc(100% + 28px); height: 34px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+.speechGapSlider input::-webkit-slider-runnable-track { background: none; }
+.speechGapSlider input::-moz-range-track { background: none; }
+.speechGapSlider input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 28px; height: 42px; border-radius: 8px; background: #fff; border: 3px solid #040025; cursor: grab; box-shadow: 0 2px 6px rgba(4, 0, 37, .3); }
+.speechGapSlider input::-moz-range-thumb { pointer-events: auto; width: 22px; height: 36px; border-radius: 8px; background: #fff; border: 3px solid #040025; cursor: grab; }
+.speechGapSlider input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #eaf2ff, 0 0 0 5px #0040A4; }
+.speechGapScale { display: flex; justify-content: space-between; margin: 0 14px; font-size: 12px; color: #65728a; }
 .speechRatioHeadRow { display: flex; align-items: center; gap: 8px; padding-right: 16px; }
 .speechRatioHeadRow .speechPhaseHead { flex: 1 1 auto; }
 .speechRatio { display: grid; gap: 12px; }

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildPointsPrompt, countMuletillas, scorePointsAnalysis, swapSpeakerLabels } from "./pointsEngine.js";
+import { buildPointsPrompt, countMuletillas, muletillaGapKinds, muletillaTimeline, scorePointsAnalysis, swapSpeakerLabels } from "./pointsEngine.js";
 import { POINTS_TEMPLATE, validatePointsSpeech } from "./speechRules.js";
 
 const speech = validatePointsSpeech(structuredClone(POINTS_TEMPLATE));
@@ -69,4 +69,35 @@ test("las muletillas se califican como indicador y el prompt explica que los con
   assert.match(prompt, /Analiza SIEMPRE la llamada/);
   const missing = scorePointsAnalysis({ reglas: [] }, speech, { consultantPct: 50, muletillas: { total: 0, perMinute: 0, byWord: [] } });
   assert.equal(missing.items.find((item) => item.ruleId === "muletillas").points, 3);
+});
+
+const word = (text, second) => ({ text, start: second * 1000 });
+const utterances = [
+  { speaker: "A", words: [word("Listo,", 10), word("en", 12), word("el", 12), word("momento", 13), word("listo.", 20)] },
+  { speaker: "B", words: [word("Listo.", 25)] },
+  { speaker: "A", words: [word("¿Listo?", 50), word("momento", 55), word("listo", 200)] },
+];
+
+test("la línea de tiempo ubica cada muletilla del consultor en su segundo", () => {
+  const timeline = muletillaTimeline(utterances, ["listo", "en el momento", "momento"], { isConsultant: (speaker) => speaker === "A", durationSec: 300.4, gaps: { tic: 20, normal: 60 } });
+  const times = Object.fromEntries(timeline.words.map((entry) => [entry.word, entry.times]));
+  assert.deepEqual(times.listo, [10, 20, 200]);
+  assert.deepEqual(times["en el momento"], [12]);
+  assert.deepEqual(times.momento, [55]);
+  assert.equal(timeline.durationSec, 300);
+  assert.deepEqual(timeline.gaps, { tic: 20, normal: 60 });
+  assert.equal(muletillaTimeline([], ["listo"], { isConsultant: () => true }), null);
+});
+
+test("cada repetición es tic, alerta o normal según el tiempo desde la anterior", () => {
+  assert.deepEqual(muletillaGapKinds([10, 20, 50, 200], { tic: 20, normal: 60 }), ["normal", "tic", "alerta", "normal"]);
+});
+
+test("el prompt incluye la clasificación por tiempo cuando hay línea de tiempo", () => {
+  const timeline = { gaps: { tic: 20, normal: 90 }, durationSec: 300, words: [{ word: "listo", times: [10, 20, 200] }] };
+  const prompt = buildPointsPrompt({ speech, durationStr: "5:00", transcriptionText: transcript, followupInstruction: "x", muletillas: { total: 3, perMinute: 1, byWord: [{ word: "listo", count: 3 }], timeline } });
+  assert.match(prompt, /menos de 20 s es un tic; entre 20 s y 1:30 min, una alerta/);
+  assert.match(prompt, /"listo" 3 veces: 1 tics, 0 alertas, 2 normales \(en 0:10, 0:20, 3:20\)/);
+  const without = buildPointsPrompt({ speech, durationStr: "5:00", transcriptionText: transcript, followupInstruction: "x", muletillas: { total: 0, perMinute: 0, byWord: [] } });
+  assert.doesNotMatch(without, /Momento de cada repetición/);
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LEVELS, levelForPercent } from "../utils/scoreLevels";
+import { GAP_KINDS, formatClock, formatGap, gapKinds } from "../utils/muletillaGaps";
 import "./PointsScorecard.css";
 
 const ZONE_COLORS = [LEVELS.excelente.color, LEVELS.bien.color, LEVELS.regular.color, LEVELS.debil.color];
@@ -33,6 +34,41 @@ function TrafficBar({ limits, value }) {
     </div>
     <div className="psScale"><span>0 %</span><span>100 %</span></div>
   </>;
+}
+
+// One bar per muletilla across the whole call, with a dot at the second it was said.
+function MuletillaTimeline({ timeline }) {
+  const lastSecond = Math.max(...timeline.words.flatMap((entry) => entry.times));
+  const duration = Math.max(timeline.durationSec || 0, lastSecond + 1);
+  const minutes = duration / 60;
+  const step = minutes <= 15 ? 2 : minutes <= 40 ? 5 : 10;
+  const ticks = Array.from({ length: Math.floor(minutes / step) + 1 }, (_, i) => i * step);
+  const at = (second) => `${Math.min((second / duration) * 100, 100)}%`;
+  return <div className="psTimeline">
+    {timeline.words.map(({ word, times }) => {
+      const kinds = gapKinds(times, timeline.gaps);
+      const count = (kind) => kinds.filter((entry) => entry === kind).length;
+      return <div className="psTimelineRow" key={word}>
+        <strong>{word}</strong>
+        <div className="psTimelineBar">
+          {times.map((second, index) => {
+            const kind = GAP_KINDS[kinds[index]];
+            const since = index ? `${formatGap(second - times[index - 1])} después de la anterior` : "primera vez en la llamada";
+            return <span key={`${second}-${index}`} className="psTimelineDot" tabIndex={0} style={{ left: at(second), background: kind.color }} data-tip={`${formatClock(second)} · ${kind.label} · ${since}`} aria-label={`${word} en el minuto ${formatClock(second)}: ${kind.label}, ${since}`} />;
+          })}
+        </div>
+        <span className="psTimelineSum"><b>{times.length} {times.length === 1 ? "vez" : "veces"}</b> · {count("tic")} tic · {count("alerta")} alerta · {count("normal")} normal</span>
+      </div>;
+    })}
+    <div className="psTimelineRow psTimelineAxisRow" aria-hidden="true">
+      <span>minuto</span>
+      <div className="psTimelineAxis">{ticks.map((minute) => <span key={minute} style={{ left: at(minute * 60) }}>{minute}</span>)}</div>
+      <span />
+    </div>
+    <div className="psTimelineLegend">
+      {Object.entries(GAP_KINDS).map(([id, kind]) => <span key={id} className="psChip"><i style={{ background: kind.color }} />{kind.label}{id === "normal" ? ` (más de ${formatGap(timeline.gaps.normal)})` : id === "tic" ? ` (menos de ${formatGap(timeline.gaps.tic)})` : ""}</span>)}
+    </div>
+  </div>;
 }
 
 // Scorecard for sessions graded with a points speech: one card per phase, then the two indicators.
@@ -96,7 +132,9 @@ export default function PointsScorecard({ scoring, speech, clientName }) {
         <span className="psChip"><i style={{ background: muletillasLevel.color }} />{muletillasLevel.label}</span>
         {scoring.muletillas?.perMinute != null && <> · {scoring.muletillas.perMinute.toLocaleString("es-CO")} por minuto</>}
       </p>
-      {scoring.muletillas?.byWord?.length > 0 && <>
+      {scoring.muletillas?.timeline?.words?.length > 0
+        ? <MuletillaTimeline timeline={scoring.muletillas.timeline} />
+        : scoring.muletillas?.byWord?.length > 0 && <>
         <p className="psObjective">Las que más repetiste:</p>
         <div className="psWords">{scoring.muletillas.byWord.slice(0, 8).map((entry) => <span key={entry.word}>{entry.word} · {entry.count}</span>)}</div>
       </>}
