@@ -13,7 +13,7 @@
   position: fixed; display: flex; align-items: flex-end; gap: 6px;
   transition: left .55s cubic-bezier(.3, .8, .3, 1), top .55s cubic-bezier(.3, .8, .3, 1);
 }
-.tourMascot { flex: 0 0 auto; width: 118px; height: auto; filter: drop-shadow(0 8px 18px var(--tour-aura, rgba(40, 133, 255, .45))); animation: tourIdle 2.4s ease-in-out infinite; }
+.tourMascot { flex: 0 0 auto; width: auto; height: 104px; filter: drop-shadow(0 8px 18px var(--tour-aura, rgba(40, 133, 255, .45))); animation: tourIdle 2.4s ease-in-out infinite; }
 .tourGuide.isMoving .tourMascot { animation: tourHop .38s ease-in-out infinite; }
 
 .tourBubble {
@@ -44,7 +44,7 @@
   display: flex; align-items: center; gap: 8px; transition: left .28s ease;
 }
 body.sidebar-collapsed .tourLauncher { left: 112px; }
-.tourLauncher img { width: 76px; height: auto; filter: drop-shadow(0 6px 12px var(--tour-aura, rgba(40, 133, 255, .35))); transition: transform .2s ease; animation: tourIdle 2.4s ease-in-out infinite; }
+.tourLauncher img { width: auto; height: 68px; filter: drop-shadow(0 6px 12px var(--tour-aura, rgba(40, 133, 255, .35))); transition: transform .2s ease; animation: tourIdle 2.4s ease-in-out infinite; }
 .tourLauncher:hover img, .tourLauncher:focus-visible img { transform: scale(1.08) rotate(-4deg); }
 .tourLauncherHint {
   opacity: 0; transform: translateX(-6px); transition: opacity .2s ease, transform .2s ease; pointer-events: none;
@@ -61,8 +61,8 @@ body.sidebar-collapsed .tourLauncher { left: 112px; }
 
 @media (max-width: 900px) {
   .tourLauncher, body.sidebar-collapsed .tourLauncher { left: 12px; bottom: 12px; }
-  .tourLauncher img { width: 60px; }
-  .tourMascot { width: 84px; }
+  .tourLauncher img { height: 54px; }
+  .tourMascot { height: 76px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .tourMascot, .tourLauncher img, .tourBubble, .tourSpot, .tourDim { animation: none !important; }

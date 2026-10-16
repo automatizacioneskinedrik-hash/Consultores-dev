@@ -126,7 +126,7 @@ async function googleCosts(fromDay, toDay) {
     return byDay;
   } catch (error) {
     // The export table only appears once Google writes its first day.
-    if (/not found|matches no table/i.test(error.message)) return {};
+    if (/not found|match(es)? (no|any) table/i.test(error.message)) return {};
     throw error;
   }
 }
