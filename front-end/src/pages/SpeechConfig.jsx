@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import { DEFAULT_GAPS, GAP_KINDS, GAP_STOPS, formatGap, stopIndex } from "../utils/muletillaGaps";
@@ -16,8 +16,8 @@ const SPEECH_TOUR = [
   { title: "Ayuda para la IA", text: "Al editar una regla puedes escribirle a la IA qué cuenta y qué no. Así califica igual en todas las llamadas." },
   { target: ".speechRatioHeadRow", title: "Ratio de habla", text: "Aquí defines hasta qué porcentaje puede hablar el consultor antes de perder puntos. Lo mide el sistema, no la IA." },
   { do: [{ show: [".speechRatioHeadRow .speechPhaseHead", ".speechRatio"] }], target: ".speechRatio", title: "Los cuatro límites", text: "Estas marcas dividen el ratio en cinco zonas, de excelente a no lo hizo. Al editar, las mueves para ajustar cada zona." },
-  { target: ".speechPhaseCard:last-of-type .speechRatioHeadRow", title: "Muletillas", text: "Aquí están las muletillas que cuenta el sistema y las palabras que ignora porque son conectores normales, como «entonces» o «pues»." },
-  { do: [{ show: [".speechPhaseCard:last-of-type .speechPhaseHead", ".speechMuletillasGrid"] }], target: ".speechMuletillasGrid", title: "Las dos listas", text: "A un lado, las que cuentan como muletilla; al otro, las que no cuentan. Al editar puedes añadir o quitar palabras." },
+  { target: ".speechPhaseCard:last-of-type .speechRatioHeadRow", title: "Muletillas", text: "La IA detecta sola las muletillas. Tú solo indicas cada cuánto se vale repetir una palabra." },
+  { do: [{ show: [".speechPhaseCard:last-of-type .speechPhaseHead", ".speechGap"] }], target: ".speechGap", title: "El slicer", text: "Si el consultor repite una palabra muy seguido, baja la nota. Al editar, mueves las manijas para ajustar los tiempos." },
   { do: [{ click: "#speech-tab-history" }], target: ".speechVersions", title: "Todas las versiones", text: "Aquí queda cada versión publicada con su fecha. Si algo no funcionó, puedes volver a una anterior con un clic." },
   { do: [{ click: "#speech-tab-version" }], title: "¡Listo, ya conoces el speech!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
@@ -210,28 +210,6 @@ function RuleRow({ rule, editable, editing, onEdit, onChange, onRemove }) {
         <span />
         <button type="button" className="speechPrimaryButton" onClick={onEdit}>Listo</button>
       </div>
-    </div>}
-  </div>;
-}
-
-function WordList({ id, label, help, words, muted, editable, onChange }) {
-  const [value, setValue] = useState("");
-  function add() {
-    const word = value.trim().toLowerCase();
-    if (word && !words.includes(word)) onChange([...words, word]);
-    setValue("");
-  }
-  return <div className="speechWordList">
-    <label htmlFor={id}>{label}</label>
-    <p>{help}</p>
-    <div className="speechChips">
-      {words.map((word) => <span className={`speechChip ${muted ? "muted" : ""}`} key={word}>{word}
-        {editable && <button type="button" aria-label={`Quitar ${word}`} onClick={() => onChange(words.filter((entry) => entry !== word))}><X size={12} /></button>}
-      </span>)}
-    </div>
-    {editable && <div className="speechWordAdd">
-      <input id={id} value={value} maxLength={40} placeholder="Escribe y pulsa Enter" onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} />
-      <button type="button" className="speechSecondaryButton" onClick={add} disabled={!value.trim()}><Plus size={14} /> Añadir</button>
     </div>}
   </div>;
 }
@@ -538,7 +516,7 @@ export default function SpeechConfig() {
                     <div className="speechRatioHeadRow">
                       <button type="button" className="speechPhaseHead" aria-expanded={expanded.has("muletillas")} onClick={() => toggle("muletillas")}>
                         <span className="speechStep">Aa</span>
-                        <span className="speechPhaseTitle"><strong>Muletillas</strong><span>{shown.muletillas.count.length} palabras cuentan · {shown.muletillas.ignore.length} no cuentan</span></span>
+                        <span className="speechPhaseTitle"><strong>Muletillas</strong><span>La IA las detecta sola</span></span>
                         {editing ? <span /> : <span className="speechPhasePoints">{muletillasPoints} <small>pts</small></span>}
                         <ChevronRight className="speechChevron" size={18} aria-hidden="true" />
                       </button>
@@ -549,12 +527,8 @@ export default function SpeechConfig() {
                       </span>}
                     </div>
                     {expanded.has("muletillas") && <div className="speechPhaseBody">
-                      <p className="speechMuletillasHow">El sistema mide cuánto tiempo pasa entre una repetición y la siguiente de cada palabra de la lista. Con eso la IA decide la nota: los tics restan fuerte, las alertas restan poco y el uso normal no resta. La IA también avisa de otras repeticiones que no estén en la lista.</p>
+                      <p className="speechMuletillasHow">La IA detecta sola las muletillas. Con el slicer indicas cada cuánto se vale repetir una palabra: si el consultor la repite muy seguido, baja la nota.</p>
                       <MuletillaGapSlider gaps={shown.muletillas.gaps} editable={editing} onChange={(gaps) => change({ muletillas: { ...draft.muletillas, gaps } })} />
-                      <div className="speechMuletillasGrid">
-                        <WordList id="muletillasCount" label="Cuentan como muletilla" help="Rellenos que algunos consultores repiten como un tic." words={shown.muletillas.count} editable={editing} onChange={(count) => change({ muletillas: { ...draft.muletillas, count } })} />
-                        <WordList id="muletillasIgnore" label="No cuentan" help="Conectores normales del español. Nunca restan." words={shown.muletillas.ignore} muted editable={editing} onChange={(ignore) => change({ muletillas: { ...draft.muletillas, ignore } })} />
-                      </div>
                     </div>}
                   </section>
                 </div>

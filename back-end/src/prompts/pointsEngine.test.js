@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildPointsPrompt, countMuletillas, muletillaGapKinds, muletillaTimeline, scorePointsAnalysis, swapSpeakerLabels } from "./pointsEngine.js";
+import { buildPointsPrompt, countMuletillas, detectedMuletillas, muletillaGapKinds, muletillaTimeline, muletillasLevel, scorePointsAnalysis, swapSpeakerLabels } from "./pointsEngine.js";
 import { POINTS_TEMPLATE, validatePointsSpeech } from "./speechRules.js";
 
 const speech = validatePointsSpeech(structuredClone(POINTS_TEMPLATE));
@@ -47,7 +47,7 @@ test("la nota la calcula el sistema con los niveles de GPT, el ratio medido y la
   reglas[0] = { id: reglas[0].id, nivel: "regular", frase: "“…”", que_paso: "a medias", como_mejorar: "di esto", proxima_llamada: "haz esto" };
   reglas.push({ id: "muletillas", nivel: "excelente", frase: "", que_paso: "fluido" });
   reglas.push({ id: "inventada", nivel: "excelente" });
-  const scoring = scorePointsAnalysis({ reglas, muletillas_no_listadas: ["como tal"] }, speech, { consultantPct: 75, muletillas: { total: 3, perMinute: 1.5, byWord: [] } });
+  const scoring = scorePointsAnalysis({ reglas }, speech, { consultantPct: 75, muletillas: { total: 3, perMinute: 1.5, byWord: [] } });
   const first = scoring.items.find((item) => item.ruleId === speech.rules[0].id);
   // Primera regla (5 pts) regular = 2,5; ratio al 75 % = Regular = 3 de 6; muletillas y resto completos.
   assert.equal(scoring.earned, 100 - 2.5 - 3);
@@ -55,14 +55,14 @@ test("la nota la calcula el sistema con los niveles de GPT, el ratio medido y la
   assert.equal(first.como_mejorar, "di esto");
   assert.equal(scoring.items.find((item) => item.ruleId === speech.rules[1].id).como_mejorar, "");
   assert.ok(!scoring.items.some((item) => item.ruleId === "inventada"));
-  assert.deepEqual(scoring.muletillas.notListed, ["como tal"]);
 });
 
-test("las muletillas se califican como indicador y el prompt explica que los conectores no cuentan", () => {
-  const prompt = buildPointsPrompt({ speech, durationStr: "10:00", transcriptionText: transcript, followupInstruction: "x", muletillas: countMuletillas(transcript, speech.muletillas.count, { minutes: 2 }) });
-  assert.match(prompt, /INDICADOR DE MULETILLAS — evalúalo como la regla \[muletillas\]/);
-  assert.match(prompt, /"en el momento" 2 veces/);
-  assert.match(prompt, /"el", "es", "de", "que"/);
+test("la IA detecta las muletillas y el prompt explica que los conectores no cuentan", () => {
+  const prompt = buildPointsPrompt({ speech, durationStr: "10:00", transcriptionText: transcript, followupInstruction: "x" });
+  assert.match(prompt, /INDICADOR DE MULETILLAS — regla \[muletillas\]/);
+  assert.match(prompt, /"muletillas_detectadas": \["frase"\]/);
+  assert.match(prompt, /"entonces", "pues", "bueno", "claro"/);
+  assert.doesNotMatch(prompt, /muletillas_no_listadas|Conteo exacto/);
   assert.doesNotMatch(prompt, /TODA LA LLAMADA/);
   // Every call is graded: the AI is never allowed to reject a transcription.
   assert.doesNotMatch(prompt, /inválida o insuficiente|devuelve \{"error"/);
@@ -81,7 +81,7 @@ const utterances = [
 test("la línea de tiempo ubica cada muletilla del consultor en su segundo", () => {
   const timeline = muletillaTimeline(utterances, ["listo", "en el momento", "momento"], { isConsultant: (speaker) => speaker === "A", durationSec: 300.4, gaps: { tic: 20, normal: 60 } });
   const times = Object.fromEntries(timeline.words.map((entry) => [entry.word, entry.times]));
-  assert.deepEqual(times.listo, [10, 20, 200]);
+  assert.deepEqual(times.listo, [10, 20, 50, 200]);
   assert.deepEqual(times["en el momento"], [12]);
   assert.deepEqual(times.momento, [55]);
   assert.equal(timeline.durationSec, 300);
@@ -93,11 +93,23 @@ test("cada repetición es tic, alerta o normal según el tiempo desde la anterio
   assert.deepEqual(muletillaGapKinds([10, 20, 50, 200], { tic: 20, normal: 60 }), ["normal", "tic", "alerta", "normal"]);
 });
 
-test("el prompt incluye la clasificación por tiempo cuando hay línea de tiempo", () => {
-  const timeline = { gaps: { tic: 20, normal: 90 }, durationSec: 300, words: [{ word: "listo", times: [10, 20, 200] }] };
-  const prompt = buildPointsPrompt({ speech, durationStr: "5:00", transcriptionText: transcript, followupInstruction: "x", muletillas: { total: 3, perMinute: 1, byWord: [{ word: "listo", count: 3 }], timeline } });
-  assert.match(prompt, /menos de 20 s es un tic; entre 20 s y 1:30 min, una alerta/);
-  assert.match(prompt, /"listo" 3 veces: 1 tics, 0 alertas, 2 normales \(en 0:10, 0:20, 3:20\)/);
-  const without = buildPointsPrompt({ speech, durationStr: "5:00", transcriptionText: transcript, followupInstruction: "x", muletillas: { total: 0, perMinute: 0, byWord: [] } });
-  assert.doesNotMatch(without, /Momento de cada repetición/);
+test("el nivel de muletillas sale de los tics por cada 10 minutos", () => {
+  const timeline = (times, durationSec = 600) => ({ gaps: { tic: 20, normal: 60 }, durationSec, words: [{ word: "listo", times }] });
+  assert.equal(muletillasLevel({ gaps: { tic: 20, normal: 60 }, durationSec: 600, words: [] }), "excelente");
+  assert.equal(muletillasLevel(timeline([0, 100, 200])), "excelente");
+  assert.equal(muletillasLevel(timeline([0, 10, 20])), "bien");
+  assert.equal(muletillasLevel(timeline([0, 5, 10, 15, 20])), "regular");
+  assert.equal(muletillasLevel(timeline([0, 5, 10, 15, 20], 4200)), "bien");
+  assert.equal(muletillasLevel(timeline(Array.from({ length: 12 }, (_, i) => i * 5))), "no_lo_hizo");
+});
+
+test("las muletillas detectadas por la IA se limpian y el nivel medido reemplaza al de la IA", () => {
+  assert.deepEqual(detectedMuletillas({ muletillas_detectadas: [" Listo ", "listo", "o sea", 3, ""] }), ["listo", "o sea"]);
+  assert.deepEqual(detectedMuletillas({}), []);
+  assert.equal(countMuletillas("CONSULTOR: ¿Vale? Te cuento, vale.", ["vale"]).total, 2);
+  const reglas = [{ id: "muletillas", nivel: "excelente", que_paso: "x" }];
+  const timed = scorePointsAnalysis({ reglas }, speech, { consultantPct: 50, muletillas: { total: 0, byWord: [] }, muletillasLevel: "debil" });
+  assert.equal(timed.items.find((item) => item.ruleId === "muletillas").level, "debil");
+  const untimed = scorePointsAnalysis({ reglas }, speech, { consultantPct: 50, muletillas: { total: 0, byWord: [] } });
+  assert.equal(untimed.items.find((item) => item.ruleId === "muletillas").level, "excelente");
 });

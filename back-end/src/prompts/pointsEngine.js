@@ -5,7 +5,7 @@ import { computeRulesScore, DEFAULT_MULETILLAS, MULETILLAS_RULE_ID, NOT_APPLICAB
 const LEVEL_IDS = [...RULE_LEVELS.map((level) => level.id), NOT_APPLICABLE];
 const SPEAKER_LINE = /^(CONSULTOR|CLIENTE):\s*/;
 
-const normalize = (text) => text.toLowerCase().replace(/[.,;:!¡"“”()[\]…]/g, " ").replace(/\s+/g, " ").trim();
+const normalize = (text) => text.toLowerCase().replace(/[.,;:!¡¿?"“”()[\]…]/g, " ").replace(/\s+/g, " ").trim();
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export function speakerText(transcriptionText, speaker) {
@@ -63,15 +63,22 @@ export function muletillaGapKinds(times, { tic, normal }) {
   });
 }
 
-const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-const gapLabel = (seconds) => seconds < 60 ? `${seconds} s` : `${clock(seconds)} min`;
+// Tics per 10 minutes of call (an alert counts as half) set the level, with no configuration.
+export function muletillasLevel(timeline) {
+  const kinds = timeline.words.flatMap(({ times }) => muletillaGapKinds(times, timeline.gaps));
+  const weight = kinds.filter((kind) => kind === "tic").length + kinds.filter((kind) => kind === "alerta").length / 2;
+  const rate = weight / (Math.max(timeline.durationSec, 60) / 600);
+  if (rate === 0) return "excelente";
+  if (rate < 3) return "bien";
+  if (rate < 6) return "regular";
+  if (rate < 10) return "debil";
+  return "no_lo_hizo";
+}
 
-function timelineLines(timeline) {
-  return timeline.words.map(({ word, times }) => {
-    const kinds = muletillaGapKinds(times, timeline.gaps);
-    const count = (kind) => kinds.filter((entry) => entry === kind).length;
-    return `     "${word}" ${times.length} veces: ${count("tic")} tics, ${count("alerta")} alertas, ${count("normal")} normales (en ${times.map(clock).join(", ")})`;
-  }).join("\n");
+// The muletillas the AI found, cleaned up for matching against the transcription.
+export function detectedMuletillas(analysis) {
+  const list = Array.isArray(analysis?.muletillas_detectadas) ? analysis.muletillas_detectadas : [];
+  return [...new Set(list.filter((word) => typeof word === "string").map((word) => word.trim().toLowerCase()).filter((word) => word && word.length <= 40))].slice(0, 15);
 }
 
 export function swapSpeakerLabels(transcriptionText) {
@@ -97,22 +104,16 @@ function rulesSection(speech) {
   }).filter(Boolean).join("\n\n");
 }
 
-function muletillasSection(speech, muletillas) {
+// The AI finds the muletillas itself; the system then times them and sets the level from the speech slicer.
+function muletillasSection(speech) {
   if (!muletillasRule(speech)) return "";
-  const counted = muletillas.byWord.length
-    ? muletillas.byWord.map((entry) => `"${entry.word}" ${entry.count} veces`).join(", ")
-    : "ninguna de la lista";
-  return `INDICADOR DE MULETILLAS — evalúalo como la regla [${MULETILLAS_RULE_ID}] "Habla con fluidez, sin muletillas":
-   - Conteo exacto hecho por el sistema sobre las líneas CONSULTOR (no lo recalcules): ${counted}. Total ${muletillas.total}${muletillas.perMinute != null ? `, ${muletillas.perMinute} por minuto de habla del consultor` : ""}.
-   - Palabras que NO son muletillas aunque se repitan (conectores normales del español): ${(speech.muletillas?.ignore || []).join(", ") || "ninguna"}. Tampoco lo son artículos, preposiciones o verbos comunes ("el", "es", "de", "que").
-   - Juzga el contexto: una palabra usada como respuesta genuina ("¿Me envías los documentos?" "Listo") no es un tic; la misma palabra repetida por reflejo una y otra vez sí lo es.
-${muletillas.timeline?.words.length ? `   - Momento de cada repetición (minuto:segundo), medido por el sistema. Límites del speech: si repite la misma muletilla en menos de ${gapLabel(muletillas.timeline.gaps.tic)} es un tic; entre ${gapLabel(muletillas.timeline.gaps.tic)} y ${gapLabel(muletillas.timeline.gaps.normal)}, una alerta; con más de ${gapLabel(muletillas.timeline.gaps.normal)} de separación, uso normal. La primera vez que dice cada una cuenta como normal.
-${timelineLines(muletillas.timeline)}
-   - El nivel depende de esta clasificación: los tics restan fuerte, las alertas restan poco y los usos normales no restan.
-` : ""}   - Si el consultor repite como tic otras palabras o frases que no están en la lista (por ejemplo, "bueno, te propongo" una y otra vez), inclúyelas en "muletillas_no_listadas" con cuántas veces aparecen y tenlas en cuenta en el nivel.`;
+  return `INDICADOR DE MULETILLAS — regla [${MULETILLAS_RULE_ID}] "Habla con fluidez, sin muletillas":
+   - Detecta tú las muletillas del consultor: palabras o frases de relleno que repite por reflejo (por ejemplo "o sea", "digamos", "¿vale?" o "listo" dicho una y otra vez). Escríbelas en "muletillas_detectadas" tal como aparecen en la transcripción, en minúsculas y sin contar las veces.
+   - No son muletillas los conectores normales del español ("entonces", "pues", "bueno", "claro"), los artículos, preposiciones o verbos comunes, ni una palabra usada como respuesta genuina ("¿Me envías los documentos?" "Listo").
+   - El sistema medirá cada cuánto repite cada una y calculará el nivel. En la regla [${MULETILLAS_RULE_ID}] escribe qué pasó y cómo mejorar.`;
 }
 
-export function buildPointsPrompt({ speech, durationStr, transcriptionText, followupInstruction, additionalInstructions = "", muletillas }) {
+export function buildPointsPrompt({ speech, durationStr, transcriptionText, followupInstruction, additionalInstructions = "" }) {
   const safeInstructions = additionalInstructions.replace(/<\/?(instrucciones|system|prompt|transcripci[oó]n)[^>]*>/gi, "");
   return `Eres un coach de ventas de KINEDRIꓘ. Evalúas una sesión comercial con el speech "${speech.name}" y escribes retroalimentación humana, concreta y útil para el consultor.
 
@@ -130,7 +131,7 @@ CÓMO EVALUAR CADA REGLA
 REGLAS DEL SPEECH
 ${rulesSection(speech)}
 
-${muletillasSection(speech, muletillas)}
+${muletillasSection(speech)}
 
 ROLES
 - Las etiquetas CONSULTOR y CLIENTE se asignaron automáticamente. Si por el contenido es evidente que están invertidas (el "CLIENTE" presenta el programa, el precio o la institución), responde "roles_invertidos": true y evalúa al verdadero consultor.
@@ -151,7 +152,7 @@ SALIDA REQUERIDA (JSON EXACTO)
   "reglas": [
     { "id": "ID de la regla", "nivel": "excelente / bien / regular / debil / no_lo_hizo / no_aplica", "frase": "String", "que_paso": "String", "como_mejorar": "String", "proxima_llamada": "String" }
   ],
-  "muletillas_no_listadas": ["frase (N veces)"],
+  "muletillas_detectadas": ["frase"],
   "necesidades": ["String"],
   "proximos_pasos": { "consultor": ["String"] },
   "fases_alcanzadas": ["ID"],
@@ -169,13 +170,17 @@ ${transcriptionText}
 }
 
 // Turns GPT's answer plus the system measurements into the stored scoring block.
-export function scorePointsAnalysis(analysis, speech, { consultantPct, muletillas, isSale = false }) {
+// muletillasLevel comes from the system's timing when there is a timeline; otherwise the AI's level stands.
+export function scorePointsAnalysis(analysis, speech, { consultantPct, muletillas, muletillasLevel: timedLevel = null, isSale = false }) {
   const rules = scoredRules(speech);
   const validIds = new Set(rules.map((rule) => rule.id));
   const answers = new Map((Array.isArray(analysis.reglas) ? analysis.reglas : [])
     .filter((entry) => validIds.has(entry?.id))
     .map((entry) => [entry.id, entry]));
-  const evaluations = [...answers.values()].map((entry) => ({ ruleId: entry.id, level: LEVEL_IDS.includes(entry.nivel) ? entry.nivel : "no_lo_hizo" }));
+  const evaluations = [...answers.values()]
+    .filter((entry) => !(timedLevel && entry.id === MULETILLAS_RULE_ID))
+    .map((entry) => ({ ruleId: entry.id, level: LEVEL_IDS.includes(entry.nivel) ? entry.nivel : "no_lo_hizo" }));
+  if (timedLevel && validIds.has(MULETILLAS_RULE_ID)) evaluations.push({ ruleId: MULETILLAS_RULE_ID, level: timedLevel });
   const result = computeRulesScore(rules, evaluations, {
     isSale,
     talkRatio: speech.talkRatio ? { config: speech.talkRatio, consultantPct } : null,
@@ -200,9 +205,6 @@ export function scorePointsAnalysis(analysis, speech, { consultantPct, muletilla
     possible: result.possible,
     items,
     talkRatio: { consultantPct, limits: speech.talkRatio?.limits || [] },
-    muletillas: {
-      ...muletillas,
-      notListed: Array.isArray(analysis.muletillas_no_listadas) ? analysis.muletillas_no_listadas.filter((word) => typeof word === "string").slice(0, 10) : [],
-    },
+    muletillas,
   };
 }

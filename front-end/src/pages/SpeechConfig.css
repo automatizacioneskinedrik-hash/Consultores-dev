@@ -158,18 +158,7 @@ body.sidebar-collapsed .speechConfigContent { margin-left: 88px; }
 .speechConfirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(255, 89, 0, .1); color: #040025; border-radius: 10px; padding: 10px 12px; font-size: 13px; }
 .speechAddPhase { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px solid #0040A4; border-radius: 14px; padding: 14px; background: #eaf2ff; color: #0040A4; font-weight: 700; font-size: 15px; cursor: pointer; transition: background .15s, color .15s; }
 .speechAddPhase:hover:not(:disabled) { background: #0040A4; color: #fff; }
-.speechMuletillas { display: grid; gap: 10px; padding-top: 4px; }
 .speechMuletillasHow { margin: 0; font-size: 14px; color: #65728a; max-width: 75ch; }
-.speechMuletillasGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.speechWordList label { font-size: 13px; font-weight: 700; color: #34435c; }
-.speechWordList p { margin: 2px 0 8px; color: #65728a; font-size: 12px; }
-.speechChips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.speechChip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 100px; background: #eaf2ff; color: #0040a4; font-size: 12px; font-weight: 600; }
-.speechChip.muted { background: #f0f1f3; color: #65728a; }
-.speechChip button { border: 0; background: transparent; color: inherit; padding: 2px; margin-right: -4px; display: inline-flex; cursor: pointer; border-radius: 50%; }
-.speechWordAdd { display: flex; gap: 8px; align-items: center; }
-.speechWordAdd input { flex: 1 1 auto; min-width: 0; border: 1px solid #dce3ed; border-radius: 8px; padding: 7px 10px; font: 13px/1.4 Roboto, Helvetica, Arial, sans-serif; color: #040025; }
-.speechWordAdd input:focus { outline: none; border-color: #0040a4; }
 .speechActivePill { border-radius: 100px; padding: 4px 10px; font-size: 12px; font-weight: 700; background: #8ABC43; color: #040025; }
 .speechVersions .speechHint { margin-top: 12px; }
 .speechGap { display: grid; gap: 6px; padding: 4px 0 6px; }
@@ -211,5 +200,5 @@ body.sidebar-collapsed .speechConfigContent { margin-left: 88px; }
 .speechRatioLegend b { font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (max-width: 760px) { .speechRatioLegend li { grid-template-columns: 14px 1fr auto; } .speechRatioLegend li span { display: none; } }
 @media (prefers-reduced-motion: reduce) { .speechBar span, .speechChevron { transition: none; } }
-@media (max-width: 760px) { .speechPhaseBody { padding-left: 16px; } .speechPhaseHead { grid-template-columns: 30px minmax(0, 1fr) auto; } .speechChevron { display: none; } .speechRule { grid-template-columns: minmax(0, 1fr) auto; } .speechRule .speechRuleActions { grid-column: 2; justify-self: end; } .speechMuletillasGrid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .speechPhaseBody { padding-left: 16px; } .speechPhaseHead { grid-template-columns: 30px minmax(0, 1fr) auto; } .speechChevron { display: none; } .speechRule { grid-template-columns: minmax(0, 1fr) auto; } .speechRule .speechRuleActions { grid-column: 2; justify-self: end; } }
 @media (max-width: 760px) { .speechConfigContent { margin-left: 0; padding: 84px 16px 60px; } body.sidebar-collapsed .speechConfigContent { margin-left: 0; } .speechConfigHeader, .speechSectionHeading, .speechBottomBar { align-items: flex-start; flex-direction: column; } .speechOverviewFields .speechField, .speechRulesGrid .speechField, .speechPhaseField { grid-template-columns: 1fr; gap: 3px; } .speechPhaseField label { margin-top: 0; } .speechRulesGrid { grid-template-columns: 1fr; } .speechScoringRow { align-items: flex-start; flex-direction: column; gap: 10px; } .speechVersion { align-items: flex-start; } .speechBottomBar > div { width: 100%; flex-wrap: wrap; } }
