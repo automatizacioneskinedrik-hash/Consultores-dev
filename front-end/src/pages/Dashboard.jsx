@@ -9,7 +9,6 @@ import {
   QuestionCircleOutlined,
   ReloadOutlined,
   StarOutlined,
-  TeamOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
 import {
@@ -27,7 +26,8 @@ import {
 import dayjs from "dayjs";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
-import UserAvatar from "../components/UserAvatar";
+import MetricsTabs from "../components/MetricsTabs";
+import PersonOption from "../components/PersonOption";
 import { getUser } from "../utils/user";
 import { seesAll } from "../utils/roles";
 import "./Dashboard.css";
@@ -50,15 +50,6 @@ const DASHBOARD_TOUR = [
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 const DEFAULT_CONSULTANT_OPTIONS = [{ label: "Todos", value: "all" }];
-
-// Every person in a selector shows their Google photo; "Todos" shows a group icon.
-function ConsultantOption({ option }) {
-  if (option?.value === "all") return <span className="consultantOption"><span className="consultantAllIcon" aria-hidden="true"><TeamOutlined /></span>Todos</span>;
-  return <span className="consultantOption">
-    <UserAvatar name={option?.label} email={option?.value} picture={option?.picture} className="avatarSm" />
-    <span className="consultantOptionName">{option?.label}</span>
-  </span>;
-}
 
 function getScoreIcon(rawScore) {
   const n = Number(rawScore);
@@ -962,6 +953,7 @@ export default function Dashboard() {
       <Sidebar />
       <GuideTour id="dashboard" steps={DASHBOARD_TOUR} mascot="/mascots/dots/dot-amarillo-analitico-guia.webp" mascotName="el personaje amarillo" aura="rgba(251, 180, 42, .55)" />
       <main className="dashboardContent">
+        <MetricsTabs />
         <ConfigProvider
           theme={{
             token: {
@@ -973,12 +965,6 @@ export default function Dashboard() {
           }}
         >
           <header className="dashboardTopBar">
-            <div className="dashboardHeaderTitle">
-              <div className="dashboardHeaderText">
-                <h1 className="pageTitle">Speech <span className="titleAccent">Analytics</span></h1>
-              </div>
-            </div>
-
             <div className="dashboardTopFilters">
               <div className="dashboardFiltersLabels">
                 <div className="dashboardFilterLabel">Mes</div>
@@ -1030,8 +1016,8 @@ export default function Dashboard() {
                   value={consultant}
                   onChange={setConsultant}
                   options={consultantOptions}
-                  optionRender={(option) => <ConsultantOption option={option.data} />}
-                  labelRender={({ value }) => <ConsultantOption option={consultantOptions.find((option) => option.value === value) || { value, label: value }} />}
+                  optionRender={(option) => <PersonOption option={option.data} />}
+                  labelRender={({ value }) => <PersonOption option={consultantOptions.find((option) => option.value === value) || { value, label: value }} />}
                   loading={consultantsLoading}
                   showSearch
                   optionFilterProp="label"

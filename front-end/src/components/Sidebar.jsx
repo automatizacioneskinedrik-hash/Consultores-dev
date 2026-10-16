@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import { canManage, cargoOf } from "../utils/roles";
-import { BookOpenText, ChartNoAxesCombined, CloudUpload, Coins, History, Menu, Settings, Users } from "lucide-react";
+import { BookOpenText, ChartNoAxesCombined, CloudUpload, Coins, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
 // Each section has its own mascot peeking over the sidebar.
 const SECTION_MASCOTS = {
   "/upload": "/mascots/dots/dot-azul-asomado.webp",
-  "/history": "/mascots/dots/dot-amarillo-asomado.webp",
-  "/dashboard": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/metricas": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/metricas/cuantitativas": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/metricas/cualitativas": "/mascots/dots/dot-amarillo-asomado.webp",
   "/admin": "/mascots/dots/dot-verde-asomado.webp",
   "/speech-comercial": "/mascots/dots/dot-lila-asomado.webp",
   "/configuracion-avanzada": "/mascots/dots/dot-naranja-asomado.webp",
@@ -31,13 +32,12 @@ export default function Sidebar() {
 
   const isUploadPage = location.pathname === "/upload";
   const isAdminPage = location.pathname === "/admin";
-  const isHistoryPage = location.pathname === "/history";
-  const isDashboardPage = location.pathname === "/dashboard";
+  const isMetricsPage = location.pathname.startsWith("/metricas");
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
   const isSpeechConfigPage = location.pathname === "/speech-comercial";
   const isCostsPage = location.pathname === "/costos";
 
-  // Every cargo sees Subir archivo, Historial and Panel; the managing cargos also see the rest.
+  // Every cargo sees Subir archivo and Métricas; the managing cargos also see the rest.
   const managesApp = canManage(user);
   const storedName = fullName || cargoOf(user).label;
 
@@ -66,7 +66,6 @@ export default function Sidebar() {
 
   const handleAdminClick = () => { navigate("/admin"); setIsMobileSidebarOpen(false); };
   const handleAdvancedConfigClick = () => { navigate("/configuracion-avanzada"); setIsMobileSidebarOpen(false); };
-  const handleDashboardClick = () => { navigate("/dashboard"); setIsMobileSidebarOpen(false); };
 
   const handleLogoutClick = () => setShowLogoutModal(true);
 
@@ -144,18 +143,9 @@ export default function Sidebar() {
             <span className="sidebarItemLabel">Subir Archivo</span>
           </button>
 
-          <button className={`sidebarItem ${isHistoryPage ? "active" : ""}`} onClick={() => { navigate("/history"); setIsMobileSidebarOpen(false); }} title="Historial de reportes">
-            <History className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
-            <span className="sidebarItemLabel">Historial</span>
-          </button>
-
-          <button
-            className={`sidebarItem ${isDashboardPage ? "active" : ""}`}
-            onClick={handleDashboardClick}
-            title="Panel"
-          >
+          <button className={`sidebarItem ${isMetricsPage ? "active" : ""}`} onClick={() => { navigate("/metricas"); setIsMobileSidebarOpen(false); }} title="Métricas">
             <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
-            <span className="sidebarItemLabel" translate="no">Panel</span>
+            <span className="sidebarItemLabel">Métricas</span>
           </button>
 
           {managesApp && (

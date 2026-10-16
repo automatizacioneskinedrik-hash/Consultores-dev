@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Select } from "antd";
 import "./History.css";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
@@ -7,6 +8,8 @@ import { seesAll } from "../utils/roles";
 import { Search, Filter, Calendar, ChevronRight, Eye, CheckCircle, X } from "lucide-react";
 import UserAvatar from "../components/UserAvatar";
 import GuideTour from "../components/GuideTour";
+import MetricsTabs from "../components/MetricsTabs";
+import PersonOption from "../components/PersonOption";
 
 const HISTORY_TOUR = [
   { title: "¡Hola! Yo analizo tus resultados", text: "Aquí guardo todas tus llamadas analizadas. Te enseño a encontrarlas y a leer tu reporte." },
@@ -36,6 +39,7 @@ export default function History() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [consultant, setConsultant] = useState("all");
   const [selectedReportId, setSelectedReportId] = useState(null);
   const [selectedReportData, setSelectedReportData] = useState(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
@@ -102,10 +106,16 @@ export default function History() {
     }
   };
 
+  // One option per consultant with sessions; typing a name finds it fast.
+  const consultantOptions = [{ value: "all", label: "Todos los consultores" }, ...[...new Map(sessions.map((s) => [s.userEmail, { value: s.userEmail, label: s.userName || s.userEmail, picture: s.userPicture }])).values()]
+    .sort((a, b) => a.label.localeCompare(b.label, "es"))];
+
   const filteredSessions = sessions.filter(s =>
-    s.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (s.userName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    (consultant === "all" || s.userEmail === consultant) && (
+      s.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.userName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   return (
@@ -113,18 +123,30 @@ export default function History() {
       <Sidebar />
       {!loading && <GuideTour id="history" steps={HISTORY_TOUR} cleanup={HISTORY_TOUR_CLEANUP} hideLauncher={Boolean(selectedReportId)}mascot="/mascots/dots/dot-amarillo-analitico-guia.webp" mascotName="el personaje amarillo" aura="rgba(251, 180, 42, .55)" />}
       <div className="historyContent">
+        <MetricsTabs />
         <header className="historyHeader">
           <div className="headerText">
-            <h1 className="pageTitle">Historial de <span className="titleAccent">Reportes</span></h1>
             <p>Consulta todos tus análisis y sesiones procesadas.</p>
           </div>
 
           <div className="historyFilters">
+            {isAdmin && <Select
+              className="historyConsultantFilter"
+              value={consultant}
+              onChange={setConsultant}
+              options={consultantOptions}
+              optionRender={(option) => <PersonOption option={option.data} allLabel="Todos los consultores" />}
+              labelRender={({ value }) => <PersonOption option={consultantOptions.find((option) => option.value === value) || { value, label: value }} allLabel="Todos los consultores" />}
+              showSearch
+              optionFilterProp="label"
+              placeholder="Escribe un nombre"
+              aria-label="Filtrar por consultor"
+            />}
             <div className="searchWrapper">
               <Search size={18} className="searchIcon" />
               <input
                 type="text"
-                placeholder={isAdmin ? "Buscar por cliente o consultor..." : "Buscar por nombre del cliente..."}
+                placeholder="Buscar por nombre del cliente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

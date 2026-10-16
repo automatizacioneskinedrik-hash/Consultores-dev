@@ -7,6 +7,7 @@ import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
 import Costs from "./pages/Costs";
+import MetricsQualitative from "./pages/MetricsQualitative";
 import { getUser } from "./utils/user";
 import { canManage } from "./utils/roles";
 import "./App.css";
@@ -44,14 +45,11 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <History />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/metricas" element={<ProtectedRoute><History /></ProtectedRoute>} />
+        <Route path="/metricas/cuantitativas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/metricas/cualitativas" element={<ProtectedRoute><MetricsQualitative /></ProtectedRoute>} />
+        <Route path="/history" element={<Navigate to="/metricas" replace />} />
+        <Route path="/dashboard" element={<Navigate to="/metricas/cuantitativas" replace />} />
         <Route
           path="/admin"
           element={
@@ -71,14 +69,6 @@ export default function App() {
         <Route path="/speech-comercial" element={<AdminRoute><SpeechConfig /></AdminRoute>} />
         <Route path="/costos" element={<AdminRoute><Costs /></AdminRoute>} />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
 
         <Route path="/" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />
         <Route path="*" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />

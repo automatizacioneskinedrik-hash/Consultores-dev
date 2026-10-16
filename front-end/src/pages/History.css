@@ -300,3 +300,7 @@ body.sidebar-collapsed .historyContent {
 .rowActions { display: flex; align-items: center; gap: 8px; }
 .deleteSessionBtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #FF5900; border-radius: 50%; background: #fff; color: #FF5900; cursor: pointer; transition: background .15s, color .15s; }
 .deleteSessionBtn:hover { background: #FF5900; color: #fff; }
+
+/* Consultant filter beside the search, for roles that see everyone. */
+.historyFilters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.historyConsultantFilter.ant-select { min-width: 260px; height: 44px; border-radius: 12px; }

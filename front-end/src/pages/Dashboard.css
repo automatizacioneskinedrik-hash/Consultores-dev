@@ -553,7 +553,5 @@ body.sidebar-collapsed .dashboardContent {
   }
 }
 
-/* Consultant selector: photo or initials beside each name. */
-.consultantOption { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; vertical-align: middle; }
-.consultantOptionName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.consultantAllIcon { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #eaf2ff; color: #0040A4; font-size: 13px; }
+/* Cualitativas waits for the metrics management is defining. */
+.metricsPlaceholder { background: #fff; border: 1px solid rgba(4, 0, 37, 0.08); border-radius: 18px; padding: 56px 24px; }
