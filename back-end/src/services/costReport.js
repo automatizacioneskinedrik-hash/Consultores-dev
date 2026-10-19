@@ -3,6 +3,7 @@
 // Days are UTC days, as the providers report them. Collected once a day after 10:00 p. m. Colombia.
 import { BigQuery } from "@google-cloud/bigquery";
 import admin, { db } from "../config/firebase.js";
+import { DEFAULT_AI_MODEL } from "../prompts/aiModelConfig.js";
 
 export const COSTS_START_DATE = "2026-09-01";
 const OPENAI_PROJECT_ID = "proj_RGj0l6my7TKzEFsyGPVecYBk";
@@ -23,6 +24,9 @@ const metaRef = db.collection("cost_meta").doc("collection");
 export const utcDay = (date) => new Date(date).toISOString().slice(0, 10);
 const addDays = (day, count) => utcDay(new Date(`${day}T00:00:00Z`).getTime() + count * DAY_MS);
 const round = (value) => Math.round(value * 10000) / 10000;
+
+// One name per model: "gpt-5.4-mini-2026-03-17, cached input" and "gpt-5.4-mini" are the same model.
+export const modelName = (item) => String(item || "").split(",")[0].trim().toLowerCase().replace(/-\d{4}-\d{2}-\d{2}$/, "");
 
 export function daysBetween(fromDay, toDay) {
   const days = [];
@@ -83,7 +87,7 @@ async function openAiCosts(fromDay, toDay) {
     const day = utcDay(bucket.start_time * 1000);
     for (const result of bucket.results || []) {
       if (result.project_id !== OPENAI_PROJECT_ID) continue;
-      addCost(byDay, day, result.line_item || "Otros", Number(result.amount?.value));
+      addCost(byDay, day, modelName(result.line_item) || "Otros", Number(result.amount?.value));
     }
   }
   return byDay;
@@ -107,7 +111,7 @@ async function claudeCosts(fromDay, toDay) {
     for (const result of bucket.results || []) {
       if (result.workspace_id !== ANTHROPIC_WORKSPACE_ID) continue;
       // Anthropic reports cents as a decimal string.
-      addCost(byDay, day, result.model || result.description || "Otros", Number(result.amount) / 100);
+      addCost(byDay, day, modelName(result.model || result.description) || "Otros", Number(result.amount) / 100);
     }
   }
   return byDay;
@@ -190,12 +194,36 @@ export async function ensureCollected(now = new Date()) {
   await running;
 }
 
+// Calls graded by each model in the period. Older calls did not store their model, so it is the model
+// that was active on that date (Configuración avanzada history), or the default before any change.
+export async function callsByModel(fromDay, toDay) {
+  const [calls, state] = await Promise.all([
+    db.collection("meetings_analysis")
+      .where("createdAt", ">=", new Date(`${fromDay}T00:00:00Z`))
+      .where("createdAt", "<", new Date(`${addDays(toDay, 1)}T00:00:00Z`))
+      .select("createdAt", "aiUsage.model").get(),
+    db.collection("ai_config").doc("state").get(),
+  ]);
+  const activations = (state.exists && Array.isArray(state.data().history) ? state.data().history : [])
+    .map((entry) => ({ model: modelName(entry.model), at: entry.changedAt?.toDate ? entry.changedAt.toDate() : new Date(entry.changedAt) }))
+    .sort((a, b) => a.at - b.at);
+  const activeAt = (date) => activations.filter((entry) => entry.at <= date).pop()?.model || modelName(DEFAULT_AI_MODEL);
+  const counts = {};
+  for (const doc of calls.docs) {
+    const data = doc.data();
+    const model = modelName(data.aiUsage?.model) || activeAt(data.createdAt?.toDate?.() || new Date(0));
+    counts[model] = (counts[model] || 0) + 1;
+  }
+  return counts;
+}
+
 export async function getCosts(fromDay, toDay) {
   await ensureCollected();
-  const [snap, latestSnap, meta] = await Promise.all([
+  const [snap, latestSnap, meta, modelCalls] = await Promise.all([
     costsCollection.where("date", ">=", fromDay).where("date", "<=", toDay).get(),
     costsCollection.orderBy("date", "desc").limit(1).get(),
     metaRef.get(),
+    callsByModel(fromDay, toDay),
   ]);
   const plain = (doc) => { const { collectedAt, ...day } = doc.data(); return day; };
   const days = snap.docs.map(plain).sort((a, b) => a.date.localeCompare(b.date));
@@ -204,6 +232,7 @@ export async function getCosts(fromDay, toDay) {
     startDate: COSTS_START_DATE,
     days,
     latest: latestSnap.empty ? null : plain(latestSnap.docs[0]),
+    callsByModel: modelCalls,
     collectedAt: metaData.collectedAt?.toDate?.().toISOString() || null,
     errors: metaData.errors || {},
   };

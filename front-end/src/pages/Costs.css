@@ -1,4 +1,3 @@
-.costsRange { min-width: 280px; }
 .costsLegend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: #040025; }
 .costsLegend span { display: inline-flex; align-items: center; gap: 6px; }
 .costsLegend i { width: 10px; height: 10px; border-radius: 3px; }
@@ -27,3 +26,14 @@
 .costsUpdated { margin: 6px 0 0; font-size: 13px; color: #52627b; }
 .costsError { color: #b42318; }
 .costsStale { font-style: normal; font-size: 12px; margin-left: 8px; color: #b45309; white-space: nowrap; }
+/* Top bar: the title keeps its width and the four filters share the rest. */
+.costsTopBar { flex-wrap: nowrap; gap: 28px; }
+.costsTopBar .dashboardHeaderTitle { flex: 0 0 auto; margin-bottom: 0; }
+.costsTopBar .pageTitle { white-space: nowrap; }
+.costsTopBar .dashboardTopFilters { flex: 1 1 0; min-width: 0; }
+.costsTopBar .dashboardFiltersLabels, .costsTopBar .dashboardFiltersInputs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.costsTopBar .dashboardFilterControl { width: 100%; min-width: 0; }
+@media (max-width: 1180px) { .costsTopBar { flex-wrap: wrap; } .costsTopBar .dashboardTopFilters { flex-basis: 100%; } }
+.costsTechProvider { font-weight: 700; color: #040025; }
+.costsTechModel { padding-left: 16px; color: #334155; }
+.costsEfficiency { font-size: 12px; color: #52627b; }
