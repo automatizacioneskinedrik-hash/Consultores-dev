@@ -1118,7 +1118,6 @@ body.sidebar-collapsed .appShell {
   max-width: 100%;
   margin: 20px auto 40px auto;
   text-align: left;
-  animation: sessionsFadeIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .recentTitle {

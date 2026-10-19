@@ -18,15 +18,33 @@ export async function setAnalysisStatus(objectPath, fields) {
 }
 
 // Called when the upload finishes; the person and day keys let both the uploader and the owner find it.
+// Returns false when the same audio is already being analyzed or finished, so a repeated request from the
+// browser cannot start a second analysis (it happened on 2026-10-19 and graded one call twice).
 export async function startAnalysisStatus(objectPath, { fileName, userEmail, uploadedBy, ownerName }) {
+  const ref = collection.doc(idFor(objectPath));
   const day = utcDay(Date.now());
-  await setAnalysisStatus(objectPath, {
-    fileName: String(fileName || objectPath.split("/").pop()).slice(0, 200),
-    userEmail, uploadedBy, ownerName: ownerName || "",
-    stage: "queued", error: "", dismissed: false,
-    uploaderDay: `${uploadedBy}|${day}`, ownerDay: `${userEmail}|${day}`,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
+  try {
+    return await db.runTransaction(async (transaction) => {
+      const current = await transaction.get(ref);
+      const data = current.exists ? current.data() : null;
+      const updatedAt = data?.updatedAt?.toDate?.();
+      const running = data && ACTIVE_STAGES.includes(data.stage) && updatedAt && Date.now() - updatedAt.getTime() < 30 * 60 * 1000;
+      if (running || data?.stage === "done") return false;
+      transaction.set(ref, {
+        objectPath,
+        fileName: String(fileName || objectPath.split("/").pop()).slice(0, 200),
+        userEmail, uploadedBy, ownerName: ownerName || "",
+        stage: "queued", error: "", dismissed: false,
+        uploaderDay: `${uploadedBy}|${day}`, ownerDay: `${userEmail}|${day}`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return true;
+    });
+  } catch (error) {
+    console.error("No se pudo registrar el inicio del análisis:", error.message);
+    return true;
+  }
 }
 
 export function friendlyAnalysisError(error) {

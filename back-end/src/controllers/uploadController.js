@@ -82,7 +82,9 @@ export const completeUpload = async (req, res) => {
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
 
-    await startAnalysisStatus(objectPath, { fileName: req.body.fileName, userEmail, uploadedBy, ownerName });
+    if (!(await startAnalysisStatus(objectPath, { fileName: req.body.fileName, userEmail, uploadedBy, ownerName }))) {
+      return res.json({ ok: true, alreadyStarted: true });
+    }
 
     const [metadata] = await file.getMetadata();
     const fileSizeBytes = parseInt(metadata.size || 0);

@@ -32,31 +32,13 @@ const UPLOAD_TOUR_CLEANUP = [{ hide: [".waFloatBtn", ".waPanel:not(.waPanelHidde
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
 
-function Modal({ isOpen, message, onYes, onNo }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modalOverlay">
-      <div className="modalContent">
-        <p>{message}</p>
-        <div className="modalButtons">
-          <button className="btnYes" onClick={onYes}>
-            Si
-          </button>
-          <button className="btnNo" onClick={onNo}>
-            No
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // The three steps of a call, shown in each row of "Tus sesiones del día de hoy".
 const STEPS = ["Subir", "Transcribir", "Calificar"];
 const STEP_INDEX = { uploading: 0, queued: 1, transcribing: 1, grading: 2 };
 const ACTIVE_STAGES = ["queued", "transcribing", "grading"];
 const startOfToday = () => { const date = new Date(); date.setHours(0, 0, 0, 0); return date.toISOString(); };
+// Today's list, kept while the app is open, so coming back to Subir archivo shows it at once without animation.
+const todayCache = { key: "", statuses: null, sessions: null };
 
 function CallRow({ stage, name, percent, owner, score, scoreFormat, duration, error, loading, onOpen, onDismiss }) {
   const current = STEP_INDEX[stage];
@@ -257,16 +239,18 @@ export default function Upload() {
     }
   }, [user]);
 
-  const [fileMeta, setFileMeta] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const cacheKey = `${user.email}|${startOfToday()}`;
+  const cached = todayCache.key === cacheKey ? todayCache : null;
   const [errorMsg, setErrorMsg] = useState("");
   const [reportData, setReportData] = useState(null);
   // The call being uploaded from this browser, until the server reports its step.
   const [uploading, setUploading] = useState(null);
   // Today's calls with their real step, written by the server while it analyzes them.
-  const [statuses, setStatuses] = useState([]);
+  const [statuses, setStatuses] = useState(() => cached?.statuses || []);
+  const [loaded, setLoaded] = useState(() => Boolean(cached?.statuses));
   const [analysisText, setAnalysisText] = useState("Procesando información...");
-  const [recentSessions, setRecentSessions] = useState([]);
+  const [recentSessions, setRecentSessions] = useState(() => cached?.sessions || []);
+  const [sessionsLoaded, setSessionsLoaded] = useState(() => Boolean(cached?.sessions));
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [sessionLoading, setSessionLoading] = useState(null);
   const [followUps, setFollowUps] = useState([]);
@@ -329,7 +313,10 @@ export default function Upload() {
       const data = await res.json();
       if (data.ok) {
         setRecentSessions(data.sessions || []);
+        todayCache.key = cacheKey;
+        todayCache.sessions = data.sessions || [];
       }
+      setSessionsLoaded(true);
     } catch (err) {
       // Quietly ignore failed session fetches
     }
@@ -409,8 +396,13 @@ export default function Upload() {
         headers: { "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" },
       });
       const data = await res.json();
-      if (data.ok) setStatuses(data.statuses || []);
+      if (data.ok) {
+        setStatuses(data.statuses || []);
+        todayCache.key = cacheKey;
+        todayCache.statuses = data.statuses || [];
+      }
     } catch { /* red inestable: lo intenta en la siguiente vuelta */ }
+    setLoaded(true);
   };
 
   useEffect(() => {
@@ -480,24 +472,17 @@ export default function Upload() {
   };
 
 
-  const handleFile = (file) => {
-    if (!file || analyzing) return;
-    setFileMeta(file);
-    setShowModal(true);
-  };
-
   const resetInput = () => {
-    setFileMeta(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  const handleYes = async () => {
-    setShowModal(false);
+  // Choosing or dropping the audio uploads it right away; the analysis starts when the upload ends.
+  const handleFile = async (file) => {
+    if (!file || analyzing) return;
     if (!navigator.onLine) {
       setErrorMsg("No tienes conexión a internet. Por favor, conéctate e intenta de nuevo.");
       return;
     }
-    const file = fileMeta;
     setErrorMsg("");
     setUploading({ name: file.name, percent: 0 });
     const headers = { "Content-Type": "application/json", "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" };
@@ -546,11 +531,6 @@ export default function Upload() {
       setUploading(null);
       resetInput();
     }
-  };
-
-  const handleNo = () => {
-    setShowModal(false);
-    resetInput();
   };
 
   const dismissStatus = async (id) => {
@@ -602,7 +582,7 @@ export default function Upload() {
         <main className="mainContent">
           <div className="uploadBody">
           <div className="container">
-            <div className={`uploadIntro${uploading || statuses.length > 0 || legacySessions.length > 0 ? " uploadIntroHidden" : ""}`}>
+            {loaded && sessionsLoaded && !uploading && statuses.length === 0 && legacySessions.length === 0 && <div className="uploadIntro">
               <h1 className="title">
                 Transforma tus reuniones en <span className="highlight">insights</span>
                 <br />accionables
@@ -615,7 +595,7 @@ export default function Upload() {
                   Al finalizar cada sesión, carga tu audio y transforma tu experiencia en crecimiento para todos.
                 </p>
               </div>
-            </div>
+            </div>}
 
             {isOffline && (
               <div className="offlineWarning">
@@ -727,13 +707,6 @@ export default function Upload() {
             </aside>
           </div>
         </main>
-
-        <Modal
-          isOpen={showModal}
-          message={`¿Enviar "${fileMeta?.name || "el audio"}" para analizarlo?`}
-          onYes={handleYes}
-          onNo={handleNo}
-        />
 
         {reportData && <ReportDetail report={reportData} onClose={handleReportClose} />}
       </div>
