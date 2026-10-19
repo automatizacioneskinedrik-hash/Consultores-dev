@@ -5,6 +5,7 @@ import { db } from "../config/firebase.js";
 import { normalizeEmailValue, slugify } from "../utils/helpers.js";
 import { logChange } from "../services/auditLog.js";
 import { processAudioAnalysis } from "../services/analysisService.js";
+import { startAnalysisStatus } from "../services/analysisStatus.js";
 
 export const getSignedUrl = async (req, res) => {
   try {
@@ -61,6 +62,7 @@ export const completeUpload = async (req, res) => {
     // The call belongs to whoever uploads it, unless a role that sees everyone uploads it for someone else.
     const uploadedBy = req.requester.email;
     let userEmail = uploadedBy;
+    let ownerName = req.requester.user?.name || "";
     const requestedOwner = normalizeEmailValue(req.body.ownerEmail);
     if (requestedOwner && requestedOwner !== uploadedBy) {
       if (!req.requester.cargo.seesAll) {
@@ -69,6 +71,7 @@ export const completeUpload = async (req, res) => {
       const owner = await db.collection("users").where("email", "==", requestedOwner).limit(1).get();
       if (owner.empty) return res.status(400).json({ ok: false, error: "La persona elegida no está registrada." });
       userEmail = requestedOwner;
+      ownerName = owner.docs[0].data().name || requestedOwner;
       await logChange(req.requester, "session.upload_for", `Subió una llamada a nombre de ${owner.docs[0].data().name || requestedOwner}`, { objectPath, ownerEmail: requestedOwner });
     }
 
@@ -78,6 +81,8 @@ export const completeUpload = async (req, res) => {
     const file = bucket.file(objectPath);
     const [exists] = await file.exists();
     if (!exists) return res.status(404).json({ ok: false, error: "Objeto no encontrado en GCS" });
+
+    await startAnalysisStatus(objectPath, { fileName: req.body.fileName, userEmail, uploadedBy, ownerName });
 
     const [metadata] = await file.getMetadata();
     const fileSizeBytes = parseInt(metadata.size || 0);

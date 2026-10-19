@@ -15,6 +15,7 @@ import { applySpeechToAnalysis } from "../prompts/speechAnalysis.js";
 import { getEmailConfigFromFirestore } from "./emailService.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 import { recordAssemblyUsage } from "./costReport.js";
+import { friendlyAnalysisError, setAnalysisStatus } from "./analysisStatus.js";
 
 const assemblyai = new AssemblyAI({ apiKey: process.env.ASSEMBLYAI_API_KEY });
 
@@ -161,6 +162,8 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     .get();
   if (!existingSnap.empty) {
     console.log(`Audio ya analizado previamente (objectPath: ${objectPath}). Saltando re-análisis.`);
+    const existing = existingSnap.docs[0];
+    await setAnalysisStatus(objectPath, { stage: "done", sessionId: existing.id, score: existing.data().generalScore ?? null });
     return;
   }
 
@@ -174,6 +177,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
       throw new Error("ASSEMBLYAI_API_KEY no configurada en el entorno");
     }
 
+    await setAnalysisStatus(objectPath, { stage: "transcribing" });
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("Archivo descargado:", tempFilePath);
 
@@ -186,6 +190,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
+    await setAnalysisStatus(objectPath, { stage: "grading" });
     const context = await loadAnalysisContext();
     const { speech } = context;
     const pointsFormat = speech.format === POINTS_FORMAT;
@@ -228,6 +233,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     };
 
     const docRef = await db.collection("meetings_analysis").add(analysisData);
+    await setAnalysisStatus(objectPath, { stage: "done", sessionId: docRef.id, score: generalScore ?? null, scoreFormat: scoring?.format === POINTS_FORMAT ? "points" : "percent", duration: durationStr, clientName: analysis.nombre_cliente || "" });
 
     if (analysis.seguimiento) {
       const fechaEnvio = new Date();
@@ -282,6 +288,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     };
   } catch (err) {
     console.error("Error processing analysis:", err);
+    await setAnalysisStatus(objectPath, { stage: "error", error: friendlyAnalysisError(err) });
     throw err;
   } finally {
     if (await fs.pathExists(tempFilePath)) await fs.remove(tempFilePath);

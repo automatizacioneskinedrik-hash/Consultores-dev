@@ -11,6 +11,8 @@ router.use(async (req, res, next) => {
 });
 
 router.get("/recent", sessionController.getRecentSessions);
+router.get("/statuses", sessionController.getAnalysisStatuses);
+router.post("/statuses/:id/dismiss", sessionController.postDismissAnalysisStatus);
 router.get("/by-path", sessionController.getSessionByPath);
 router.get("/audio-download", sessionController.getAudioDownloadUrl);
 router.get("/", sessionController.getAllSessions);

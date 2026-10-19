@@ -1325,3 +1325,34 @@ body.sidebar-collapsed .appShell {
   to { opacity: 1; }
 }
 
+
+/* Subir archivo: each call of the day with its real step (Subir → Transcribir → Calificar). */
+.callsHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.callsHint { font-size: 13px; color: #52617a; max-width: 60ch; text-align: right; }
+.callList { display: grid; gap: 10px; }
+.callRow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #2885FF; border-radius: 14px; padding: 14px 18px; text-align: left; font-family: Roboto, Helvetica, Arial, sans-serif; }
+.callRow.is-done { border-left-color: #8ABC43; }
+.callRow.is-error { border-left-color: #FF5900; }
+.callMain { display: grid; gap: 4px; min-width: 0; }
+.callName { font-weight: 700; color: #040025; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.callStatus { font-size: 13px; color: #52617a; }
+.callRow.is-error .callStatus { color: #c2410c; }
+.callSteps { display: flex; gap: 14px; margin-top: 4px; font-size: 12px; color: #94a3b8; flex-wrap: wrap; }
+.callSteps span { display: inline-flex; align-items: center; gap: 6px; }
+.callSteps i { position: relative; width: 44px; height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+.callSteps i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 0; background: #2885FF; border-radius: inherit; }
+.callSteps .done { color: #0040A4; }
+.callSteps .done i::after { width: 100%; background: #8ABC43; }
+.callSteps .now { color: #0040A4; font-weight: 700; }
+.callSteps .now i::after { width: var(--fill, 40%); animation: callPulse 1.2s ease-in-out infinite alternate; }
+@keyframes callPulse { from { opacity: .55; } to { opacity: 1; } }
+.callOwner { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: #040025; white-space: nowrap; }
+.callActions { display: inline-flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.callScore { display: inline-block; padding: 5px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+.callScore.high { background: #dcfce7; color: #166534; }
+.callScore.mid { background: #fef3c7; color: #92400e; }
+.callScore.low { background: #ffe4e6; color: #9f1239; }
+.callDismiss { border: 0; background: #f1f5f9; color: #64748b; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; }
+.dropZoneBusy { cursor: default; opacity: .72; }
+@media (max-width: 760px) { .callRow { grid-template-columns: minmax(0, 1fr); } .callActions { justify-content: flex-start; } .callsHint { text-align: left; } }
+@media (prefers-reduced-motion: reduce) { .callSteps .now i::after { animation: none; } }

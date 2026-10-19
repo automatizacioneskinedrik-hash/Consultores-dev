@@ -1,10 +1,11 @@
 import { useRef, useState, useEffect, useMemo } from "react";
-import { Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { getUser, setUser as storeUser } from "../utils/user";
 import Sidebar from "../components/Sidebar";
 import ReportDetail from "../components/ReportDetail";
 import GuideTour from "../components/GuideTour";
 import OwnerPicker from "../components/OwnerPicker";
+import UserAvatar from "../components/UserAvatar";
 import { seesAll } from "../utils/roles";
 import "../App.css";
 
@@ -15,7 +16,7 @@ const UPLOAD_TOUR = [
   { target: ".formatTags", title: "Formatos que entiendo", text: "Acepto audios en MP3, WAV, M4A u OGG. Si tu archivo tiene otro formato, conviértelo primero a uno de estos." },
   { target: ".dropZone", title: "Luego yo hago el resto", text: "Transcribo la llamada, la califico con el speech comercial y te muestro tu reporte: la nota de 100 y qué decir distinto la próxima vez." },
   { target: ".recentSessionsContainer", title: "Tus llamadas de hoy", text: "Las llamadas que subes hoy aparecen aquí. Con Ver resumen abres su reporte sin salir de esta pantalla." },
-  { target: '.sidebarItem[title="Historial de reportes"]', title: "Tus reportes quedan guardados", text: "En Historial encuentras todas tus llamadas analizadas, por si quieres volver a verlas o descargar el PDF." },
+  { target: '.sidebarItem[title="Métricas"]', title: "Tus reportes quedan guardados", text: "En Métricas, en la pestaña Historial, encuentras todas tus llamadas analizadas, por si quieres volver a verlas o descargar el PDF." },
   { target: ".waFloatBtn", title: "Seguimientos por WhatsApp", text: "Después de cada llamada te sugiero un mensaje de seguimiento para tu cliente. Lo encuentras aquí." },
   { do: [{ show: [".waFloatBtn", ".waPanel:not(.waPanelHidden)"] }], target: ".waPanel", title: "Tus mensajes pendientes", text: "Aquí se juntan los mensajes sugeridos. Cada tarjeta es un cliente y te recuerda enviarlo en las próximas 24 horas." },
   { target: ".waCardMsg", title: "Revisa el mensaje", text: "Puedes leer el mensaje sugerido y cambiar lo que quieras antes de enviarlo." },
@@ -30,10 +31,6 @@ const UPLOAD_TOUR_CLEANUP = [{ hide: [".waFloatBtn", ".waPanel:not(.waPanelHidde
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 
-function formatMB(bytes) {
-  const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(1)} MB`;
-}
 
 function Modal({ isOpen, message, onYes, onNo }) {
   if (!isOpen) return null;
@@ -55,28 +52,41 @@ function Modal({ isOpen, message, onYes, onNo }) {
   );
 }
 
-function SuccessModal({ isOpen, message, onClose }) {
-  if (!isOpen) return null;
+// The three steps of a call, shown in each row of "Tus sesiones del día de hoy".
+const STEPS = ["Subir", "Transcribir", "Calificar"];
+const STEP_INDEX = { uploading: 0, queued: 1, transcribing: 1, grading: 2 };
+const ACTIVE_STAGES = ["queued", "transcribing", "grading"];
+const startOfToday = () => { const date = new Date(); date.setHours(0, 0, 0, 0); return date.toISOString(); };
 
-  return (
-    <div className="modalOverlay">
-      <div className="modalContent successModalContent" style={{ position: "relative" }}>
-        <button className="closeX" onClick={onClose} title="Cerrar">×</button>
-        <div className="successIcon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2b6cff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-        </div>
-        <p className="successText">{message}</p>
-        <div className="modalButtons">
-          <button className="btnYes" onClick={onClose}>
-            Entendido
-          </button>
-        </div>
-      </div>
+function CallRow({ stage, name, percent, owner, score, scoreFormat, duration, error, loading, onOpen, onDismiss }) {
+  const current = STEP_INDEX[stage];
+  const status = {
+    uploading: `Subiendo ${percent ?? 0} %`,
+    queued: "En cola · empieza en unos segundos",
+    transcribing: "Transcribiendo la llamada…",
+    grading: "Calificando con el speech…",
+    done: `Lista${duration ? ` · ${duration}` : ""}`,
+    error,
+  }[stage];
+  return <div className={`callRow is-${stage}`}>
+    <div className="callMain">
+      <div className="callName">{name}</div>
+      <div className="callStatus">{status}</div>
+      {current !== undefined && <div className="callSteps" aria-label={`Paso ${current + 1} de 3`}>
+        {STEPS.map((step, index) => <span key={step} className={index < current ? "done" : index === current ? "now" : ""}>
+          <i style={index === 0 && stage === "uploading" ? { "--fill": `${percent ?? 0}%` } : undefined} />{step}
+        </span>)}
+      </div>}
     </div>
-  );
+    {owner ? <span className="callOwner"><UserAvatar name={owner.name} email={owner.email} picture={owner.picture} className="avatarSm" />{owner.name}</span> : <span />}
+    <div className="callActions">
+      {stage === "done" && <>
+        {score != null && <span className={`callScore ${score >= 70 ? "high" : score >= 40 ? "mid" : "low"}`}>{scoreFormat === "points" ? `${Number(score).toLocaleString("es-CO")} pts` : `${score}%`}</span>}
+        <button className="viewSummaryBtn" type="button" onClick={onOpen} disabled={loading}><Eye size={14} /><span>{loading ? "Abriendo…" : "Ver Resumen"}</span></button>
+      </>}
+      {stage === "error" && <button className="callDismiss" type="button" aria-label="Quitar de la lista" onClick={onDismiss}><X size={14} /></button>}
+    </div>
+  </div>;
 }
 
 function MicIcon() {
@@ -234,7 +244,6 @@ function WaCard({ followUp, onSent, onDismiss }) {
 
 export default function Upload() {
   const inputRef = useRef(null);
-  const pollingRef = useRef(null);
   const [user] = useState(() => getUser() || {});
   // Roles that see everyone may upload a call for someone else; read at upload time through a ref.
   const canChooseOwner = seesAll(user);
@@ -249,27 +258,14 @@ export default function Upload() {
   }, [user]);
 
   const [fileMeta, setFileMeta] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [successStep, setSuccessStep] = useState(() =>
-    sessionStorage.getItem('kinedrik_upload_step') === '2' ? 2 : 0
-  );
-  const [isToastVisible, setIsToastVisible] = useState(false);
-  const [currentObjectPath, setCurrentObjectPath] = useState("");
   const [reportData, setReportData] = useState(null);
-  const [pollingObjectPath, setPollingObjectPath] = useState(() =>
-    sessionStorage.getItem('kinedrik_upload_step') === '2'
-      ? sessionStorage.getItem('kinedrik_upload_path') || ''
-      : ''
-  );
+  // The call being uploaded from this browser, until the server reports its step.
+  const [uploading, setUploading] = useState(null);
+  // Today's calls with their real step, written by the server while it analyzes them.
+  const [statuses, setStatuses] = useState([]);
   const [analysisText, setAnalysisText] = useState("Procesando información...");
-  const [isLargeFile, setIsLargeFile] = useState(() =>
-    sessionStorage.getItem('kinedrik_upload_large') === 'true'
-  );
   const [recentSessions, setRecentSessions] = useState([]);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [sessionLoading, setSessionLoading] = useState(null);
@@ -346,8 +342,10 @@ export default function Upload() {
     }
   }, [user?.email, user?.authToken]);
 
+  const analyzing = Boolean(uploading) || statuses.some((entry) => ACTIVE_STAGES.includes(entry.stage));
+
   useEffect(() => {
-    if (successStep === 2) {
+    if (analyzing) {
       const tips = [
         "El lead debe hablar el 55–65% del tiempo. Tu ratio ideal: 35–45%.",
         "Menos es más. Cuanta menos información des, más autoridad proyectas.",
@@ -403,48 +401,49 @@ export default function Upload() {
       }, 8000);
       return () => clearInterval(interval);
     }
-  }, [successStep]);
+  }, [analyzing]);
+
+  const fetchStatuses = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/sessions/statuses?since=${encodeURIComponent(startOfToday())}`, {
+        headers: { "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" },
+      });
+      const data = await res.json();
+      if (data.ok) setStatuses(data.statuses || []);
+    } catch { /* red inestable: lo intenta en la siguiente vuelta */ }
+  };
 
   useEffect(() => {
-    if (!pollingObjectPath) return;
+    if (user?.email && user?.authToken) fetchStatuses();
+  }, [user?.email, user?.authToken]);
 
-    const poll = async () => {
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/sessions/by-path?objectPath=${encodeURIComponent(pollingObjectPath)}`,
-          { headers: { "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" } }
-        );
-        const data = await res.json();
-        if (data.ok && data.found && data.report) {
-          clearInterval(pollingRef.current);
-          sessionStorage.removeItem('kinedrik_upload_step');
-          sessionStorage.removeItem('kinedrik_upload_path');
-          sessionStorage.removeItem('kinedrik_upload_large');
-          setPollingObjectPath("");
-          setSuccessStep(0);
-          setIsLargeFile(false);
-          setReportData(data.report);
-          setFileMeta(null);
-          setProgress(0);
-          setStatus("");
-          setCurrentObjectPath("");
-          if (inputRef.current) inputRef.current.value = "";
-          if (user?.email) { fetchRecentSessions(user.email); fetchFollowUps(user.email); }
-        }
-      } catch {
-        // red inestable: seguir intentando
-      }
-    };
+  // While a call is in progress, its step is checked every 4 seconds.
+  useEffect(() => {
+    if (!analyzing) return;
+    const timer = setInterval(fetchStatuses, 4000);
+    return () => clearInterval(timer);
+  }, [analyzing]);
 
-    pollingRef.current = setInterval(poll, 5000);
-    return () => clearInterval(pollingRef.current);
-  }, [pollingObjectPath]);
+  // When a call finishes, refresh today's list and the WhatsApp follow-ups it may have created.
+  const activeIds = useRef(new Set());
+  useEffect(() => {
+    const finished = [...activeIds.current].some((id) => statuses.find((entry) => entry.id === id && entry.stage === "done"));
+    activeIds.current = new Set(statuses.filter((entry) => ACTIVE_STAGES.includes(entry.stage)).map((entry) => entry.id));
+    if (finished && user?.email) { fetchRecentSessions(user.email); fetchFollowUps(user.email); }
+  }, [statuses]);
 
-  const todaySessions = useMemo(() => {
+  // The browser's own upload row gives way to the server's row once it exists.
+  useEffect(() => {
+    if (uploading?.objectPath && statuses.some((entry) => entry.objectPath === uploading.objectPath)) setUploading(null);
+  }, [statuses, uploading?.objectPath]);
+
+  // Today's calls that have no step record (uploaded before this list existed) still show as done.
+  const legacySessions = useMemo(() => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    return recentSessions.filter(s => s.date && new Date(s.date) >= todayStart);
-  }, [recentSessions]);
+    const withStatus = new Set(statuses.map((entry) => entry.sessionId).filter(Boolean));
+    return recentSessions.filter((session) => session.date && new Date(session.date) >= todayStart && !withStatus.has(session.id));
+  }, [recentSessions, statuses]);
 
   useEffect(() => {
     if (!user?.email || !user?.authToken) return;
@@ -482,189 +481,86 @@ export default function Upload() {
 
 
   const handleFile = (file) => {
-    if (!file) return;
+    if (!file || analyzing) return;
     setFileMeta(file);
-    setProgress(0);
-    setStatus("");
     setShowModal(true);
   };
 
+  const resetInput = () => {
+    setFileMeta(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   const handleYes = async () => {
+    setShowModal(false);
     if (!navigator.onLine) {
       setErrorMsg("No tienes conexión a internet. Por favor, conéctate e intenta de nuevo.");
-      setShowModal(false);
       return;
     }
-    setShowModal(false);
+    const file = fileMeta;
     setErrorMsg("");
-    setIsUploading(true);
+    setUploading({ name: file.name, percent: 0 });
+    const headers = { "Content-Type": "application/json", "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" };
 
     try {
       const signRes = await fetch(`${API_BASE_URL}/api/upload/signed-url`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "X-Admin-Email": user?.email || "",
-          "X-Auth-Token": user?.authToken || ""
-        },
-        body: JSON.stringify({
-          originalName: fileMeta.name,
-          contentType: fileMeta.type,
-          userId: user?.email || "anonymous",
-          meetingType: "venta",
-        }),
+        headers,
+        body: JSON.stringify({ originalName: file.name, contentType: file.type, userId: user?.email || "anonymous", meetingType: "venta" }),
       });
-
       const signData = await signRes.json();
-      if (!signRes.ok || !signData.ok) {
-        throw new Error(signData?.error || "No se pudo generar URL de subida.");
-      }
-
+      if (!signRes.ok || !signData.ok) throw new Error(signData?.error || "No se pudo generar URL de subida.");
       const { uploadUrl, objectPath } = signData;
-      setCurrentObjectPath(objectPath); 
 
       await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl, true);
-        xhr.setRequestHeader("Content-Type", fileMeta.type);
-
+        xhr.setRequestHeader("Content-Type", file.type);
         xhr.upload.onprogress = (evt) => {
-          if (evt.lengthComputable) {
-            const percent = Math.round((evt.loaded / evt.total) * 100);
-            setProgress(percent);
-            setStatus("SUBIENDO...");
-          }
+          if (evt.lengthComputable) setUploading({ name: file.name, percent: Math.round((evt.loaded / evt.total) * 100) });
         };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve();
-          else reject(new Error(`Error subiendo a GCS (status ${xhr.status})`));
-        };
-
+        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`Error subiendo a GCS (status ${xhr.status})`)));
         xhr.onerror = () => reject(new Error("Error de red subiendo a GCS."));
-        xhr.send(fileMeta);
+        xhr.send(file);
       });
 
-      setStatus("SUBIDA EXITOSA");
-      setSuccessStep(1); 
-      setShowSuccessModal(true);
+      // The analysis starts now. Short calls keep this request open until they finish; long ones answer at
+      // once and go on in the server. Either way the row follows the real step.
+      setUploading({ name: file.name, percent: 100, objectPath });
+      resetInput();
+      fetch(`${API_BASE_URL}/api/upload/complete`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ objectPath, ownerEmail: ownerRef.current, fileName: file.name }),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok && res.status < 500) { setUploading(null); setErrorMsg(data?.error || "No se pudo enviar la llamada a analizar."); }
+        })
+        .catch(() => { /* the row keeps following the server's status */ })
+        .finally(fetchStatuses);
+      setTimeout(fetchStatuses, 1500);
     } catch (err) {
       const msg = err.message || "Error desconocido.";
-      if (msg.includes("Failed to fetch")) {
-        setErrorMsg("Error de red: No se pudo contactar al servidor. Revisa tu conexión.");
-      } else {
-        setErrorMsg(msg);
-      }
-      setStatus("ERROR");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  // Short audio: wait for /complete and show the report card immediately
-  const startEmailProcess = async () => {
-    try {
-      const completeRes = await fetch(`${API_BASE_URL}/api/upload/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Email": user?.email || "",
-          "X-Auth-Token": user?.authToken || ""
-        },
-        body: JSON.stringify({ objectPath: currentObjectPath, ownerEmail: ownerRef.current }),
-      });
-
-      const completeData = await completeRes.json();
-      if (!completeRes.ok) {
-        throw new Error(completeData?.error || "No se pudo procesar el análisis.");
-      }
-
-      if (completeData.report) {
-        sessionStorage.removeItem('kinedrik_upload_step');
-        sessionStorage.removeItem('kinedrik_upload_path');
-        sessionStorage.removeItem('kinedrik_upload_large');
-        setSuccessStep(0);
-        setReportData(completeData.report);
-        setFileMeta(null);
-        setProgress(0);
-        setStatus("");
-        setCurrentObjectPath("");
-        if (inputRef.current) inputRef.current.value = "";
-        if (user?.email) { fetchRecentSessions(user.email); fetchFollowUps(user.email); }
-      } else {
-        setSuccessStep(3);
-        setShowSuccessModal(true);
-      }
-    } catch (err) {
-      console.error(err);
-      sessionStorage.removeItem('kinedrik_upload_step');
-      sessionStorage.removeItem('kinedrik_upload_path');
-      sessionStorage.removeItem('kinedrik_upload_large');
-      setErrorMsg("El análisis de tu audio fue enviado al servidor. Recibirás tu reporte por correo en unos minutos.");
-      setSuccessStep(0);
-    }
-  };
-
-  // Large audio: fire /complete without blocking the UI
-  const triggerAnalysisBackground = () => {
-    fetch(`${API_BASE_URL}/api/upload/complete`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Admin-Email": user?.email || "",
-        "X-Auth-Token": user?.authToken || ""
-      },
-      body: JSON.stringify({ objectPath: currentObjectPath, ownerEmail: ownerRef.current }),
-    }).catch((err) => console.error("Background analysis trigger:", err));
-  };
-
-  const handleSuccessClose = () => {
-    if (successStep === 1) {
-      // ~30 MB ≈ 45 min at typical voice recording bitrates — must match backend threshold
-      const large = fileMeta && fileMeta.size > 30 * 1024 * 1024;
-      sessionStorage.setItem('kinedrik_upload_step', '2');
-      sessionStorage.setItem('kinedrik_upload_path', currentObjectPath);
-      sessionStorage.setItem('kinedrik_upload_large', String(large));
-      if (large) {
-        setIsLargeFile(true);
-        setShowSuccessModal(false);
-        setSuccessStep(2);
-        triggerAnalysisBackground();
-        setPollingObjectPath(currentObjectPath);
-      } else {
-        setShowSuccessModal(false);
-        setSuccessStep(2);
-        startEmailProcess();
-      }
-    } else if (successStep === 3) {
-      sessionStorage.removeItem('kinedrik_upload_step');
-      sessionStorage.removeItem('kinedrik_upload_path');
-      sessionStorage.removeItem('kinedrik_upload_large');
-      setShowSuccessModal(false);
-      setSuccessStep(0);
-      setIsLargeFile(false);
-      setFileMeta(null);
-      setProgress(0);
-      setStatus("");
-      setCurrentObjectPath("");
-      if (inputRef.current) {
-        inputRef.current.value = "";
-      }
-      if (user?.email) {
-        fetchRecentSessions(user.email);
-        fetchFollowUps(user.email);
-      }
+      setErrorMsg(msg.includes("Failed to fetch") ? "Error de red: No se pudo contactar al servidor. Revisa tu conexión." : msg);
+      setUploading(null);
+      resetInput();
     }
   };
 
   const handleNo = () => {
     setShowModal(false);
-    setFileMeta(null);
-    setProgress(0);
-    setStatus("");
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+    resetInput();
+  };
+
+  const dismissStatus = async (id) => {
+    setStatuses((current) => current.filter((entry) => entry.id !== id));
+    try {
+      await fetch(`${API_BASE_URL}/api/sessions/statuses/${id}/dismiss`, {
+        method: "POST",
+        headers: { "X-Admin-Email": user?.email || "", "X-Auth-Token": user?.authToken || "" },
+      });
+    } catch { /* se oculta igual en esta pantalla */ }
   };
 
   const handleReportClose = () => {
@@ -698,12 +594,6 @@ export default function Upload() {
     e.preventDefault();
   };
 
-  const getSuccessMessage = () => {
-    if (successStep === 1) return "Gracias, por tu gran trabajo, pronto recibirás más información";
-    if (successStep === 3) return "Correo enviado correctamente. Sigue con tu excelente trabajo consultor";
-    return "";
-  };
-
   return (
     <>
       <Sidebar />
@@ -712,7 +602,7 @@ export default function Upload() {
         <main className="mainContent">
           <div className="uploadBody">
           <div className="container">
-            <div className={`uploadIntro${todaySessions.length > 0 ? " uploadIntroHidden" : ""}`}>
+            <div className={`uploadIntro${uploading || statuses.length > 0 || legacySessions.length > 0 ? " uploadIntroHidden" : ""}`}>
               <h1 className="title">
                 Transforma tus reuniones en <span className="highlight">insights</span>
                 <br />accionables
@@ -736,22 +626,17 @@ export default function Upload() {
               </div>
             )}
 
-            {canChooseOwner && successStep !== 2 && <OwnerPicker user={user} value={ownerEmail} onChange={chooseOwner} />}
-            {successStep === 2 ? (
-              <div className="analyzingWidget">
-                <div className="spinnerGlow"></div>
-                <div className="analyzingText">{analysisText}</div>
-              </div>
-            ) : (
-              <div className="dropZone" onDrop={onDrop} onDragOver={onDragOver} onClick={() => inputRef.current.click()}>
+            {canChooseOwner && <OwnerPicker user={user} value={ownerEmail} onChange={chooseOwner} disabled={analyzing} />}
+            {(
+              <div className={`dropZone${analyzing ? " dropZoneBusy" : ""}`} onDrop={onDrop} onDragOver={onDragOver} onClick={() => { if (!analyzing) inputRef.current.click(); }} aria-disabled={analyzing}>
               <div className="micCircle">
                 <div className="pulseRing"></div>
                 <div className="pulseRing double"></div>
                 <MicIcon />
               </div>
 
-              <h3>Arrastra tu archivo de audio aqui</h3>
-              <p>o haz clic para buscar en tu computadora</p>
+              <h3>{analyzing ? "Analizando tu llamada" : "Arrastra tu archivo de audio aqui"}</h3>
+              <p>{analyzing ? "Espera a que termine la llamada en curso para subir otra." : "o haz clic para buscar en tu computadora"}</p>
               
               <div className="formatTags">
                 <span className="formatTag">MP3</span>
@@ -764,72 +649,39 @@ export default function Upload() {
             </div>
             )}
 
-            {fileMeta && (progress > 0 || isUploading) && (
-              <div className="progressSection">
-                <div className="progressTop">
-                  <div className="fileInfo">
-                    <span>{fileMeta.name}</span>
-                  </div>
-                  <span className="percent">{progress}%</span>
-                </div>
-
-                <div className="progressBar">
-                  <div className="progressFill" style={{ width: `${progress}%` }}></div>
-                </div>
-
-                <div className="progressBottom">
-                  <span>{status}</span>
-                  <span>
-                    {formatMB((fileMeta.size * progress) / 100)} DE {formatMB(fileMeta.size)}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {isUploading && <p>Subiendo archivo...</p>}
             {errorMsg && <p className="errorMessage">{errorMsg}</p>}
 
-            {todaySessions.length > 0 && (
+            {(uploading || statuses.length > 0 || legacySessions.length > 0) && (
               <div className="recentSessionsContainer">
-                <h3 className="recentTitle">Tus sesiones del día de hoy</h3>
-                <div className="recentList">
-                  {todaySessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="sessionCard"
-                      onClick={() => handleOpenSession(session)}
-                      style={{ cursor: sessionLoading === session.id ? "wait" : "pointer" }}
-                    >
-                      <div className="sessionIcon">
-                        {sessionLoading === session.id ? (
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0040A4" strokeWidth="2.5" strokeLinecap="round">
-                            <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
-                            <path d="M12 3a9 9 0 0 1 9 9" strokeOpacity="1">
-                              <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
-                            </path>
-                          </svg>
-                        ) : (
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
-                        )}
-                      </div>
-                      <div className="sessionInfo">
-                        <div className="sessionName">{session.filename}</div>
-                        <div className="sessionDate">
-                          {new Date(session.date).toLocaleDateString()} - {session.duration}
-                        </div>
-                      </div>
-                      <button
-                        className="viewSummaryBtn"
-                        onClick={(e) => { e.stopPropagation(); handleOpenSession(session); }}
-                        disabled={sessionLoading === session.id}
-                      >
-                        <Eye size={14} />
-                        <span>Ver Resumen</span>
-                      </button>
-                    </div>
-                  ))}
+                <div className="callsHead">
+                  <h3 className="recentTitle">Tus sesiones del día de hoy</h3>
+                  {analyzing && <span className="callsHint">{analysisText}</span>}
+                </div>
+                <div className="callList">
+                  {uploading && !statuses.some((entry) => entry.objectPath === uploading.objectPath) && <CallRow stage="uploading" name={uploading.name} percent={uploading.percent} />}
+                  {statuses.map((entry) => <CallRow
+                    key={entry.id}
+                    stage={entry.stage}
+                    name={entry.clientName ? `Reunión con ${entry.clientName}` : entry.fileName}
+                    owner={entry.userEmail !== String(user.email || "").toLowerCase() ? { name: entry.ownerName || entry.userEmail, email: entry.userEmail } : null}
+                    score={entry.score}
+                    scoreFormat={entry.scoreFormat}
+                    duration={entry.duration}
+                    error={entry.error}
+                    loading={sessionLoading === entry.sessionId}
+                    onOpen={() => handleOpenSession({ id: entry.sessionId })}
+                    onDismiss={() => dismissStatus(entry.id)}
+                  />)}
+                  {legacySessions.map((session) => <CallRow
+                    key={session.id}
+                    stage="done"
+                    name={session.filename}
+                    score={session.score}
+                    scoreFormat={session.scoreFormat}
+                    duration={session.duration}
+                    loading={sessionLoading === session.id}
+                    onOpen={() => handleOpenSession(session)}
+                  />)}
                 </div>
               </div>
             )}
@@ -878,25 +730,12 @@ export default function Upload() {
 
         <Modal
           isOpen={showModal}
-          message="El archivo de audio se ha cargado correctamente. Desea enviarlo ahora?"
+          message={`¿Enviar "${fileMeta?.name || "el audio"}" para analizarlo?`}
           onYes={handleYes}
           onNo={handleNo}
         />
 
-        <SuccessModal isOpen={showSuccessModal} message={getSuccessMessage()} onClose={handleSuccessClose} />
-
         {reportData && <ReportDetail report={reportData} onClose={handleReportClose} />}
-
-        {isToastVisible && (
-          <div className="toastNotice">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>Pendiente envío del correo...</span>
-          </div>
-        )}
       </div>
     </>
   );
