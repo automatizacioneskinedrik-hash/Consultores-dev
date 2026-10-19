@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import ChangeHistory from "../components/ChangeHistory";
@@ -151,6 +151,30 @@ function MuletillaGapSlider({ gaps = DEFAULT_GAPS, editable, onChange }) {
       </>}
     </div>
     <div className="speechGapScale" aria-hidden="true"><span>0 s</span><span>10 min</span></div>
+  </div>;
+}
+
+// Words the team says are never a muletilla, even if the AI lists them. Starts empty.
+function MuletillaExclusions({ words = [], editable, onChange }) {
+  const [value, setValue] = useState("");
+  function add() {
+    const word = value.trim().toLowerCase();
+    if (word && !words.includes(word)) onChange([...words, word]);
+    setValue("");
+  }
+  return <div className="speechExclude">
+    <label htmlFor="muletillasExclude">Palabras que no cuentan como muletilla</label>
+    <p>Si la IA marca como muletilla una palabra que no lo es, escríbela aquí y dejará de contarse.</p>
+    {words.length > 0 && <div className="speechExcludeChips">
+      {words.map((word) => <span key={word}>{word}
+        {editable && <button type="button" aria-label={`Quitar ${word}`} onClick={() => onChange(words.filter((entry) => entry !== word))}><X size={12} /></button>}
+      </span>)}
+    </div>}
+    {!words.length && !editable && <p className="speechExcludeEmpty">Ninguna por ahora.</p>}
+    {editable && <div className="speechExcludeAdd">
+      <input id="muletillasExclude" value={value} maxLength={40} placeholder="Escribe una palabra y pulsa Enter" onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} />
+      <button type="button" className="speechSecondaryButton" onClick={add} disabled={!value.trim()}><Plus size={14} /> Añadir</button>
+    </div>}
   </div>;
 }
 
@@ -531,6 +555,7 @@ export default function SpeechConfig() {
                     {expanded.has("muletillas") && <div className="speechPhaseBody">
                       <p className="speechMuletillasHow">La IA detecta sola las muletillas. Con el slicer indicas cada cuánto se vale repetir una palabra: si el consultor la repite muy seguido, baja la nota.</p>
                       <MuletillaGapSlider gaps={shown.muletillas.gaps} editable={editing} onChange={(gaps) => change({ muletillas: { ...draft.muletillas, gaps } })} />
+                      <MuletillaExclusions words={shown.muletillas.exclude} editable={editing} onChange={(exclude) => change({ muletillas: { ...draft.muletillas, exclude } })} />
                     </div>}
                   </section>
                 </div>

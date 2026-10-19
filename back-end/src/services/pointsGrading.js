@@ -12,7 +12,7 @@ export async function gradeWithPoints({ context, durationStr, transcriptionText,
   const { json: analysis, usage, fallbackFrom } = await askAi(buildPointsPrompt({ ...context, durationStr, transcriptionText }), { model });
   if (analysis.error) return { analysis, scoring: null, usage, fallbackFrom, transcriptionText, consultantPct, rolesSwapped: false, muletillas: null };
 
-  const words = detectedMuletillas(analysis);
+  const words = detectedMuletillas(analysis, speech.muletillas?.exclude || []);
   const gaps = speech.muletillas?.gaps || DEFAULT_MULETILLAS.gaps;
   function measure(text, minutes, isConsultant) {
     const timeline = utterances ? muletillaTimeline(utterances, words, { isConsultant, durationSec, gaps }) : null;

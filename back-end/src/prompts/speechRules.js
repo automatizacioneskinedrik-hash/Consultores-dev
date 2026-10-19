@@ -31,6 +31,8 @@ export const DEFAULT_MULETILLAS = Object.freeze({
   ignore: Object.freeze(["entonces", "pues", "este", "sí", "bueno", "claro", "mira", "a ver", "tipo", "correcto", "por ejemplo"]),
   // Seconds between two repetitions of the same muletilla: under "tic" is a tic, over "normal" is normal use.
   gaps: Object.freeze({ tic: 20, normal: 60 }),
+  // Words the commercial team says must never count as muletilla. Starts empty; the old "ignore" list is not used.
+  exclude: Object.freeze([]),
 });
 export const MULETILLA_GAP_MAX = 600;
 
@@ -133,6 +135,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     count: wordList(value.muletillas?.count, "Muletilla"),
     ignore: wordList(value.muletillas?.ignore, "Palabra ignorada"),
     gaps: validateMuletillaGaps(value.muletillas?.gaps ?? DEFAULT_MULETILLAS.gaps),
+    exclude: wordList(value.muletillas?.exclude, "Palabra que no cuenta"),
   };
   if (muletillas.count.some((word) => muletillas.ignore.includes(word))) throw new Error("Una palabra no debe estar a la vez en muletillas y en palabras ignoradas.");
 

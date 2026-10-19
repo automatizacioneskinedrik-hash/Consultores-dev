@@ -45,7 +45,7 @@ function MuletillaTimeline({ timeline }) {
   const ticks = Array.from({ length: Math.floor(minutes / step) + 1 }, (_, i) => i * step);
   const at = (second) => `${Math.min((second / duration) * 100, 100)}%`;
   return <div className="psTimeline">
-    {timeline.words.map(({ word, times }) => {
+    {timeline.words.map(({ word, times, phrases = [] }) => {
       const kinds = gapKinds(times, timeline.gaps);
       const count = (kind) => kinds.filter((entry) => entry === kind).length;
       return <div className="psTimelineRow" key={word}>
@@ -54,7 +54,7 @@ function MuletillaTimeline({ timeline }) {
           {times.map((second, index) => {
             const kind = GAP_KINDS[kinds[index]];
             const since = index ? `${formatGap(second - times[index - 1])} después de la anterior` : "primera vez en la llamada";
-            return <span key={`${second}-${index}`} className="psTimelineDot" tabIndex={0} style={{ left: at(second), background: kind.color }} data-tip={`${formatClock(second)} · ${kind.label} · ${since}`} aria-label={`${word} en el minuto ${formatClock(second)}: ${kind.label}, ${since}`} />;
+            return <span key={`${second}-${index}`} className="psTimelineDot" tabIndex={0} style={{ left: at(second), background: kind.color }} data-tip={`${formatClock(second)} · ${kind.label} · ${since}${phrases[index] ? `\n«${phrases[index]}»` : ""}`} aria-label={`${word} en el minuto ${formatClock(second)}: ${kind.label}, ${since}`} />;
           })}
         </div>
         <span className="psTimelineSum"><b>{times.length} {times.length === 1 ? "vez" : "veces"}</b> · {count("tic")} tic · {count("alerta")} alerta · {count("normal")} normal</span>

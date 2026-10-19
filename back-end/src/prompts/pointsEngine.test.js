@@ -61,7 +61,11 @@ test("la IA detecta las muletillas y el prompt explica que los conectores no cue
   const prompt = buildPointsPrompt({ speech, durationStr: "10:00", transcriptionText: transcript, followupInstruction: "x" });
   assert.match(prompt, /INDICADOR DE MULETILLAS — regla \[muletillas\]/);
   assert.match(prompt, /"muletillas_detectadas": \["frase"\]/);
-  assert.match(prompt, /"entonces", "pues", "bueno", "claro"/);
+  assert.match(prompt, /un conector usado de más/);
+  assert.doesNotMatch(prompt, /nunca cuentan como muletilla/);
+  const custom = structuredClone(speech);
+  custom.muletillas.exclude = ["claro"];
+  assert.match(buildPointsPrompt({ speech: custom, durationStr: "10:00", transcriptionText: transcript, followupInstruction: "x" }), /nunca cuentan como muletilla; no las incluyas: claro/);
   assert.doesNotMatch(prompt, /muletillas_no_listadas|Conteo exacto/);
   assert.doesNotMatch(prompt, /TODA LA LLAMADA/);
   // Every call is graded: the AI is never allowed to reject a transcription.
@@ -106,6 +110,7 @@ test("el nivel de muletillas sale de los tics por cada 10 minutos", () => {
 test("las muletillas detectadas por la IA se limpian y el nivel medido reemplaza al de la IA", () => {
   assert.deepEqual(detectedMuletillas({ muletillas_detectadas: [" Listo ", "listo", "o sea", 3, ""] }), ["listo", "o sea"]);
   assert.deepEqual(detectedMuletillas({}), []);
+  assert.deepEqual(detectedMuletillas({ muletillas_detectadas: ["bueno", "¿Vale?", "claro"] }, ["Claro", "vale"]), ["bueno"]);
   assert.equal(countMuletillas("CONSULTOR: ¿Vale? Te cuento, vale.", ["vale"]).total, 2);
   const reglas = [{ id: "muletillas", nivel: "excelente", que_paso: "x" }];
   const timed = scorePointsAnalysis({ reglas }, speech, { consultantPct: 50, muletillas: { total: 0, byWord: [] }, muletillasLevel: "debil" });

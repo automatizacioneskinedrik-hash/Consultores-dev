@@ -34,22 +34,25 @@ export function countMuletillas(transcriptionText, words = [], { speaker = "CONS
 // Finds the second in which the consultant said each muletilla, from AssemblyAI's word timestamps.
 // Same matching as countMuletillas: whole words, longest phrases first, each word used once.
 export function muletillaTimeline(utterances = [], words = [], { isConsultant, durationSec = 0, gaps = DEFAULT_MULETILLAS.gaps } = {}) {
-  const tokens = utterances
-    .filter((utterance) => isConsultant(utterance.speaker))
-    .flatMap((utterance) => (utterance.words || []).flatMap((word) => normalize(word.text || "").split(" ").filter(Boolean)
-      .map((token) => ({ token, second: Math.round((word.start || 0) / 1000) }))));
+  const spoken = utterances.filter((utterance) => isConsultant(utterance.speaker)).flatMap((utterance) => utterance.words || []);
+  const tokens = spoken.flatMap((word, wordIndex) => normalize(word.text || "").split(" ").filter(Boolean)
+    .map((token) => ({ token, wordIndex, second: Math.round((word.start || 0) / 1000) })));
   if (!tokens.length) return null;
+  // A few words before and after, as the consultant said them.
+  const phraseAt = (wordIndex) => spoken.slice(Math.max(0, wordIndex - 5), wordIndex + 6).map((word) => word.text).join(" ");
   const used = tokens.map(() => false);
   const entries = [...words].sort((a, b) => normalize(b).length - normalize(a).length).map((word) => {
     const parts = normalize(word).split(" ").filter(Boolean);
     const times = [];
+    const phrases = [];
     for (let i = 0; parts.length && i + parts.length <= tokens.length; i++) {
       if (!parts.every((part, k) => !used[i + k] && tokens[i + k].token === part)) continue;
       times.push(tokens[i].second);
+      phrases.push(phraseAt(tokens[i].wordIndex));
       parts.forEach((_, k) => { used[i + k] = true; });
       i += parts.length - 1;
     }
-    return { word, times };
+    return { word, times, phrases };
   }).filter((entry) => entry.times.length > 0).sort((a, b) => b.times.length - a.times.length);
   return { gaps: { tic: gaps.tic, normal: gaps.normal }, durationSec: Math.round(durationSec), words: entries };
 }
@@ -76,9 +79,13 @@ export function muletillasLevel(timeline) {
 }
 
 // The muletillas the AI found, cleaned up for matching against the transcription.
-export function detectedMuletillas(analysis) {
+// The words in the speech's exclude list are removed even if the AI listed them.
+export function detectedMuletillas(analysis, exclude = []) {
   const list = Array.isArray(analysis?.muletillas_detectadas) ? analysis.muletillas_detectadas : [];
-  return [...new Set(list.filter((word) => typeof word === "string").map((word) => word.trim().toLowerCase()).filter((word) => word && word.length <= 40))].slice(0, 15);
+  const excluded = new Set(exclude.map((word) => normalize(String(word))));
+  return [...new Set(list.filter((word) => typeof word === "string").map((word) => word.trim().toLowerCase()).filter((word) => word && word.length <= 40))]
+    .filter((word) => !excluded.has(normalize(word)))
+    .slice(0, 25);
 }
 
 export function swapSpeakerLabels(transcriptionText) {
@@ -107,9 +114,12 @@ function rulesSection(speech) {
 // The AI finds the muletillas itself; the system then times them and sets the level from the speech slicer.
 function muletillasSection(speech) {
   if (!muletillasRule(speech)) return "";
+  const excluded = speech.muletillas?.exclude || [];
   return `INDICADOR DE MULETILLAS — regla [${MULETILLAS_RULE_ID}] "Habla con fluidez, sin muletillas":
-   - Detecta tú las muletillas del consultor: palabras o frases de relleno que repite por reflejo (por ejemplo "o sea", "digamos", "¿vale?" o "listo" dicho una y otra vez). Escríbelas en "muletillas_detectadas" tal como aparecen en la transcripción, en minúsculas y sin contar las veces.
-   - No son muletillas los conectores normales del español ("entonces", "pues", "bueno", "claro"), los artículos, preposiciones o verbos comunes, ni una palabra usada como respuesta genuina ("¿Me envías los documentos?" "Listo").
+   - Lee con atención lo que dice el CONSULTOR e identifica TODAS sus muletillas: cualquier palabra o frase que repite por costumbre o para rellenar, sin aportar significado. Puede ser una expresión ("o sea", "¿vale?", "no sé", "de todas formas") o un conector usado de más ("bueno, bueno…", "y entonces… y entonces…"). Un conector solo es muletilla cuando se repite como relleno, no cuando une ideas con sentido.
+   - Escríbelas todas en "muletillas_detectadas" tal como aparecen en la transcripción, en minúsculas y sin contar las veces. No te limites a las más obvias.
+   - No incluyas palabras gramaticales sueltas (el, la, los, de, que, y, en, un), ni una palabra usada como respuesta genuina ("¿Me envías los documentos?" "Listo").${excluded.length ? `
+   - El equipo comercial indicó que estas palabras nunca cuentan como muletilla; no las incluyas: ${excluded.join(", ")}.` : ""}
    - El sistema medirá cada cuánto repite cada una y calculará el nivel. En la regla [${MULETILLAS_RULE_ID}] escribe qué pasó y cómo mejorar.`;
 }
 
