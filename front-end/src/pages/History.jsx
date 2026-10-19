@@ -33,11 +33,16 @@ const HISTORY_TOUR = [
 const HISTORY_TOUR_CLEANUP = [{ hide: [".closeReport", ".reportOverlay"] }];
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
+const PAGE_SIZE = 50;
+// Kept while the app is open, so coming back from another Métricas tab shows the list at once.
+const sessionsCache = { email: "", sessions: null };
 
 export default function History() {
   const [user] = useState(() => getUser());
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cached = sessionsCache.email === user.email ? sessionsCache.sessions : null;
+  const [sessions, setSessions] = useState(() => cached || []);
+  const [loading, setLoading] = useState(!cached);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [searchTerm, setSearchTerm] = useState("");
   const [consultant, setConsultant] = useState("all");
   const [selectedReportId, setSelectedReportId] = useState(null);
@@ -48,22 +53,28 @@ export default function History() {
   // Cargos that see everyone get the consultant column and search.
   const isAdmin = seesAll(user);
 
+  // The newest page arrives first; the full list follows so search and the consultant filter find any call.
   const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/sessions?email=${user.email}&role=${user.role}`, {
-        headers: {
-          "X-Admin-Email": user.email,
-          "X-Auth-Token": user.authToken
-        }
-      });
+    const headers = { "X-Admin-Email": user.email, "X-Auth-Token": user.authToken };
+    const load = async (limit) => {
+      const res = await fetch(`${API_BASE_URL}/api/sessions${limit ? `?limit=${limit}` : ""}`, { headers });
       const data = await res.json();
-      if (data.ok) {
-        setSessions(data.sessions);
+      if (!data.ok) throw new Error(data.error || "No se pudo cargar el historial.");
+      return data.sessions;
+    };
+    setError(null);
+    try {
+      if (!sessionsCache.sessions || sessionsCache.email !== user.email) {
+        setSessions(await load(PAGE_SIZE));
+        setLoading(false);
       }
+      const all = await load();
+      sessionsCache.email = user.email;
+      sessionsCache.sessions = all;
+      setSessions(all);
     } catch (err) {
       console.error("Error fetching history:", err);
-      setError("No se pudo cargar el historial. Por favor, verifica tu conexión o intenta más tarde.");
+      if (!sessionsCache.sessions) setError("No se pudo cargar el historial. Por favor, verifica tu conexión o intenta más tarde.");
     } finally {
       setLoading(false);
     }
@@ -101,6 +112,7 @@ export default function History() {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo eliminar la sesión.");
       setSessions((current) => current.filter((entry) => entry.id !== session.id));
+      if (sessionsCache.sessions) sessionsCache.sessions = sessionsCache.sessions.filter((entry) => entry.id !== session.id);
     } catch (err) {
       alert(err.message);
     }
@@ -133,7 +145,7 @@ export default function History() {
             {isAdmin && <Select
               className="historyConsultantFilter"
               value={consultant}
-              onChange={setConsultant}
+              onChange={(value) => { setConsultant(value); setVisibleCount(PAGE_SIZE); }}
               options={consultantOptions}
               optionRender={(option) => <PersonOption option={option.data} allLabel="Todos los consultores" />}
               labelRender={({ value }) => <PersonOption option={consultantOptions.find((option) => option.value === value) || { value, label: value }} allLabel="Todos los consultores" />}
@@ -148,7 +160,7 @@ export default function History() {
                 type="text"
                 placeholder="Buscar por nombre del cliente..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(PAGE_SIZE); }}
               />
             </div>
           </div>
@@ -175,7 +187,7 @@ export default function History() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSessions.map((session) => (
+                  {filteredSessions.slice(0, visibleCount).map((session) => (
                     <tr key={session.id} onClick={() => handleOpenDetail(session)}>
                       <td>
                         <div className="dateCell">
@@ -221,7 +233,14 @@ export default function History() {
                   ))}
                 </tbody>
               </table>
-            ) : error ? (
+            ) : null}
+            {filteredSessions.length > visibleCount ? (
+              <div className="historyMore">
+                <span>Mostrando {visibleCount} de {filteredSessions.length.toLocaleString("es-CO")} llamadas</span>
+                <button type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>Ver más</button>
+              </div>
+            ) : null}
+            {filteredSessions.length > 0 ? null : error ? (
               <div className="noResults">
                 <p style={{ color: '#ef4444' }}>{error}</p>
                 <button 

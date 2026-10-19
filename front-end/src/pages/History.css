@@ -304,3 +304,8 @@ body.sidebar-collapsed .historyContent {
 /* Consultant filter beside the search, for roles that see everyone. */
 .historyFilters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .historyConsultantFilter.ant-select { min-width: 260px; height: 44px; border-radius: 12px; }
+
+/* Fifty rows at a time; "Ver más" adds the next fifty. */
+.historyMore { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 18px 0 6px; font-size: 13px; color: #52617a; }
+.historyMore button { border: 1px solid #0040A4; background: #fff; color: #0040A4; font: 700 14px Roboto, Helvetica, Arial, sans-serif; padding: 8px 20px; border-radius: 999px; cursor: pointer; }
+.historyMore button:hover { background: #eaf2ff; }

@@ -3,6 +3,7 @@ import { bucket } from "../config/storage.js";
 import { normalizeEmailValue } from "../utils/helpers.js";
 import { USER_CACHE, CACHE_TTL } from "../middleware/auth.js";
 import { cargoOf } from "../roles.js";
+import { dismissAnalysisStatus, listAnalysisStatuses } from "../services/analysisStatus.js";
 
 // Profiles allowed to delete their own test sessions from the history (red X). Only their own sessions.
 const SESSION_CLEANUP_EMAILS = (process.env.SESSION_CLEANUP_EMAILS || "angelvera.eadic@gmail.com")
@@ -19,6 +20,7 @@ export const getRecentSessions = async (req, res) => {
       .where("userEmail", "==", email)
       .orderBy("createdAt", "desc")
       .limit(20)
+      .select("objectPath", "createdAt", "generalScore", "scoring.format", "analysis.nombre_cliente", "analysis.participacion.duracion_total")
       .get();
 
     const sessions = snapshot.docs.map(doc => {
@@ -32,7 +34,9 @@ export const getRecentSessions = async (req, res) => {
         id: doc.id,
         filename: data.analysis?.nombre_cliente ? "Reunión con " + data.analysis.nombre_cliente : filename,
         date: data.createdAt ? data.createdAt.toDate().toISOString() : null,
-        duration: data.analysis?.participacion?.duracion_total || "00:00"
+        duration: data.analysis?.participacion?.duracion_total || "00:00",
+        score: data.generalScore ?? null,
+        scoreFormat: data.scoring?.format === "points" ? "points" : "percent",
       };
     });
 
@@ -59,6 +63,7 @@ export const getAllSessions = async (req, res) => {
     }
 
     const { filterEmail } = req.query;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 0, 0), 500);
     let query = db.collection("meetings_analysis");
 
     if (!cargoOf(userData).seesAll) {
@@ -67,16 +72,18 @@ export const getAllSessions = async (req, res) => {
       query = query.where("userEmail", "==", filterEmail.toLowerCase().trim());
     }
 
-    // Seleccionar solo los campos necesarios para la tabla — excluye transcription y campos pesados
+    // Only the table's fields. With ?limit the newest calls come first, so the page shows them right away.
+    if (limit) query = query.orderBy("createdAt", "desc").limit(limit);
     const [snapshot, usersSnapshot] = await Promise.all([
-      query.select(
-        "userEmail", "createdAt", "generalScore", "scoring.format",
-        "analysis.nombre_cliente",
-        "analysis.participacion.duracion_total",
-        "analysis.scorecard"
-      ).get(),
+      query.select("userEmail", "createdAt", "generalScore", "scoring.format", "analysis.nombre_cliente", "analysis.participacion.duracion_total").get(),
       db.collection("users").get(),
     ]);
+
+    // Old calls without a stored score get it from their scorecard, read only for them.
+    const withoutScore = snapshot.docs.filter((doc) => doc.data().generalScore == null).map((doc) => doc.ref);
+    const scorecards = new Map(withoutScore.length
+      ? (await db.getAll(...withoutScore, { fieldMask: ["analysis.scorecard"] })).map((doc) => [doc.id, doc.data()?.analysis?.scorecard || {}])
+      : []);
 
     const userProfilesMap = {};
     usersSnapshot.forEach(u => {
@@ -89,7 +96,7 @@ export const getAllSessions = async (req, res) => {
 
     const sessions = snapshot.docs.map(doc => {
       const data = doc.data();
-      const sc = data.analysis?.scorecard || {};
+      const sc = scorecards.get(doc.id) || {};
       const email = normalizeEmailValue(data.userEmail);
       const userProfile = userProfilesMap[email] || {};
 
@@ -276,5 +283,26 @@ export const deleteOwnSession = async (req, res) => {
   } catch (err) {
     console.error("Error deleting session:", err);
     return res.status(500).json({ ok: false, error: "No se pudo eliminar la sesión." });
+  }
+};
+
+// Today's calls of the person, with the real step of each analysis (Subir archivo).
+export const getAnalysisStatuses = async (req, res) => {
+  try {
+    const email = normalizeEmailValue(req.headers["x-admin-email"]);
+    return res.json({ ok: true, statuses: await listAnalysisStatuses(email, req.query.since) });
+  } catch (err) {
+    console.error("Error fetching analysis statuses:", err);
+    return res.status(500).json({ ok: false, error: "No se pudo consultar el estado de las llamadas" });
+  }
+};
+
+export const postDismissAnalysisStatus = async (req, res) => {
+  try {
+    const done = await dismissAnalysisStatus(req.params.id, normalizeEmailValue(req.headers["x-admin-email"]));
+    return done ? res.json({ ok: true }) : res.status(404).json({ ok: false, error: "No encontramos esa llamada" });
+  } catch (err) {
+    console.error("Error dismissing analysis status:", err);
+    return res.status(500).json({ ok: false, error: "No se pudo quitar la llamada de la lista" });
   }
 };
