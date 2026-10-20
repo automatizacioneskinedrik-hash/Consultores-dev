@@ -7,7 +7,7 @@ import History from "./pages/History";
 import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
 import Costs from "./pages/Costs";
-import MetricsQualitative from "./pages/MetricsQualitative";
+import Coach from "./pages/Coach";
 import { getUser } from "./utils/user";
 import { canManage } from "./utils/roles";
 import "./App.css";
@@ -47,7 +47,8 @@ export default function App() {
         />
         <Route path="/metricas" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/metricas/cuantitativas" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/metricas/cualitativas" element={<ProtectedRoute><MetricsQualitative /></ProtectedRoute>} />
+        <Route path="/metricas/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
+        <Route path="/metricas/cualitativas" element={<Navigate to="/metricas/coach" replace />} />
         <Route path="/history" element={<Navigate to="/metricas" replace />} />
         <Route path="/dashboard" element={<Navigate to="/metricas/cuantitativas" replace />} />
         <Route

@@ -1356,3 +1356,7 @@ body.sidebar-collapsed .appShell {
 @media (max-width: 760px) { .callRow { grid-template-columns: minmax(0, 1fr); } .callActions { justify-content: flex-start; } .callsHint { text-align: left; } }
 @media (prefers-reduced-motion: reduce) { .callSteps .now i::after { animation: none; } }
 .callTime { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; background: #eaf2ff; color: #0040A4; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Subir archivo: reminder of WhatsApp follow-ups still to send; they live in Métricas → Coach. */
+.waNotice { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 720px; margin: 0 auto 14px; padding: 11px 16px; border: 1px solid #b7e4c7; border-radius: 12px; background: #e7f8ee; color: #0f5132; font: 600 14px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; text-align: left; }
+.waNotice span { margin-left: auto; color: #128C4A; font-weight: 700; white-space: nowrap; }
+.waNotice:hover { background: #d8f3e3; }

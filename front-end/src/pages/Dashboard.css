@@ -553,5 +553,3 @@ body.sidebar-collapsed .dashboardContent {
   }
 }
 
-/* Cualitativas waits for the metrics management is defining. */
-.metricsPlaceholder { background: #fff; border: 1px solid rgba(4, 0, 37, 0.08); border-radius: 18px; padding: 56px 24px; }

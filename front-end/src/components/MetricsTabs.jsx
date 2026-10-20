@@ -5,7 +5,7 @@ import "./MetricsTabs.css";
 const METRICS_TABS = [
   { path: "/metricas", label: "Historial" },
   { path: "/metricas/cuantitativas", label: "Cuantitativas" },
-  { path: "/metricas/cualitativas", label: "Cualitativas" },
+  { path: "/metricas/coach", label: "Coach" },
 ];
 
 export default function MetricsTabs() {

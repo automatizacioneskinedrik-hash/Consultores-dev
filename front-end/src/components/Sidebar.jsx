@@ -10,7 +10,7 @@ const SECTION_MASCOTS = {
   "/upload": "/mascots/dots/dot-azul-asomado.webp",
   "/metricas": "/mascots/dots/dot-amarillo-asomado.webp",
   "/metricas/cuantitativas": "/mascots/dots/dot-amarillo-asomado.webp",
-  "/metricas/cualitativas": "/mascots/dots/dot-amarillo-asomado.webp",
+  "/metricas/coach": "/mascots/dots/dot-amarillo-asomado.webp",
   "/admin": "/mascots/dots/dot-verde-asomado.webp",
   "/speech-comercial": "/mascots/dots/dot-lila-asomado.webp",
   "/configuracion-avanzada": "/mascots/dots/dot-naranja-asomado.webp",

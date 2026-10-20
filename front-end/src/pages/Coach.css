@@ -1,0 +1,94 @@
+.coachVh { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.coachVh h2 { margin: 0 0 6px; font-size: 30px; line-height: 1.1; font-weight: 900; color: #040025; }
+.coachVh p { margin: 0; color: #52617a; font-size: 13.5px; max-width: 72ch; }
+.coachPerson.ant-select { min-width: 260px; height: 42px; }
+.coachGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.coachCard { background: #fff; border: 1px solid rgba(4,0,37,.08); border-radius: 18px; box-shadow: 0 10px 26px rgba(0,0,0,.04); padding: 18px 20px; font-family: Roboto, sans-serif; color: #040025; }
+.coachCardHead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.coachCardHead h3, .coachNavhd h3 { margin: 0; font-size: 19px; font-weight: 700; }
+.coachChip { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid #e2e8f0; color: #52617a; }
+.coachLegend { display: flex; gap: 14px; font-size: 11.5px; color: #64748b; margin: 6px 0 14px; }
+.coachLegend i { display: inline-block; width: 16px; height: 3px; border-radius: 3px; background: #0040A4; margin-right: 5px; vertical-align: middle; }
+.coachLegend s { display: inline-block; width: 2px; height: 11px; background: #94a3b8; margin-right: 5px; vertical-align: middle; }
+.coachPhase { margin-bottom: 12px; }
+.coachPhaseTop { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; margin-bottom: 4px; }
+.coachPhaseTop em { font-style: normal; color: #64748b; }
+.coachTrack { position: relative; height: 9px; border-radius: 5px; background: #eef1f5; }
+.coachTrack i { display: block; height: 100%; border-radius: 5px; }
+.coachTrack s { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #94a3b8; }
+.coachMut { font-size: 12px; color: #64748b; margin: 2px 0 0; }
+.coachLbl { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #64748b; margin: 18px 0 8px; }
+.coachRep { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 12.5px; }
+.coachRep span { flex: 1; }
+.coachRep i { width: 110px; height: 7px; border-radius: 4px; background: #eef1f5; overflow: hidden; }
+.coachRep u { display: block; height: 100%; background: #FF5900; text-decoration: none; }
+.coachRep b { width: 34px; text-align: right; }
+.coachSeg { margin-left: auto; display: inline-flex; background: #f1f5f9; border-radius: 999px; padding: 3px; gap: 2px; }
+.coachSeg button { border: 0; background: none; padding: 5px 12px; border-radius: 999px; font: 600 12px Roboto, sans-serif; color: #64748b; cursor: pointer; }
+.coachSeg button[aria-pressed="true"] { background: #fff; color: #040025; box-shadow: 0 1px 4px rgba(4,0,37,.15); }
+.coachBdg { display: flex; gap: 11px; align-items: flex-start; padding: 12px 0; border-top: 1px solid #eef1f5; }
+.coachCardHead + .coachBdg { margin-top: 12px; border-top: 0; }
+.coachBdg .ic { width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 14px; }
+.coachBdg .ic.good { background: #8ABC43; }
+.coachBdg .ic.warn { background: #FBB42A; color: #040025; }
+.coachBdg .ic.grave { background: #FF5900; }
+.coachBdg b { display: block; font-size: 13.5px; }
+.coachBdg p { margin: 2px 0 0; font-size: 12.5px; color: #64748b; }
+.coachFoco { background: #040025; color: #fff; border-radius: 12px; padding: 13px 15px; margin-top: 14px; display: grid; gap: 6px; }
+.coachFoco small { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; opacity: .75; }
+.coachFoco b { font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+.coachFoco span { font-size: 12px; opacity: .8; }
+.coachNote { background: #f1f5f9; border-radius: 12px; padding: 12px 14px; font-size: 12.5px; color: #3A3A52; margin-top: 12px; }
+.coachNavhd { background: #040025; color: #fff; border-radius: 12px; padding: 12px 15px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.coachNavhd span { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+.coachChipDark { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); color: #fff !important; text-transform: none !important; }
+.coachTableWrap { overflow-x: auto; }
+.coachTable { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 860px; }
+.coachTable th { text-align: left; font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #64748b; padding: 7px 10px 7px 0; border-bottom: 1px solid #cfd5de; }
+.coachTable td { padding: 11px 10px 11px 0; border-bottom: 1px solid #eef1f5; vertical-align: middle; }
+.coachTable .num { text-align: right; }
+.coachTable th:nth-child(3), .coachTable th:nth-child(4) { text-align: right; }
+.coachTable tbody tr { cursor: pointer; }
+.coachTable tbody tr:hover { background: #f5f8fd; }
+.coachTable td em { display: block; font-style: normal; font-size: 11.5px; color: #64748b; margin-top: 3px; }
+.coachWaDot { margin-left: 8px; font-size: 11px; font-weight: 700; color: #128C4A; background: #e7f8ee; padding: 2px 8px; border-radius: 999px; }
+.coachDot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; }
+.coachVch { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 7px; }
+.coachVch.ok { background: rgba(138,188,67,.20); color: #3F5F12; }
+.coachVch.pa { background: rgba(251,180,42,.22); color: #8A5E00; }
+.coachVch.pe { background: #f1f5f9; color: #64748b; }
+.coachLeg { font-size: 11.5px; color: #64748b; margin-top: 10px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.coachOverlay { position: fixed; inset: 0; background: rgba(4,0,37,.45); display: grid; place-items: center; z-index: 1000; padding: 16px; }
+.coachDialog { background: #fff; border-radius: 16px; width: min(880px, 100%); max-height: 88vh; overflow: auto; box-shadow: 0 30px 80px -20px rgba(4,0,37,.5); font-family: Roboto, sans-serif; color: #040025; }
+.coachDialogHead { display: flex; justify-content: space-between; gap: 12px; padding: 20px 24px 14px; border-bottom: 1px solid #eef1f5; }
+.coachDialogHead h3 { margin: 0; font-size: 24px; font-weight: 700; }
+.coachDialogHead span { font-size: 12.5px; color: #64748b; }
+.coachDialogHead button { border: 0; background: #f1f5f9; width: 30px; height: 30px; border-radius: 50%; font-size: 17px; cursor: pointer; color: #64748b; }
+.coachDialogBody { padding: 18px 24px 26px; display: grid; gap: 12px; }
+.coachTags { display: flex; flex-wrap: wrap; gap: 6px; }
+.coachTags span { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: #f1f5f9; color: #64748b; }
+.coachTwo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.coachFcard { border: 1px solid #eef1f5; border-radius: 12px; overflow: hidden; }
+.coachFcard .hd { padding: 9px 13px; font-size: 12.5px; font-weight: 700; }
+.coachFcard .hd.lt { background: #E9F0FB; color: #0040A4; }
+.coachFcard .hd.pe { background: #FDF0E4; color: #B33E00; }
+.coachFcard .hd.gr { background: #EAF3E4; color: #3F5F12; }
+.coachFcard .bd { padding: 13px; font-size: 13px; }
+.coachFcard .bd p { margin: 0 0 8px; }
+.coachFcard .bd small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #64748b; margin-bottom: 2px; }
+.coachFcard .bd ul { margin: 3px 0 0; padding-left: 16px; }
+.coachSaid { margin-bottom: 8px; }
+.coachSaid span { font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 999px; background: #f1f5f9; color: #64748b; }
+.coachSaid p { font-style: italic; color: #3A3A52; margin-top: 3px !important; }
+.coachNext { background: #0040A4; color: #fff; border-radius: 12px; padding: 13px 15px; display: grid; gap: 4px; }
+.coachNext small { font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; opacity: .85; }
+.coachBand { background: #F2F6FD; border-radius: 14px; padding: 13px; }
+.coachBand .cbt { font-size: 12.5px; font-weight: 700; color: #0040A4; margin-bottom: 10px; }
+.coachBand .waCard { max-width: none; }
+.coachCountry { border: 1px solid #dce3ed; border-radius: 8px; padding: 6px 8px; font: 13px Roboto, sans-serif; }
+@media (max-width: 980px) { .coachGrid, .coachTwo { grid-template-columns: 1fr; } }
+.coachLoading { display: grid; place-items: center; padding: 40px 0; }
+.coachError { color: #b42318; font-size: 14px; }
+.coachEmpty { background: #fff; border-radius: 14px; padding: 24px; color: #52617a; }
+.coachNoBadges { margin: 16px 0 4px; }
+.coachFcard .bd small { margin-top: 8px; }
