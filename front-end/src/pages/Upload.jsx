@@ -40,7 +40,9 @@ const startOfToday = () => { const date = new Date(); date.setHours(0, 0, 0, 0);
 // Today's list, kept while the app is open, so coming back to Subir archivo shows it at once without animation.
 const todayCache = { key: "", statuses: null, sessions: null };
 
-function CallRow({ stage, name, percent, owner, score, scoreFormat, duration, error, loading, onOpen, onDismiss }) {
+const clock = (total) => `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+
+function CallRow({ stage, name, percent, owner, score, scoreFormat, duration, analysisSeconds, error, loading, onOpen, onDismiss }) {
   const current = STEP_INDEX[stage];
   const status = {
     uploading: `Subiendo ${percent ?? 0} %`,
@@ -63,6 +65,7 @@ function CallRow({ stage, name, percent, owner, score, scoreFormat, duration, er
     {owner ? <span className="callOwner"><UserAvatar name={owner.name} email={owner.email} picture={owner.picture} className="avatarSm" />{owner.name}</span> : <span />}
     <div className="callActions">
       {stage === "done" && <>
+        {analysisSeconds != null && <span className="callTime" title="Desde que terminó la subida hasta que el reporte quedó listo">⏱ {clock(analysisSeconds)} de análisis</span>}
         {score != null && <span className={`callScore ${score >= 70 ? "high" : score >= 40 ? "mid" : "low"}`}>{scoreFormat === "points" ? `${Number(score).toLocaleString("es-CO")} pts` : `${score}%`}</span>}
         <button className="viewSummaryBtn" type="button" onClick={onOpen} disabled={loading}><Eye size={14} /><span>{loading ? "Abriendo…" : "Ver Resumen"}</span></button>
       </>}
@@ -647,6 +650,7 @@ export default function Upload() {
                     score={entry.score}
                     scoreFormat={entry.scoreFormat}
                     duration={entry.duration}
+                    analysisSeconds={entry.analysisSeconds}
                     error={entry.error}
                     loading={sessionLoading === entry.sessionId}
                     onOpen={() => handleOpenSession({ id: entry.sessionId })}

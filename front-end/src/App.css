@@ -1355,3 +1355,4 @@ body.sidebar-collapsed .appShell {
 .dropZoneBusy { cursor: default; opacity: .72; }
 @media (max-width: 760px) { .callRow { grid-template-columns: minmax(0, 1fr); } .callActions { justify-content: flex-start; } .callsHint { text-align: left; } }
 @media (prefers-reduced-motion: reduce) { .callSteps .now i::after { animation: none; } }
+.callTime { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 500; background: #eaf2ff; color: #0040A4; font-variant-numeric: tabular-nums; white-space: nowrap; }

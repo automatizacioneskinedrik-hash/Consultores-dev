@@ -177,7 +177,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
       throw new Error("ASSEMBLYAI_API_KEY no configurada en el entorno");
     }
 
-    await setAnalysisStatus(objectPath, { stage: "transcribing" });
+    await setAnalysisStatus(objectPath, { stage: "transcribing", transcribingAt: new Date() });
     await bucket.file(objectPath).download({ destination: tempFilePath });
     console.log("Archivo descargado:", tempFilePath);
 
@@ -190,7 +190,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     const seconds = Math.floor(durationSec % 60);
     const durationStr = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 
-    await setAnalysisStatus(objectPath, { stage: "grading" });
+    await setAnalysisStatus(objectPath, { stage: "grading", gradingAt: new Date() });
     const context = await loadAnalysisContext();
     const { speech } = context;
     const pointsFormat = speech.format === POINTS_FORMAT;
@@ -233,7 +233,7 @@ export async function processAudioAnalysis(objectPath, userEmail, { uploadedBy =
     };
 
     const docRef = await db.collection("meetings_analysis").add(analysisData);
-    await setAnalysisStatus(objectPath, { stage: "done", sessionId: docRef.id, score: generalScore ?? null, scoreFormat: scoring?.format === POINTS_FORMAT ? "points" : "percent", duration: durationStr, clientName: analysis.nombre_cliente || "" });
+    await setAnalysisStatus(objectPath, { stage: "done", doneAt: new Date(), sessionId: docRef.id, score: generalScore ?? null, scoreFormat: scoring?.format === POINTS_FORMAT ? "points" : "percent", duration: durationStr, clientName: analysis.nombre_cliente || "" });
 
     if (analysis.seguimiento) {
       const fechaEnvio = new Date();

@@ -54,6 +54,8 @@ export function friendlyAnalysisError(error) {
   return "No se pudo analizar la llamada. Vuelve a subirla y, si se repite, avisa al administrador.";
 }
 
+const seconds = (from, to) => (from?.toDate && to?.toDate ? Math.max(0, Math.round((to.toDate() - from.toDate()) / 1000)) : null);
+
 const plain = (doc) => {
   const data = doc.data();
   const iso = (value) => value?.toDate?.().toISOString() || null;
@@ -61,6 +63,9 @@ const plain = (doc) => {
     id: doc.id, objectPath: data.objectPath, fileName: data.fileName, clientName: data.clientName || "", userEmail: data.userEmail, uploadedBy: data.uploadedBy, ownerName: data.ownerName,
     stage: data.stage, error: data.error || "", sessionId: data.sessionId || null, score: data.score ?? null,
     scoreFormat: data.scoreFormat || null, duration: data.duration || "", createdAt: iso(data.createdAt), updatedAt: iso(data.updatedAt),
+    // Seconds from the end of the upload to the finished report, and per step, for calls since 2026-10-20.
+    analysisSeconds: seconds(data.createdAt, data.doneAt),
+    stepSeconds: { transcribing: seconds(data.transcribingAt, data.gradingAt), grading: seconds(data.gradingAt, data.doneAt) },
   };
 };
 
