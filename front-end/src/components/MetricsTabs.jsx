@@ -3,9 +3,9 @@ import "./MetricsTabs.css";
 
 // Métricas joins Historial and the Panel; each tab is its own route so links and the back button work.
 const METRICS_TABS = [
-  { path: "/metricas", label: "Historial" },
-  { path: "/metricas/cuantitativas", label: "Cuantitativas" },
   { path: "/metricas/coach", label: "Coach" },
+  { path: "/metricas/cuantitativas", label: "Cuantitativas" },
+  { path: "/metricas", label: "Historial" },
 ];
 
 export default function MetricsTabs() {

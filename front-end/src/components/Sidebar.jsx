@@ -143,7 +143,7 @@ export default function Sidebar() {
             <span className="sidebarItemLabel">Subir Archivo</span>
           </button>
 
-          <button className={`sidebarItem ${isMetricsPage ? "active" : ""}`} onClick={() => { navigate("/metricas"); setIsMobileSidebarOpen(false); }} title="Métricas">
+          <button className={`sidebarItem ${isMetricsPage ? "active" : ""}`} onClick={() => { navigate("/metricas/coach"); setIsMobileSidebarOpen(false); }} title="Métricas">
             <ChartNoAxesCombined className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
             <span className="sidebarItemLabel">Métricas</span>
           </button>

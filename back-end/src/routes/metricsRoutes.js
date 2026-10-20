@@ -14,8 +14,8 @@ router.use(async (req, res, next) => {
 
 router.get("/coach", async (req, res) => {
   try {
-    const { consultant, period, versionId, tzOffset } = req.query;
-    res.json(await coachMetrics({ requester: req.requester, consultant, period, versionId, tzOffset }));
+    const { consultant, versionId } = req.query;
+    res.json(await coachMetrics({ requester: req.requester, consultant, versionId }));
   } catch (error) {
     console.error("Error en métricas Coach:", error);
     res.status(500).json({ ok: false, error: "No se pudieron calcular las métricas." });

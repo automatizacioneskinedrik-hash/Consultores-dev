@@ -11,7 +11,6 @@ import "./Dashboard.css";
 import "./Coach.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
-const PERIODS = [["hoy", "Hoy"], ["semana", "Semana"], ["mes", "Mes"], ["historico", "Histórico"]];
 const STAGE_COLOR = { Inminente: "#8ABC43", "Negociación": "#2885FF", Seguimiento: "#FBB42A", "Gestión LP": "#FF5900" };
 const VAL = { ok: ["ok", "✓ Confirmado"], pa: ["pa", "◑ Parcial"], pe: ["pe", "○ Pendiente"] };
 const LEVEL_ORDER = ["no_lo_hizo", "debil", "regular", "bien", "excelente"];
@@ -19,11 +18,12 @@ const notaColor = (value) => (value >= 70 ? "#5E8C1F" : value >= 45 ? "#C98A00" 
 const barColor = (value) => (value >= 70 ? "#8ABC43" : value >= 45 ? "#FBB42A" : "#FF5900");
 const shortDate = (iso) => new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short" });
 const formatScore = (value) => (value == null ? "—" : Number(value).toLocaleString("es-CO"));
+const share = (score) => (score && score.possible > 0 ? (100 * score.earned) / score.possible : null);
 
 const COACH_TOUR = [
   { title: "¡Hola! Aquí está tu coach", text: "Te muestro lo que haces bien, lo que puedes mejorar y el siguiente paso con cada lead." },
-  { target: ".coachMatrix", title: "Matriz de calidad", text: "Cada barra es una fase del speech. La raya marca la media del equipo, para que veas dónde estás por encima o por debajo." },
-  { target: ".coachBadgesCard", title: "Insignias y alertas", text: "Elige hoy, semana, mes o histórico. Aquí ves lo que mejoraste y lo que se te sigue escapando, con un foco de mejora." },
+  { target: ".coachMatrix", title: "Matriz de calidad", text: "Cada barra es una fase del speech: los puntos que sacas de media por llamada, de los que vale. La raya marca la media del equipo." },
+  { target: ".coachBadgesCard", title: "Foco de mejora", text: "La regla que más te conviene trabajar ahora, con un consejo sacado de tus llamadas." },
   { target: ".coachLeads", title: "Mis leads", text: "Cada llamada con su interés, su nota y las validaciones. Haz clic en una para ver su ficha y enviar el mensaje de WhatsApp." },
 ];
 
@@ -94,7 +94,6 @@ export default function Coach() {
   const [headers] = useState(() => ({ "X-Admin-Email": user.email || "", "X-Auth-Token": user.authToken || "" }));
   const [consultant, setConsultant] = useState("all");
   const [people, setPeople] = useState([{ value: "all", label: "Todos los consultores" }]);
-  const [period, setPeriod] = useState("semana");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
@@ -110,7 +109,7 @@ export default function Coach() {
 
   useEffect(() => {
     let cancelled = false;
-    const params = new URLSearchParams({ consultant, period, tzOffset: String(new Date().getTimezoneOffset()) });
+    const params = new URLSearchParams({ consultant });
     fetch(`${API_BASE_URL}/api/metrics/coach?${params}`, { headers })
       .then((response) => response.json())
       .then((body) => {
@@ -121,10 +120,10 @@ export default function Coach() {
       })
       .catch((err) => { if (!cancelled) setError(err.message); });
     return () => { cancelled = true; };
-  }, [consultant, period, headers, refresh]);
+  }, [consultant, headers, refresh]);
 
-  const badges = data?.badges || [];
-  const positives = badges.filter((badge) => badge[0] === "+").length;
+  // With "Todos los consultores" the selection is the team, so there is nothing to compare against.
+  const showTeam = !(viewsEveryone && consultant === "all");
   const pendingWa = (data?.leads || []).filter((lead) => lead.waPending).length;
   const leads = [...(data?.leads || [])].sort((a, b) => (b.interest ?? -1) - (a.interest ?? -1));
 
@@ -135,7 +134,7 @@ export default function Coach() {
       <MetricsTabs />
       <ConfigProvider theme={{ token: { colorPrimary: "#0040A4", borderRadius: 12, fontFamily: "Roboto, Helvetica, Arial, sans-serif" } }}>
         <div className="coachVh">
-          <div><h2>Lo que haces bien.<br />Lo que puedes mejorar.</h2><p>Tus fases frente al equipo, lo que ha cambiado en el periodo y el siguiente paso con cada lead.</p></div>
+          <div><h2>Lo que haces bien.<br />Lo que puedes mejorar.</h2><p>Tus fases frente al equipo, en qué enfocarte y el siguiente paso con cada lead.</p></div>
           {viewsEveryone && <Select className="coachPerson" value={consultant} onChange={setConsultant} options={people} showSearch optionFilterProp="label"
             optionRender={(option) => <PersonOption option={option.data} allLabel="Todos los consultores" />}
             labelRender={({ value }) => <PersonOption option={people.find((person) => person.value === value) || { value, label: value }} allLabel="Todos los consultores" />} />}
@@ -148,12 +147,12 @@ export default function Coach() {
         {data && !data.legacy && <>
           <div className="coachGrid">
             <div className="coachCard coachMatrix">
-              <div className="coachCardHead"><h3>Matriz de calidad</h3><span className="coachChip">% de puntos por fase</span></div>
-              <div className="coachLegend"><span><i />{consultant === "all" && viewsEveryone ? "Selección" : "Tu nota"}</span><span><s />Media del equipo</span></div>
+              <div className="coachCardHead"><h3>Matriz de calidad</h3><span className="coachChip">puntos por llamada</span></div>
+              <div className="coachLegend"><span><i />{showTeam ? "Tu media" : "Media del equipo"}</span>{showTeam && <span><s />Media del equipo</span>}</div>
               {data.phases.map((phase) => <div key={phase.id} className="coachPhase" title={phase.rules.join(" · ")}>
                 <div className="coachPhaseTop"><span><b>{phase.name}</b> <em>{phase.points} pts</em></span>
-                  <span>{phase.mine == null ? <em>sin llamadas</em> : <><b style={{ color: notaColor(phase.mine) }}>{phase.mine} %</b> <em>/ {phase.team ?? "—"} %</em></>}</span></div>
-                <div className="coachTrack"><i style={{ width: `${phase.mine ?? 0}%`, background: barColor(phase.mine ?? 0) }} />{phase.team != null && <s style={{ left: `${phase.team}%` }} />}</div>
+                  <span>{phase.mine == null ? <em>sin llamadas</em> : <><b style={{ color: notaColor(share(phase.mine)) }}>{formatScore(phase.mine.earned)}</b> <em>de {formatScore(phase.mine.possible)}{showTeam && phase.team ? ` · equipo ${formatScore(phase.team.earned)}` : ""}</em></>}</span></div>
+                <div className="coachTrack"><i style={{ width: `${share(phase.mine) ?? 0}%`, background: barColor(share(phase.mine) ?? 0) }} />{showTeam && phase.team && <s style={{ left: `${share(phase.team)}%` }} />}</div>
               </div>)}
               <p className="coachMut">Pasa el ratón por cada fase para ver sus reglas.</p>
               <p className="coachLbl">Lo que más se me repite</p>
@@ -163,13 +162,10 @@ export default function Coach() {
             </div>
 
             <div className="coachCard coachBadgesCard">
-              <div className="coachCardHead"><h3>Insignias y alertas</h3>
-                <div className="coachSeg">{PERIODS.map(([key, label]) => <button key={key} type="button" aria-pressed={key === period} onClick={() => setPeriod(key)}>{label}</button>)}</div></div>
-              {badges.length ? badges.map(([type, title, text]) => <div key={title} className="coachBdg"><div className={`ic ${type === "+" ? "good" : type === "!!" ? "grave" : "warn"}`}>{type === "+" ? "★" : type}</div><div><b>{title}</b><p>{text}</p></div></div>)
-                : <p className="coachMut coachNoBadges">{data.counts.period ? "Sin insignias ni alertas en este periodo." : "Sin llamadas en este periodo."}</p>}
+              <div className="coachCardHead"><h3>Insignias</h3><span className="coachChip">Próximamente</span></div>
+              <p className="coachMut coachNoBadges">Estamos diseñando las insignias: una ruta con logros y personajes.</p>
               {data.focus && <div className="coachFoco"><small>Foco de mejora</small><b>{data.focus.rule}{data.focus.tip ? `: ${data.focus.tip}` : ""}</b>
-                <span>Tu fase más floja es {data.focus.phase} ({data.focus.mine} % frente a {data.focus.team} % del equipo), y «{data.focus.rule.toLowerCase()}» se escapa en el {data.focus.pct} % de las llamadas.</span></div>}
-              <div className="coachNote"><b>{positives} {positives === 1 ? "insignia" : "insignias"} y {badges.length - positives} {badges.length - positives === 1 ? "alerta" : "alertas"}</b> en este periodo. Las positivas comparan con el periodo anterior; las alertas en rojo son reglas que se escapan casi siempre y pesan sobre la nota aunque la llamada vaya bien.</div>
+                <span>{showTeam ? "Tu" : "La"} fase más floja es {data.focus.phase}: {formatScore(data.focus.mine.earned)} de {formatScore(data.focus.mine.possible)} pts{showTeam && data.focus.team ? ` (equipo ${formatScore(data.focus.team.earned)})` : ""}, y «{data.focus.rule.toLowerCase()}» se escapa en el {data.focus.pct} % de las llamadas.</span></div>}
             </div>
           </div>
 

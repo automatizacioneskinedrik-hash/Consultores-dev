@@ -6,41 +6,28 @@ import { validationsFor } from "../prompts/speechRules.js";
 
 const GOOD = new Set(["excelente", "bien"]);
 const BAD = new Set(["debil", "no_lo_hizo"]);
-const DAY = 24 * 60 * 60 * 1000;
 const pct = (earned, possible) => (possible > 0 ? Math.round((earned / possible) * 100) : null);
 
-// Period windows in the viewer's local time (tzOffset = minutes from Date.getTimezoneOffset()).
-function periodWindow(period, now, tzOffset) {
-  const local = new Date(now.getTime() - tzOffset * 60000);
-  const startOfLocalDay = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate()) + tzOffset * 60000;
-  if (period === "hoy") return { from: startOfLocalDay, length: DAY };
-  if (period === "semana") {
-    const weekday = (local.getUTCDay() + 6) % 7;
-    return { from: startOfLocalDay - weekday * DAY, length: 7 * DAY };
-  }
-  if (period === "mes") {
-    const from = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) + tzOffset * 60000;
-    const prev = Date.UTC(local.getUTCFullYear(), local.getUTCMonth() - 1, 1) + tzOffset * 60000;
-    return { from, length: from - prev };
-  }
-  return null;
-}
-
+// Average points per call in each phase, out of what the phase is worth (only calls where the phase applied).
+const round1 = (value) => Math.round(value * 10) / 10;
 function phaseScores(calls, phases, rulesById) {
   return Object.fromEntries(phases.map((phase) => {
     let earned = 0;
     let possible = 0;
+    let evaluated = 0;
     for (const call of calls) {
-      for (const item of call.items) {
-        const rule = rulesById.get(item.ruleId);
-        if (!rule || rule.phaseId !== phase.id || item.level === "no_aplica") continue;
+      const items = call.items.filter((item) => rulesById.get(item.ruleId)?.phaseId === phase.id && item.level !== "no_aplica");
+      if (!items.length) continue;
+      evaluated += 1;
+      for (const item of items) {
         earned += item.earned || 0;
         possible += item.points || 0;
       }
     }
-    return [phase.id, pct(earned, possible)];
+    return [phase.id, evaluated ? { earned: round1(earned / evaluated), possible: round1(possible / evaluated) } : null];
   }));
 }
+const ratio = (score) => (score && score.possible > 0 ? score.earned / score.possible : null);
 
 // Share of calls where each rule came out Débil or No lo hizo.
 function ruleFailures(calls, rulesById) {
@@ -71,29 +58,6 @@ function validationState(validation, call) {
   return "pa";
 }
 
-function badgesFor(current, previous, team, phases, rulesById, hasPrevious) {
-  const badges = [];
-  if (!current.length) return badges;
-  const now = phaseScores(current, phases, rulesById);
-  const before = hasPrevious ? phaseScores(previous, phases, rulesById) : null;
-  const teamScores = phaseScores(team, phases, rulesById);
-  const name = (id) => phases.find((phase) => phase.id === id)?.name || id;
-  if (before && previous.length) {
-    for (const phase of phases) {
-      if (now[phase.id] != null && before[phase.id] != null && now[phase.id] - before[phase.id] >= 8) {
-        badges.push(["+", `Subiste en ${name(phase.id)}`, `De ${before[phase.id]} % a ${now[phase.id]} % frente al periodo anterior.`]);
-      }
-    }
-  }
-  const best = phases.map((phase) => ({ id: phase.id, gap: (now[phase.id] ?? -1) - (teamScores[phase.id] ?? 0) })).sort((a, b) => b.gap - a.gap)[0];
-  if (best && best.gap >= 5) badges.push(["+", `Tu mejor fase: ${name(best.id)}`, `${now[best.id]} %, por encima del equipo (${teamScores[best.id]} %).`]);
-  for (const failure of ruleFailures(current, rulesById).filter((entry) => entry.total >= 2 && entry.pct >= 50).slice(0, 3)) {
-    const grave = failure.pct >= 80 && failure.total >= 3;
-    badges.push([grave ? "!!" : "!", failure.title, `Se te escapó en ${failure.failed} de ${failure.total} llamadas (${name(failure.phaseId)}).`]);
-  }
-  return badges;
-}
-
 const toCall = (doc) => {
   const data = doc.data();
   return {
@@ -111,7 +75,7 @@ const toCall = (doc) => {
   };
 };
 
-export async function coachMetrics({ requester, consultant = "all", period = "semana", versionId = "", tzOffset = 0, now = new Date() }) {
+export async function coachMetrics({ requester, consultant = "all", versionId = "" }) {
   const speech = versionId ? await getSpeechVersion(versionId) : await getActiveSpeech();
   if (speech.legacy || !Array.isArray(speech.rules)) return { ok: true, legacy: true };
   const rulesById = new Map(speech.rules.map((rule) => [rule.id, rule]));
@@ -126,16 +90,13 @@ export async function coachMetrics({ requester, consultant = "all", period = "se
   const scope = requester.cargo.seesAll ? (consultant && consultant !== "all" ? String(consultant).toLowerCase() : null) : requester.email;
   const mine = scope ? team.filter((call) => call.email === scope) : team;
 
-  const window = periodWindow(period, now, Number(tzOffset) || 0);
-  const current = window ? mine.filter((call) => call.at >= window.from) : mine;
-  const previous = window ? mine.filter((call) => call.at >= window.from - window.length && call.at < window.from) : [];
   const teamScores = phaseScores(team, phases, rulesById);
   const myScores = phaseScores(mine, phases, rulesById);
   const repeated = ruleFailures(mine, rulesById).filter((entry) => entry.failed > 0).slice(0, 5);
 
-  const gaps = phases.map((phase) => ({ ...phase, mine: myScores[phase.id], team: teamScores[phase.id], gap: (myScores[phase.id] ?? 0) - (teamScores[phase.id] ?? 0) }))
+  const gaps = phases.map((phase) => ({ ...phase, mine: myScores[phase.id], team: teamScores[phase.id], rate: ratio(myScores[phase.id]), gap: (ratio(myScores[phase.id]) ?? 0) - (ratio(teamScores[phase.id]) ?? 0) }))
     // Against the team when one person is selected; with everyone selected, the lowest phase.
-    .filter((phase) => phase.mine != null).sort((a, b) => (scope ? a.gap - b.gap : 0) || a.mine - b.mine);
+    .filter((phase) => phase.rate != null).sort((a, b) => (scope ? a.gap - b.gap : 0) || a.rate - b.rate);
   const weakest = gaps[0] || null;
   const focusRule = weakest ? ruleFailures(mine, rulesById).find((entry) => entry.phaseId === weakest.id && entry.failed > 0) : null;
   const focusTip = focusRule
@@ -161,10 +122,9 @@ export async function coachMetrics({ requester, consultant = "all", period = "se
     speech: { id: speech.id, name: speech.name },
     phases: phases.map((phase) => ({ id: phase.id, name: phase.name, points: speech.rules.filter((rule) => rule.phaseId === phase.id).reduce((sum, rule) => sum + rule.points, 0), rules: speech.rules.filter((rule) => rule.phaseId === phase.id).map((rule) => rule.title), mine: myScores[phase.id], team: teamScores[phase.id] })),
     repeated: repeated.map(({ title, pct: share }) => ({ title, pct: share })),
-    badges: badgesFor(current, previous, team, phases, rulesById, Boolean(window)),
     focus: weakest && focusRule ? { phase: weakest.name, mine: weakest.mine, team: weakest.team, rule: focusRule.title, pct: focusRule.pct, tip: focusTip } : null,
     validations: validations.map((validation) => validation.label),
     leads,
-    counts: { team: team.length, mine: mine.length, period: current.length },
+    counts: { team: team.length, mine: mine.length },
   };
 }
