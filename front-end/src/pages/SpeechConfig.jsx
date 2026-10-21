@@ -50,8 +50,8 @@ function blueShade(index, count) {
 }
 
 function editableCopy(speech) {
-  const { format, name, description, phases, rules, talkRatio, muletillas, validations } = structuredClone(speech);
-  return { format, name, description: description || "", changeNote: "", phases, rules, talkRatio, muletillas, ...(validations ? { validations } : {}) };
+  const { format, name, description, phases, rules, talkRatio, muletillas } = structuredClone(speech);
+  return { format, name, description: description || "", changeNote: "", phases, rules, talkRatio, muletillas };
 }
 
 // Older drafts kept talk ratio and muletillas as rules in a "Toda la llamada" group; move them to their indicators.
@@ -175,31 +175,6 @@ function MuletillaExclusions({ words = [], editable, onChange }) {
       <input id="muletillasExclude" value={value} maxLength={40} placeholder="Escribe una palabra y pulsa Enter" onChange={(event) => setValue(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} />
       <button type="button" className="speechSecondaryButton" onClick={add} disabled={!value.trim()}><Plus size={14} /> Añadir</button>
     </div>}
-  </div>;
-}
-
-// Métricas → Coach shows these validations for each lead; each one is met through the rules linked to it.
-// Without rules, "Acuerdos" uses the commitment type the AI detects in the call.
-function LeadValidations({ validations, phases, rules, editable, onChange }) {
-  const toggleRule = (index, ruleId) => onChange(validations.map((entry, position) => position !== index ? entry : {
-    ...entry, ruleIds: entry.ruleIds.includes(ruleId) ? entry.ruleIds.filter((id) => id !== ruleId) : [...entry.ruleIds, ruleId],
-  }));
-  return <div className="speechValidations">
-    {validations.map((entry, index) => <div key={entry.id} className="speechValidation">
-      <div className="speechValidationHead">
-        <strong>{entry.label}</strong>
-        <span>{entry.ruleIds.length ? `${entry.ruleIds.length} ${entry.ruleIds.length === 1 ? "regla" : "reglas"}` : entry.id === "acuerdos" ? "Usa el tipo de compromiso de la llamada" : "Sin reglas: no se muestra"}</span>
-      </div>
-      <div className="speechValidationRules">
-        {phases.map((phase) => {
-          const phaseRules = rules.filter((rule) => rule.phaseId === phase.id && (editable || entry.ruleIds.includes(rule.id)));
-          if (!phaseRules.length) return null;
-          return <div key={phase.id} className="speechValidationPhase"><em>{phase.name}</em>
-            {phaseRules.map((rule) => <button key={rule.id} type="button" className={`speechValidationRule ${entry.ruleIds.includes(rule.id) ? "on" : ""}`} disabled={!editable} aria-pressed={entry.ruleIds.includes(rule.id)} onClick={() => toggleRule(index, rule.id)}>{rule.title}</button>)}
-          </div>;
-        })}
-      </div>
-    </div>)}
   </div>;
 }
 
@@ -581,19 +556,6 @@ export default function SpeechConfig() {
                       <p className="speechMuletillasHow">La IA detecta sola las muletillas. Con el slicer indicas cada cuánto se vale repetir una palabra: si el consultor la repite muy seguido, baja la nota.</p>
                       <MuletillaGapSlider gaps={shown.muletillas.gaps} editable={editing} onChange={(gaps) => change({ muletillas: { ...draft.muletillas, gaps } })} />
                       <MuletillaExclusions words={shown.muletillas.exclude} editable={editing} onChange={(exclude) => change({ muletillas: { ...draft.muletillas, exclude } })} />
-                    </div>}
-                  </section>
-                  <section className={`speechPhaseCard ${expanded.has("validations") ? "open" : ""}`}>
-                    <button type="button" className="speechPhaseHead" aria-expanded={expanded.has("validations")} onClick={() => toggle("validations")}>
-                      <span className="speechStep">✓</span>
-                      <span className="speechPhaseTitle"><strong>Validaciones de Mis leads</strong><span>Producto, Precio y Acuerdos en Métricas → Coach</span></span>
-                      <span />
-                      <ChevronRight className="speechChevron" size={18} aria-hidden="true" />
-                    </button>
-                    {expanded.has("validations") && <div className="speechPhaseBody">
-                      <p className="speechMuletillasHow">Cada validación se cumple con las reglas que le conectes: ✓ si todas salen Excelente o Bien, ○ si todas fallan y ◑ en medio. Si cambias las reglas del speech, solo vuelve a conectarlas aquí. No suman puntos.</p>
-                      <LeadValidations validations={shown.validations || template?.validations || []} phases={shown.phases} rules={shown.rules} editable={editing}
-                        onChange={(validations) => change({ validations })} />
                     </div>}
                   </section>
                 </div>

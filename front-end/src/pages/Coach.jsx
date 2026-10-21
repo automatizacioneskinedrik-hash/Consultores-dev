@@ -179,7 +179,7 @@ export default function Coach() {
                 <td>{lead.stage ? <><span className="coachDot" style={{ background: STAGE_COLOR[lead.stage] || "#94a3b8" }} />{lead.stage}</> : "—"}</td>
                 <td className="num" style={{ color: "#D9480F" }}><b>{lead.interest ?? "—"}</b></td>
                 <td className="num" style={{ color: notaColor(lead.score ?? 0) }}><b>{formatScore(lead.score)}</b></td>
-                {lead.validations.map((state, index) => <td key={index}>{state ? <span className={`coachVch ${VAL[state][0]}`}>{VAL[state][1]}</span> : <span className="coachMut">—</span>}</td>)}
+                {lead.validations.map((check, index) => <td key={index}>{check ? <span className={`coachVch ${VAL[check.state][0]}`} title={check.why}>{VAL[check.state][1]}</span> : <span className="coachMut">—</span>}</td>)}
               </tr>)}</tbody>
             </table></div>
             {!leads.length && <p className="coachMut">Todavía no hay llamadas analizadas con este speech.</p>}

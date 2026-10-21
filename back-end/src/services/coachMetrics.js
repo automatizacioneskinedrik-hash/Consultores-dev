@@ -2,9 +2,10 @@
 // "validaciones" (Producto, Precio, Acuerdos…), so it keeps working when the client changes the speech.
 import { db } from "../config/firebase.js";
 import { getActiveSpeech, getSpeechVersion } from "../prompts/speechConfig.js";
-import { validationsFor } from "../prompts/speechRules.js";
 
-const GOOD = new Set(["excelente", "bien"]);
+// Mis leads → Producto, Precio, Acuerdos come straight from the AI's reading of the call.
+const VALIDATIONS = [["producto", "Producto"], ["precio", "Precio"], ["acuerdos", "Acuerdos"]];
+const STATE = { si: "ok", parcial: "pa", no: "pe" };
 const BAD = new Set(["debil", "no_lo_hizo"]);
 const pct = (earned, possible) => (possible > 0 ? Math.round((earned / possible) * 100) : null);
 
@@ -46,16 +47,13 @@ function ruleFailures(calls, rulesById) {
     .sort((a, b) => b.pct - a.pct || b.failed - a.failed);
 }
 
-// ✓ every rule Excelente/Bien, ○ every rule failed, ◑ in between; "Acuerdos" without rules uses the commitment type.
-function validationState(validation, call) {
-  const items = call.items.filter((item) => validation.ruleIds.includes(item.ruleId) && item.level !== "no_aplica");
-  if (!items.length) {
-    if (validation.id !== "acuerdos") return null;
-    return { firme: "ok", condicionado: "pa" }[call.commitment] || (call.commitment ? "pe" : null);
-  }
-  if (items.every((item) => GOOD.has(item.level))) return "ok";
-  if (items.every((item) => BAD.has(item.level))) return "pe";
-  return "pa";
+// Calls analyzed before the AI answered these only have the commitment type, which still gives Acuerdos.
+function validationState(id, call) {
+  const answer = call.leadChecks?.[id];
+  const state = STATE[String(answer?.estado || "").toLowerCase()];
+  if (state) return { state, why: answer.motivo || "" };
+  if (id !== "acuerdos" || !call.commitment) return null;
+  return { state: { firme: "ok", condicionado: "pa" }[call.commitment] || "pe", why: `Compromiso ${call.commitment.replace("_", " ")}.` };
 }
 
 const toCall = (doc) => {
@@ -71,6 +69,7 @@ const toCall = (doc) => {
     stage: data.analysis?.probabilidades?.estado_cierre || "",
     interest: data.analysis?.probabilidades?.interes_cliente ?? null,
     commitment: data.analysis?.tipo_compromiso_cierre || "",
+    leadChecks: data.analysis?.validaciones_lead || null,
     next: data.analysis?.proximos_pasos?.consultor?.[0] || "",
   };
 };
@@ -80,11 +79,10 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
   if (speech.legacy || !Array.isArray(speech.rules)) return { ok: true, legacy: true };
   const rulesById = new Map(speech.rules.map((rule) => [rule.id, rule]));
   const phases = speech.phases.filter((phase) => speech.rules.some((rule) => rule.phaseId === phase.id));
-  const validations = validationsFor(speech);
 
   const snap = await db.collection("meetings_analysis").where("speechVersionId", "==", speech.id)
     .select("userEmail", "createdAt", "generalScore", "scoring.items", "analysis.nombre_cliente", "analysis.participacion.duracion_total",
-      "analysis.probabilidades", "analysis.tipo_compromiso_cierre", "analysis.proximos_pasos").get();
+      "analysis.probabilidades", "analysis.tipo_compromiso_cierre", "analysis.validaciones_lead", "analysis.proximos_pasos").get();
   const team = snap.docs.map(toCall).filter((call) => call.items.length);
   // Own-scope roles always see themselves; roles that see everyone may pick one consultant.
   const scope = requester.cargo.seesAll ? (consultant && consultant !== "all" ? String(consultant).toLowerCase() : null) : requester.email;
@@ -114,7 +112,7 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
   const leads = shown.map((call) => ({
     id: call.id, client: call.client, date: new Date(call.at).toISOString(), duration: call.duration, stage: call.stage,
     interest: call.interest, score: call.score, next: call.next, waPending: pending.has(call.id), followUp: pending.get(call.id) || null,
-    validations: validations.map((validation) => validationState(validation, call)),
+    validations: VALIDATIONS.map(([id]) => validationState(id, call)),
   }));
 
   return {
@@ -123,7 +121,7 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
     phases: phases.map((phase) => ({ id: phase.id, name: phase.name, points: speech.rules.filter((rule) => rule.phaseId === phase.id).reduce((sum, rule) => sum + rule.points, 0), rules: speech.rules.filter((rule) => rule.phaseId === phase.id).map((rule) => rule.title), mine: myScores[phase.id], team: teamScores[phase.id] })),
     repeated: repeated.map(({ title, pct: share }) => ({ title, pct: share })),
     focus: weakest && focusRule ? { phase: weakest.name, mine: weakest.mine, team: weakest.team, rule: focusRule.title, pct: focusRule.pct, tip: focusTip } : null,
-    validations: validations.map((validation) => validation.label),
+    validations: VALIDATIONS.map(([, label]) => label),
     leads,
     counts: { team: team.length, mine: mine.length },
   };

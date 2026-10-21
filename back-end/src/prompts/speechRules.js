@@ -41,21 +41,6 @@ export const MULETILLA_GAP_MAX = 600;
 // Defaults follow the current methodology (over 65 % improvement point, over 75 % serious, over 80 % very serious).
 export const DEFAULT_TALK_RATIO = Object.freeze({ limits: Object.freeze([65, 70, 75, 80]), points: 6 });
 
-// "Validaciones" shown in Métricas → Coach for each lead (Producto, Precio, Acuerdos…). Each one is met through
-// the speech rules linked to it; "acuerdos" with no rules falls back to the commitment type of the call.
-export const DEFAULT_VALIDATIONS = Object.freeze([
-  Object.freeze({ id: "producto", label: "Producto", ruleIds: Object.freeze(["vision-gap", "propuesta-dolor", "propuesta-foco"]) }),
-  Object.freeze({ id: "precio", label: "Precio", ruleIds: Object.freeze(["diagnostico-presupuesto", "cierre-si-antes-precio", "cierre-silencio", "cierre-plan-pago"]) }),
-  Object.freeze({ id: "acuerdos", label: "Acuerdos", ruleIds: Object.freeze([]) }),
-]);
-
-// The speech's own validations, or the defaults, keeping only rules that still exist.
-export function validationsFor(speech) {
-  const ruleIds = new Set((speech.rules || []).map((rule) => rule.id));
-  const source = Array.isArray(speech.validations) ? speech.validations : DEFAULT_VALIDATIONS;
-  return source.map((entry) => ({ id: entry.id, label: entry.label, ruleIds: (entry.ruleIds || []).filter((id) => ruleIds.has(id)) }));
-}
-
 const phase = (id, name, objective) => ({ id, name, objective });
 const rule = (id, phaseId, title, points, guidance = "", allowNotApplicable = false) => ({ id, phaseId, title, guidance, points, allowNotApplicable });
 
@@ -89,7 +74,6 @@ export const POINTS_TEMPLATE = Object.freeze({
   ],
   talkRatio: DEFAULT_TALK_RATIO,
   muletillas: DEFAULT_MULETILLAS,
-  validations: DEFAULT_VALIDATIONS,
 });
 
 function text(input, label, max, { required = true } = {}) {
@@ -167,19 +151,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     rules,
     talkRatio,
     muletillas,
-    validations: validateValidations(value.validations, rules),
   };
-}
-
-function validateValidations(value, rules) {
-  if (value == null) return DEFAULT_VALIDATIONS.map((entry) => ({ ...entry, ruleIds: entry.ruleIds.filter((id) => rules.some((rule) => rule.id === id)) }));
-  if (!Array.isArray(value) || value.length > 6) throw new Error("Las validaciones de Mis leads deben ser máximo 6.");
-  const ruleIds = new Set(rules.map((rule) => rule.id));
-  return value.map((entry, index) => ({
-    id: text(entry?.id, `Validación ${index + 1}: ID`, 40),
-    label: text(entry?.label, `Validación ${index + 1}: nombre`, 40),
-    ruleIds: [...new Set(Array.isArray(entry?.ruleIds) ? entry.ruleIds : [])].filter((id) => ruleIds.has(id)),
-  }));
 }
 
 function validateMuletillaGaps(value) {

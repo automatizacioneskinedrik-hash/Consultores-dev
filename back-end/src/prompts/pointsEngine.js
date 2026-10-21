@@ -149,6 +149,10 @@ ROLES
 DATOS ADICIONALES (para el panel de métricas)
 - momento_precio: primera vez que el consultor menciona una cifra económica, en qué fase (usa el ID de fase) o "No mencionado"; precio_sin_diagnostico_previo = true si apareció antes de explorar la situación económica.
 - tipo_compromiso_cierre: "firme", "condicionado", "aplazado" o "sin_compromiso".
+- validaciones_lead: en qué punto quedó el lead, según la conversación. Para cada una responde "si", "parcial" o "no" y un motivo de una frase:
+  producto = el cliente reconoce que el programa le sirve para lo que busca;
+  precio = se habló de la inversión y el cliente la aceptó o la ve viable;
+  acuerdos = quedó un compromiso concreto para el siguiente paso (fecha, acción o decisión).
 - objeciones: cada objeción del cliente con categoría "precio", "titulacion", "tiempo", "decisor", "formato", "otras_opciones", "nivel" u "otro" y si quedó resuelta.
 - fases_alcanzadas: IDs de las fases claramente presentes, en orden de aparición. IDs válidos: ${speech.phases.map((phase) => `"${phase.id}"`).join(", ")}.
 - seguimiento.mensaje_sugerido: ${followupInstruction}
@@ -168,6 +172,7 @@ SALIDA REQUERIDA (JSON EXACTO)
   "fases_alcanzadas": ["ID"],
   "momento_precio": { "fase_aparicion": "ID o No mencionado", "precio_sin_diagnostico_previo": true, "descripcion": "String" },
   "tipo_compromiso_cierre": "firme / condicionado / aplazado / sin_compromiso",
+  "validaciones_lead": { "producto": { "estado": "si / parcial / no", "motivo": "String" }, "precio": { "estado": "si / parcial / no", "motivo": "String" }, "acuerdos": { "estado": "si / parcial / no", "motivo": "String" } },
   "objeciones": [ { "descripcion": "String", "categoria": "String", "resuelta": true } ],
   "seguimiento": { "aplica": true, "tipo": "pensar / consultar / rellamar / general", "frase_cliente": "String", "mensaje_sugerido": "String" }
 }
