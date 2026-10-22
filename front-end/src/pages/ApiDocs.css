@@ -1,12 +1,25 @@
-/* Documentación y API: same shell, tabs and cards as Configuración avanzada; code in Roboto Mono on navy. */
-.apiCode { position: relative; background: #040025; border-radius: 12px; min-width: 0; }
-.apiCode pre { margin: 0; padding: 14px 16px; padding-right: 96px; overflow-x: auto; color: #E7E7E7; font: 13px/1.55 "Roboto Mono", ui-monospace, monospace; white-space: pre; }
+/* Documentación y API: same shell, tabs and cards as Configuración avanzada. */
+/* Code blocks look like an editor: black panel, Roboto Mono, VS Code Dark+ colors. */
+.apiCode { position: relative; background: #1E1E1E; border: 1px solid #2d2d2d; border-radius: 12px; min-width: 0; overflow: hidden; }
+.apiCodeBar { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 14px; background: #252526; border-bottom: 1px solid #2d2d2d; }
+.apiCodeBar span { font: 600 11.5px Roboto, Helvetica, Arial, sans-serif; letter-spacing: .04em; color: #9d9d9d; }
+.apiCode pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: #D4D4D4; font: 13px/1.6 "Roboto Mono", ui-monospace, monospace; white-space: pre; tab-size: 2; }
 .apiCode code { font: inherit; }
-.apiCodeInline pre { padding-top: 11px; padding-bottom: 11px; }
+.apiCodeInline pre { padding: 11px 96px 11px 16px; }
 .apiResult pre { max-height: 420px; overflow: auto; }
-.apiCopy { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(231, 231, 231, .25); background: rgba(231, 231, 231, .08); color: #E7E7E7; border-radius: 8px; padding: 4px 9px; font: 600 12px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; }
-.apiCopy:hover { background: rgba(231, 231, 231, .16); }
+.apiCopy { display: inline-flex; align-items: center; gap: 5px; border: 1px solid #3c3c3c; background: #2d2d2d; color: #cccccc; border-radius: 7px; padding: 3px 9px; font: 600 12px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; }
+.apiCodeInline .apiCopy { position: absolute; top: 7px; right: 8px; }
+.apiCopy:hover { background: #3c3c3c; color: #ffffff; }
 .apiCopy:focus-visible { outline: 2px solid #2885FF; outline-offset: 2px; }
+.apiCode .token.comment, .apiCode .token.prolog { color: #6A9955; }
+.apiCode .token.string, .apiCode .token.char, .apiCode .token.template-string, .apiCode .token.attr-value { color: #CE9178; }
+.apiCode .token.number { color: #B5CEA8; }
+.apiCode .token.keyword, .apiCode .token.boolean, .apiCode .token.null, .apiCode .token.constant, .apiCode .token.interpolation-punctuation { color: #569CD6; }
+.apiCode .language-python .token.keyword, .apiCode .language-javascript .token.keyword.control-flow, .apiCode .language-javascript .token.keyword.module { color: #C586C0; }
+.apiCode .token.function { color: #DCDCAA; }
+.apiCode .token.class-name, .apiCode .token.builtin { color: #4EC9B0; }
+.apiCode .token.property, .apiCode .token.parameter, .apiCode .token.variable, .apiCode .token.attr-name { color: #9CDCFE; }
+.apiCode .token.operator, .apiCode .token.punctuation { color: #D4D4D4; }
 
 .acCard code, .apiText code, .apiFacts code, .apiSteps code, .apiTable code { font: 12.5px "Roboto Mono", ui-monospace, monospace; background: #f1f5f9; color: #040025; padding: 1px 5px; border-radius: 5px; }
 .apiCode code { background: none; color: inherit; padding: 0; }

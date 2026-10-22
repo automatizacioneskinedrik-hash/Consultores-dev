@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import Prism from "prismjs";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-sql";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import ChangeHistory from "../components/ChangeHistory";
@@ -46,10 +51,17 @@ function CopyButton({ text, label = "Copiar" }) {
   </button>;
 }
 
-function CodeBlock({ code, className = "" }) {
+const LANGUAGE_LABELS = { bash: "Terminal", javascript: "JavaScript", python: "Python", json: "JSON", sql: "SQL" };
+
+// Code with editor colors (Prism tokens styled like VS Code Dark+). Prism escapes the text before adding its spans.
+function CodeBlock({ code, lang, className = "" }) {
+  const grammar = lang && Prism.languages[lang];
+  const inline = className.includes("apiCodeInline");
   return <div className={`apiCode ${className}`}>
-    <CopyButton text={code} />
-    <pre><code>{code}</code></pre>
+    {inline ? <CopyButton text={code} /> : <div className="apiCodeBar"><span>{LANGUAGE_LABELS[lang] || "Texto"}</span><CopyButton text={code} /></div>}
+    <pre className={lang ? `language-${lang}` : ""}>{grammar
+      ? <code dangerouslySetInnerHTML={{ __html: Prism.highlight(code, grammar, lang) }} />
+      : <code>{code}</code>}</pre>
   </div>;
 }
 
@@ -122,10 +134,10 @@ while True:
       <ol className="apiSteps">
         <li><b>Crea una llave</b> en la pestaña Llaves de acceso y guárdala como variable de entorno <code>SPEECH_API_KEY</code>.</li>
         <li><b>Prueba la conexión.</b> Si responde con el nombre de tu llave, todo está bien.
-          <CodeBlock code={`curl -s "${base}/ping" \\\n  -H "Authorization: Bearer $SPEECH_API_KEY"`} />
+          <CodeBlock lang="bash" code={`curl -s "${base}/ping" \\\n  -H "Authorization: Bearer $SPEECH_API_KEY"`} />
         </li>
         <li><b>Trae las sesiones</b>, página a página, hasta que <code>nextCursor</code> sea <code>null</code>.
-          <CodeBlock code={paging} />
+          <CodeBlock lang="python" code={paging} />
         </li>
       </ol>
     </section>
@@ -310,16 +322,16 @@ function ReferenceTab({ base, catalog, authHeaders }) {
           {missing.length > 0 && <span className="acHint">Escribe {missing.map((param) => param.name).join(", ")} para probar.</span>}
           {result && <span className={`apiHttp ${result.status >= 200 && result.status < 300 ? "ok" : "bad"}`}>{result.status || "Sin respuesta"} · {result.ms} ms</span>}
         </div>
-        {result && <CodeBlock code={shown.length > MAX_SHOWN_CHARS ? `${shown.slice(0, MAX_SHOWN_CHARS)}\n… (respuesta recortada en pantalla)` : shown} className="apiResult" />}
+        {result && <CodeBlock code={shown.length > MAX_SHOWN_CHARS ? `${shown.slice(0, MAX_SHOWN_CHARS)}\n… (respuesta recortada en pantalla)` : shown} lang="json" className="apiResult" />}
       </section>
 
       <section className="acCard">
         <div className="apiLangs" role="tablist" aria-label="Lenguaje del ejemplo">
           {[["curl", "cURL"], ["javascript", "JavaScript"], ["python", "Python"]].map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={language === id} onClick={() => setLanguage(id)}>{label}</button>)}
         </div>
-        <CodeBlock code={code[language]} />
+        <CodeBlock lang={language === "curl" ? "bash" : language} code={code[language]} />
         <div className="acCardHead"><div><h2>Ejemplo de respuesta</h2></div></div>
-        <CodeBlock code={JSON.stringify(endpoint.example, null, 2)} />
+        <CodeBlock lang="json" code={JSON.stringify(endpoint.example, null, 2)} />
       </section>
     </div>
   </div>;
@@ -338,7 +350,7 @@ function ModelTab({ catalog }) {
     </section>)}
     <section className="acCard apiMysql">
       <div className="acCardHead"><div><h2>Esquema sugerido para MySQL</h2><p>Tablas listas para copiar; los nombres de columna siguen los campos de la API.</p></div></div>
-      <CodeBlock code={catalog.mysql} />
+      <CodeBlock lang="sql" code={catalog.mysql} />
     </section>
   </div>;
 }
@@ -347,7 +359,7 @@ function ErrorsTab({ catalog }) {
   return <div className="acPanel">
     <section className="acCard apiErrors">
       <div className="acCardHead"><div><h2>Formato de error</h2><p>Cuando algo falla, la respuesta siempre tiene esta forma.</p></div></div>
-      <CodeBlock code={`{\n  "error": {\n    "code": "invalid_parameter",\n    "message": "from debe tener el formato AAAA-MM-DD."\n  }\n}`} />
+      <CodeBlock lang="json" code={`{\n  "error": {\n    "code": "invalid_parameter",\n    "message": "from debe tener el formato AAAA-MM-DD."\n  }\n}`} />
       <div className="apiTableWrap">
         <table className="apiTable">
           <thead><tr><th>HTTP</th><th>code</th><th>Qué significa</th><th>Qué hacer</th></tr></thead>
