@@ -48,6 +48,35 @@ function ruleFailures(calls, rulesById) {
     .sort((a, b) => b.pct - a.pct || b.failed - a.failed);
 }
 
+// Where the most points are lost per call: average of (points − earned) over the calls where the rule applied,
+// with the latest advice from the AI for that rule.
+function improvements(calls, rulesById, phases) {
+  const lost = new Map();
+  for (const call of calls) {
+    for (const item of call.items) {
+      if (!rulesById.has(item.ruleId) || item.level === "no_aplica") continue;
+      const entry = lost.get(item.ruleId) || { lost: 0, total: 0, good: 0 };
+      entry.lost += Math.max(0, (item.points || 0) - (item.earned || 0));
+      entry.total += 1;
+      if (GOOD_LEVELS.has(item.level)) entry.good += 1;
+      lost.set(item.ruleId, entry);
+    }
+  }
+  const newest = [...calls].sort((a, b) => b.at - a.at);
+  return [...lost.entries()]
+    .map(([ruleId, entry]) => {
+      const rule = rulesById.get(ruleId);
+      const tip = newest.flatMap((call) => call.items).find((item) => item.ruleId === ruleId && item.como_mejorar)?.como_mejorar || "";
+      return {
+        ruleId, title: rule.title, phase: phases.find((phase) => phase.id === rule.phaseId)?.name || "", points: rule.points,
+        lostPerCall: Math.round((entry.lost / entry.total) * 10) / 10, goodPct: Math.round((entry.good / entry.total) * 100), calls: entry.total, tip,
+      };
+    })
+    .filter((entry) => entry.lostPerCall > 0)
+    .sort((a, b) => b.lostPerCall - a.lostPerCall)
+    .slice(0, 3);
+}
+
 // Calls analyzed before the AI answered these only have the commitment type, which still gives Acuerdos.
 function validationState(id, call) {
   const answer = call.leadChecks?.[id];
@@ -75,12 +104,15 @@ async function pathFor(email, speech) {
   const snap = await db.collection("meetings_analysis").where("userEmail", "==", email).orderBy("createdAt", "desc").limit(80).select("scoring.items").get();
   const histories = new Map();
   const tips = new Map();
+  const praise = new Map();
   for (const doc of snap.docs) {
     for (const item of doc.data().scoring?.items || []) {
       if (!item?.ruleId || item.level === "no_aplica") continue;
       if (!histories.has(item.ruleId)) histories.set(item.ruleId, []);
       histories.get(item.ruleId).push(GOOD_LEVELS.has(item.level));
       if (item.como_mejorar && !tips.has(item.ruleId)) tips.set(item.ruleId, item.como_mejorar);
+      // What went well, from the newest call where the rule came out Excelente or Bien.
+      if (GOOD_LEVELS.has(item.level) && !praise.has(item.ruleId) && (item.que_paso || item.frase)) praise.set(item.ruleId, { text: item.que_paso || "", quote: item.frase || "" });
     }
   }
   let earnedPoints = 0;
@@ -91,7 +123,7 @@ async function pathFor(email, speech) {
       const state = ruleState(history);
       totalPoints += rule.points;
       if (state === "earned" || state === "risk") earnedPoints += rule.points;
-      return { id: rule.id, title: rule.title, points: rule.points, badge: rule.badge || null, state, recent: history.slice(0, PATH_WINDOW), tip: tips.get(rule.id) || "" };
+      return { id: rule.id, title: rule.title, points: rule.points, badge: rule.badge || null, state, recent: history.slice(0, PATH_WINDOW), tip: tips.get(rule.id) || "", praise: praise.get(rule.id) || null };
     });
     const earnedRules = rules.filter((rule) => rule.state === "earned" || rule.state === "risk").length;
     return { id: phase.id, name: phase.name, badge: phase.badge || null, rules, earnedRules, earned: rules.length > 0 && earnedRules === rules.length };
@@ -173,6 +205,9 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
     validations: VALIDATIONS.map(([, label]) => label),
     leads,
     counts: { team: team.length, mine: mine.length },
-    path: scope ? await pathFor(scope, speech) : null,
+    // Everyone sees their own path; roles that see everyone can pick another person above.
+    path: await pathFor(scope || requester.email, speech),
+    pathOwner: scope || requester.email,
+    improvements: improvements(mine, rulesById, phases),
   };
 }

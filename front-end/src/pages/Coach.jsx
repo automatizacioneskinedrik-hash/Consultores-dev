@@ -6,6 +6,7 @@ import MetricsTabs from "../components/MetricsTabs";
 import PersonOption from "../components/PersonOption";
 import WaCard from "../components/WaCard";
 import MiCamino from "../components/MiCamino";
+import { badgeSrc, ruleBadge } from "../utils/badges";
 import { getUser } from "../utils/user";
 import { seesAll } from "../utils/roles";
 import "./Dashboard.css";
@@ -21,10 +22,21 @@ const shortDate = (iso) => new Date(iso).toLocaleDateString("es-CO", { day: "num
 const formatScore = (value) => (value == null ? "—" : Number(value).toLocaleString("es-CO"));
 const share = (score) => (score && score.possible > 0 ? (100 * score.earned) / score.possible : null);
 
+// The insignia closest to being won in the first phase still open: most Excelente/Bien in the recent calls.
+function nextInsignia(path) {
+  const phase = path?.phases.find((entry) => !entry.earned);
+  if (!phase) return null;
+  const rule = phase.rules.filter((entry) => entry.state !== "earned" && entry.state !== "risk")
+    .sort((a, b) => b.recent.filter(Boolean).length - a.recent.filter(Boolean).length)[0];
+  if (!rule) return null;
+  const good = rule.recent.filter(Boolean).length;
+  return { rule, phase, missing: Math.max(1, path.needed - good), good, window: path.window };
+}
+
 const COACH_TOUR = [
   { title: "¡Hola! Aquí está tu coach", text: "Te muestro lo que haces bien, lo que puedes mejorar y el siguiente paso con cada lead." },
   { target: ".coachMatrix", title: "Matriz de calidad", text: "Cada barra es una fase del speech: los puntos que sacas de media por llamada, de los que vale. La raya marca la media del equipo." },
-  { target: ".coachBadgesCard", title: "Foco de mejora", text: "La regla que más te conviene trabajar ahora, con un consejo sacado de tus llamadas." },
+  { target: ".coachBadgesCard", title: "Foco de mejora", text: "Las tres reglas donde más puntos se pierden por llamada, cada una con su consejo, y tu próxima insignia." },
   { target: ".camCard", title: "Mi camino", text: "Cada regla del speech tiene su insignia: la ganas con Excelente o Bien en 3 de tus últimas 5 llamadas. Con todas las de una fase, ganas la de la fase." },
   { target: ".coachLeads", title: "Mis leads", text: "Cada llamada con su interés, su nota y las validaciones. Haz clic en una para ver su ficha y enviar el mensaje de WhatsApp." },
 ];
@@ -127,6 +139,7 @@ export default function Coach() {
   // With "Todos los consultores" the selection is the team, so there is nothing to compare against.
   const showTeam = !(viewsEveryone && consultant === "all");
   const pendingWa = (data?.leads || []).filter((lead) => lead.waPending).length;
+  const next = nextInsignia(data?.path);
   const leads = [...(data?.leads || [])].sort((a, b) => (b.interest ?? -1) - (a.interest ?? -1));
 
   return <div className="dashboardPage">
@@ -164,16 +177,27 @@ export default function Coach() {
             </div>
 
             <div className="coachCard coachBadgesCard">
-              <div className="coachCardHead"><h3>Foco de mejora</h3></div>
-              {!data.focus && <p className="coachMut">Sin un foco claro todavía.</p>}
-              {data.focus && <div className="coachFoco"><b>{data.focus.rule}{data.focus.tip ? `: ${data.focus.tip}` : ""}</b>
-                <span>{showTeam ? "Tu" : "La"} fase más floja es {data.focus.phase}: {formatScore(data.focus.mine.earned)} de {formatScore(data.focus.mine.possible)} pts{showTeam && data.focus.team ? ` (equipo ${formatScore(data.focus.team.earned)})` : ""}, y «{data.focus.rule.toLowerCase()}» se escapa en el {data.focus.pct} % de las llamadas.</span></div>}
+              <div className="coachCardHead"><h3>Foco de mejora</h3><span className="coachChip">dónde más puntos se pierden</span></div>
+              {data.improvements?.length ? <ol className="coachImprove">
+                {data.improvements.map((entry, index) => <li key={entry.ruleId} className={index === 0 ? "main" : ""}>
+                  <span className="coachImproveNum" aria-hidden="true">{index + 1}</span>
+                  <div>
+                    <b>{entry.title}</b>
+                    <small>{entry.phase} · se pierden {formatScore(entry.lostPerCall)} de {entry.points} pts por llamada · Excelente o Bien en el {entry.goodPct} %</small>
+                    {entry.tip && <p>{entry.tip}</p>}
+                  </div>
+                </li>)}
+              </ol> : <p className="coachMut">Todavía no hay llamadas con el speech activo para calcularlo.</p>}
+              {next && <div className="coachNextBadge">
+                {ruleBadge(next.rule) && <img src={badgeSrc(ruleBadge(next.rule))} alt="" />}
+                <div><small>Tu próxima insignia</small><b>{next.rule.title}</b><span>{next.phase.name} · Excelente o Bien en {next.good} de tus últimas {next.window} · te {next.missing === 1 ? "falta 1" : `faltan ${next.missing}`}</span></div>
+              </div>}
             </div>
           </div>
 
-          {data.path
-            ? <MiCamino key={consultant} path={data.path} storageKey={`kinedrik_camino_${user.email || ""}_${consultant}`} />
-            : <div className="coachCard camCard camEmpty"><div className="camHead"><h3>Mi camino</h3><p>Elige un consultor arriba para ver sus insignias.</p></div></div>}
+          {data.path && <MiCamino key={data.pathOwner} path={data.path}
+            title={data.pathOwner === String(user.email || "").toLowerCase() ? "Mi camino" : `Camino de ${people.find((person) => person.value === data.pathOwner)?.label || data.pathOwner}`}
+            storageKey={`kinedrik_camino_${user.email || ""}_${data.pathOwner}`} />}
 
           <div className="coachCard coachLeads">
             <div className="coachNavhd"><div><h3>Mis leads</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>
