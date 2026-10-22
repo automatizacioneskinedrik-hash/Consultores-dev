@@ -7,6 +7,7 @@ import { getActiveSpeech, getSpeechVersion } from "../prompts/speechConfig.js";
 const VALIDATIONS = [["producto", "Producto"], ["precio", "Precio"], ["acuerdos", "Acuerdos"]];
 const STATE = { si: "ok", parcial: "pa", no: "pe" };
 const BAD = new Set(["debil", "no_lo_hizo"]);
+const GOOD_LEVELS = new Set(["excelente", "bien"]);
 const pct = (earned, possible) => (possible > 0 ? Math.round((earned / possible) * 100) : null);
 
 // Average points per call in each phase, out of what the phase is worth (only calls where the phase applied).
@@ -54,6 +55,54 @@ function validationState(id, call) {
   if (state) return { state, why: answer.motivo || "" };
   if (id !== "acuerdos" || !call.commitment) return null;
   return { state: { firme: "ok", condicionado: "pa" }[call.commitment] || "pe", why: `Compromiso ${call.commitment.replace("_", " ")}.` };
+}
+
+// Mi camino: a rule insignia is earned with Excelente/Bien in 3 of the last 5 calls where the rule applied, and
+// lost when that stops being true. A phase is earned with all its rule insignias. Calls of earlier speech versions
+// count for the rules that still exist (same id), so changing the speech does not reset everyone.
+const PATH_WINDOW = 5;
+const PATH_NEEDED = 3;
+
+function ruleState(history) {
+  const recent = history.slice(0, PATH_WINDOW);
+  const good = recent.filter(Boolean).length;
+  const earned = good >= PATH_NEEDED;
+  if (earned) return good === PATH_NEEDED && recent[0] === false ? "risk" : "earned";
+  return history.slice(1, PATH_WINDOW + 1).filter(Boolean).length >= PATH_NEEDED ? "lost" : "pending";
+}
+
+async function pathFor(email, speech) {
+  const snap = await db.collection("meetings_analysis").where("userEmail", "==", email).orderBy("createdAt", "desc").limit(80).select("scoring.items").get();
+  const histories = new Map();
+  const tips = new Map();
+  for (const doc of snap.docs) {
+    for (const item of doc.data().scoring?.items || []) {
+      if (!item?.ruleId || item.level === "no_aplica") continue;
+      if (!histories.has(item.ruleId)) histories.set(item.ruleId, []);
+      histories.get(item.ruleId).push(GOOD_LEVELS.has(item.level));
+      if (item.como_mejorar && !tips.has(item.ruleId)) tips.set(item.ruleId, item.como_mejorar);
+    }
+  }
+  let earnedPoints = 0;
+  let totalPoints = 0;
+  const phases = speech.phases.map((phase) => {
+    const rules = speech.rules.filter((rule) => rule.phaseId === phase.id).map((rule) => {
+      const history = histories.get(rule.id) || [];
+      const state = ruleState(history);
+      totalPoints += rule.points;
+      if (state === "earned" || state === "risk") earnedPoints += rule.points;
+      return { id: rule.id, title: rule.title, points: rule.points, badge: rule.badge || null, state, recent: history.slice(0, PATH_WINDOW), tip: tips.get(rule.id) || "" };
+    });
+    const earnedRules = rules.filter((rule) => rule.state === "earned" || rule.state === "risk").length;
+    return { id: phase.id, name: phase.name, badge: phase.badge || null, rules, earnedRules, earned: rules.length > 0 && earnedRules === rules.length };
+  }).filter((phase) => phase.rules.length);
+  return {
+    window: PATH_WINDOW,
+    needed: PATH_NEEDED,
+    pct: totalPoints ? Math.round((earnedPoints / totalPoints) * 100) : 0,
+    mastered: phases.length > 0 && phases.every((phase) => phase.earned),
+    phases,
+  };
 }
 
 const toCall = (doc) => {
@@ -124,5 +173,6 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
     validations: VALIDATIONS.map(([, label]) => label),
     leads,
     counts: { team: team.length, mine: mine.length },
+    path: scope ? await pathFor(scope, speech) : null,
   };
 }

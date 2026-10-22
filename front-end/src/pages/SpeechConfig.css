@@ -213,3 +213,7 @@ body.sidebar-collapsed .speechConfigContent { margin-left: 88px; }
 .speechExcludeAdd { display: flex; gap: 8px; align-items: center; max-width: 520px; }
 .speechExcludeAdd input { flex: 1 1 auto; min-width: 0; border: 1px solid #dce3ed; border-radius: 8px; padding: 7px 10px; font: 13px Roboto, Helvetica, Arial, sans-serif; color: #040025; }
 .speechExcludeAdd input:focus { outline: none; border-color: #0040a4; }
+
+/* Insignias chosen from the library */
+.speechRuleBadge { float: left; width: 34px; height: 34px; object-fit: contain; margin: 0 10px 0 0; }
+.speechPhaseBadge { width: 44px; height: 44px; object-fit: contain; flex: none; margin: -4px 2px -4px -2px; }

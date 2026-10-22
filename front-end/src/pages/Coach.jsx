@@ -5,6 +5,7 @@ import GuideTour from "../components/GuideTour";
 import MetricsTabs from "../components/MetricsTabs";
 import PersonOption from "../components/PersonOption";
 import WaCard from "../components/WaCard";
+import MiCamino from "../components/MiCamino";
 import { getUser } from "../utils/user";
 import { seesAll } from "../utils/roles";
 import "./Dashboard.css";
@@ -24,6 +25,7 @@ const COACH_TOUR = [
   { title: "¡Hola! Aquí está tu coach", text: "Te muestro lo que haces bien, lo que puedes mejorar y el siguiente paso con cada lead." },
   { target: ".coachMatrix", title: "Matriz de calidad", text: "Cada barra es una fase del speech: los puntos que sacas de media por llamada, de los que vale. La raya marca la media del equipo." },
   { target: ".coachBadgesCard", title: "Foco de mejora", text: "La regla que más te conviene trabajar ahora, con un consejo sacado de tus llamadas." },
+  { target: ".camCard", title: "Mi camino", text: "Cada regla del speech tiene su insignia: la ganas con Excelente o Bien en 3 de tus últimas 5 llamadas. Con todas las de una fase, ganas la de la fase." },
   { target: ".coachLeads", title: "Mis leads", text: "Cada llamada con su interés, su nota y las validaciones. Haz clic en una para ver su ficha y enviar el mensaje de WhatsApp." },
 ];
 
@@ -162,12 +164,16 @@ export default function Coach() {
             </div>
 
             <div className="coachCard coachBadgesCard">
-              <div className="coachCardHead"><h3>Insignias</h3><span className="coachChip">Próximamente</span></div>
-              <p className="coachMut coachNoBadges">Estamos diseñando las insignias: una ruta con logros y personajes.</p>
-              {data.focus && <div className="coachFoco"><small>Foco de mejora</small><b>{data.focus.rule}{data.focus.tip ? `: ${data.focus.tip}` : ""}</b>
+              <div className="coachCardHead"><h3>Foco de mejora</h3></div>
+              {!data.focus && <p className="coachMut">Sin un foco claro todavía.</p>}
+              {data.focus && <div className="coachFoco"><b>{data.focus.rule}{data.focus.tip ? `: ${data.focus.tip}` : ""}</b>
                 <span>{showTeam ? "Tu" : "La"} fase más floja es {data.focus.phase}: {formatScore(data.focus.mine.earned)} de {formatScore(data.focus.mine.possible)} pts{showTeam && data.focus.team ? ` (equipo ${formatScore(data.focus.team.earned)})` : ""}, y «{data.focus.rule.toLowerCase()}» se escapa en el {data.focus.pct} % de las llamadas.</span></div>}
             </div>
           </div>
+
+          {data.path
+            ? <MiCamino key={consultant} path={data.path} storageKey={`kinedrik_camino_${user.email || ""}_${consultant}`} />
+            : <div className="coachCard camCard camEmpty"><div className="camHead"><h3>Mi camino</h3><p>Elige un consultor arriba para ver sus insignias.</p></div></div>}
 
           <div className="coachCard coachLeads">
             <div className="coachNavhd"><div><h3>Mis leads</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>

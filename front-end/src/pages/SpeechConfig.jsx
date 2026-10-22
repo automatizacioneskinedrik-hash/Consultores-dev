@@ -4,6 +4,8 @@ import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import ChangeHistory from "../components/ChangeHistory";
 import UserAvatar from "../components/UserAvatar";
+import BadgeField from "../components/BadgePicker";
+import { badgeSrc, phaseBadge, ruleBadge } from "../utils/badges";
 import { DEFAULT_GAPS, GAP_KINDS, GAP_STOPS, formatGap, stopIndex } from "../utils/muletillaGaps";
 
 const SPEECH_TOUR_CLEANUP = [{ click: "#speech-tab-version" }];
@@ -199,8 +201,10 @@ function PointsSummary({ groups, total }) {
 
 function RuleRow({ rule, editable, editing, onEdit, onChange, onRemove }) {
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const badge = ruleBadge(rule);
   return <div className="speechRule">
     <div className="speechRuleText">
+      {badge && <img className="speechRuleBadge" src={badgeSrc(badge)} alt="" />}
       <strong>{rule.title || "Regla sin texto"}</strong>
       {rule.allowNotApplicable && <span className="speechTag">No resta si no ocurre</span>}
     </div>
@@ -228,6 +232,7 @@ function RuleRow({ rule, editable, editing, onEdit, onChange, onRemove }) {
         <label htmlFor={`ruleGuidance-${rule.id}`}>Ayuda para la IA (opcional)</label>
         <input id={`ruleGuidance-${rule.id}`} value={rule.guidance || ""} maxLength={1500} placeholder="Ej. Vale si pregunta por ingresos o capacidad de pago" onChange={(event) => onChange("guidance", event.target.value)} />
       </div>
+      <BadgeField kind="rule" value={badge} editable onChange={(id) => onChange("badge", id)} />
       <label className="speechSwitch">
         <input type="checkbox" checked={rule.allowNotApplicable} onChange={(event) => onChange("allowNotApplicable", event.target.checked)} />
         <span>No restar si la situación no ocurre<small>Ejemplo: si el cliente no pone objeciones, la regla de objeciones no cuenta.</small></span>
@@ -493,10 +498,11 @@ export default function SpeechConfig() {
                         {editing && editingPhase === group.id
                             ? <div className="speechEditor">
                               <div className="speechInputField"><label htmlFor={`phaseName-${group.id}`}>Nombre de la fase</label><input id={`phaseName-${group.id}`} autoFocus value={group.name} maxLength={100} onChange={(event) => changePhase(group.id, "name", event.target.value)} /></div>
+                              <BadgeField kind="phase" value={phaseBadge(group)} editable onChange={(id) => changePhase(group.id, "badge", id)} />
                               <div className="speechInputField"><label htmlFor={`phaseObjective-${group.id}`}>Objetivo</label><input id={`phaseObjective-${group.id}`} value={group.objective} maxLength={2000} placeholder="Para qué sirve esta fase en la llamada" onChange={(event) => changePhase(group.id, "objective", event.target.value)} /></div>
                               <div className="speechEditorActions"><span /><button type="button" className="speechPrimaryButton" onClick={() => setEditingPhase(null)}>Listo</button></div>
                             </div>
-                            : <div className="speechObjective"><b>Objetivo</b><p>{group.objective || "Sin objetivo definido."}</p>{editing && <button type="button" className="speechLinkButton" onClick={() => setEditingPhase(group.id)}>Editar fase</button>}</div>}
+                            : <div className="speechObjective">{phaseBadge(group) && <img className="speechPhaseBadge" src={badgeSrc(phaseBadge(group))} alt="" />}<b>Objetivo</b><p>{group.objective || "Sin objetivo definido."}</p>{editing && <button type="button" className="speechLinkButton" onClick={() => setEditingPhase(group.id)}>Editar fase</button>}</div>}
 
                         <p className="speechSectionLabel"><span>Reglas de esta fase ({count})</span><span>Puntos</span></p>
                         <div className="speechRules">

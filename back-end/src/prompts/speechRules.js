@@ -16,6 +16,9 @@ export const RULE_LEVELS = Object.freeze([
 
 const LEVEL_FACTORS = new Map(RULE_LEVELS.map((level) => [level.id, level.factor]));
 const ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+const BADGE_PATTERN = /^[a-z0-9-]{1,60}$/;
+// Insignia chosen from the library in Speech comercial (an image name); empty means the default one.
+const badgeId = (value) => (typeof value === "string" && BADGE_PATTERN.test(value) ? value : "");
 
 // Muletillas indicator: the system counts the "count" words in the consultant's lines and GPT judges
 // them in context. Starting lists come from the analysis of 946 stored transcriptions (2026-10-08).
@@ -102,6 +105,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     id: text(entry?.id, `ID de fase ${index + 1}`, 64),
     name: text(entry?.name, `Nombre de fase ${index + 1}`, 100),
     objective: text(entry?.objective, `Objetivo de fase ${index + 1}`, 2000, { required }),
+    badge: badgeId(entry?.badge),
   }));
   const phaseIds = new Set(phases.map((entry) => entry.id));
   if (phases.some((entry) => !ID_PATTERN.test(entry.id) || entry.id === GENERAL_GROUP_ID) || phaseIds.size !== phases.length) {
@@ -122,6 +126,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
       guidance: text(entry?.guidance, `${label}: detalle`, 1500, { required: false }),
       points,
       allowNotApplicable: entry?.allowNotApplicable === true,
+      badge: badgeId(entry?.badge),
     };
   });
   if (rules.some((entry) => !ID_PATTERN.test(entry.id)) || new Set(rules.map((entry) => entry.id)).size !== rules.length) {
