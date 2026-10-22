@@ -833,8 +833,10 @@
    ======================================================================= */
 @media print {
   /* Quitar los encabezados y pies de página por defecto del navegador (como el localhost o la fecha) */
+  /* Top and bottom margin on every page (not only the first); a margin box also hides the browser header and footer. */
   @page {
-    margin: 0;
+    margin: 14mm 0;
+    @bottom-right { content: counter(page) " / " counter(pages); font: 9px Roboto, sans-serif; color: #94a3b8; margin-right: 2cm; }
   }
 
   /* Limpiar el fondo gris global */
@@ -885,7 +887,7 @@
     position: static;
     width: 100%;
     height: auto;
-    padding: 2cm !important; /* Margen para el PDF ya que quitamos el del navegador */
+    padding: 0 2cm !important; /* Laterales; arriba y abajo los pone @page en cada hoja */
     background: white !important;
     display: block;
     margin: 0;
@@ -947,4 +949,12 @@
     page-break-inside: avoid;
     break-inside: avoid;
   }
+
+  /* The credits line is small: keep it on the last page with the content instead of alone on a new one. */
+  .reportFooter {
+    padding: 8px 0 0;
+    margin-top: 12px;
+    break-before: avoid;
+  }
+  .footerLine { margin-bottom: 8px; }
 }

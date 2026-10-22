@@ -52,9 +52,12 @@
 .metricsGrid.psSingle { grid-template-columns: 1fr; }
 
 @media print {
-  .psRules.psCollapsed { display: grid; }
+  /* A phase may continue on the next page; only a single rule stays whole, so long speeches leave no half-empty pages. */
+  .psList, .psCard, .psRules, .psRules.psCollapsed { display: block; }
+  .psList > * + *, .psCard > * + *, .psRules > * + * { margin-top: 12px; }
   .psToggle { display: none; }
-  .psCard, .psRule { break-inside: avoid; }
+  .psCardTop, .psProgress, .psObjective { break-after: avoid; }
+  .psRule, .psIndicator, .psSemaforo, .psTimelineRow, .psCardTop, .psObjective { break-inside: avoid; }
 }
 @media (max-width: 680px) {
   .psHeroCircles { gap: 12px; }

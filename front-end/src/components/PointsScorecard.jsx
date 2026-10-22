@@ -5,6 +5,10 @@ import "./PointsScorecard.css";
 
 const ZONE_COLORS = [LEVELS.excelente.color, LEVELS.bien.color, LEVELS.regular.color, LEVELS.debil.color];
 
+// The talk ratio measures how much the consultant talked, so its levels read as amounts, not as "did it or not".
+const RATIO_LABELS = { excelente: "Ideal", bien: "Bien", regular: "Algo alto", debil: "Alto", no_lo_hizo: "Muy alto" };
+const normalizeWord = (word) => String(word).toLowerCase().trim();
+
 const formatPoints = (value) => (Math.round(value * 100) / 100).toLocaleString("es-CO");
 
 function RuleFeedback({ rule, item }) {
@@ -86,7 +90,11 @@ export default function PointsScorecard({ scoring, speech, clientName }) {
   const muletillasItem = items.get("muletillas");
   const ratioLevel = LEVELS[ratioItem?.level] || null;
   const muletillasLevel = LEVELS[muletillasItem?.level] || null;
+  const ratioLabel = RATIO_LABELS[ratioItem?.level] || ratioLevel?.label;
   const limits = scoring.talkRatio?.limits || [];
+  // "Otras repeticiones" only lists words not already shown above.
+  const shownWords = new Set([...(scoring.muletillas?.timeline?.words || []).map((entry) => entry.word), ...(scoring.muletillas?.byWord || []).map((entry) => entry.word)].map(normalizeWord));
+  const otherWords = (scoring.muletillas?.notListed || []).filter((word) => !shownWords.has(normalizeWord(word)));
   const pct = scoring.talkRatio?.consultantPct;
 
   return <div className="psList">
@@ -114,16 +122,16 @@ export default function PointsScorecard({ scoring, speech, clientName }) {
       </section>;
     })}
 
-    {ratioItem && <section className="psCard">
+    {ratioItem && <section className="psCard psIndicator">
       <div className="psCardTop">
         <strong>Ratio de habla</strong>
         <span className="psPoints" style={{ color: ratioLevel.color }}>{formatPoints(ratioItem.earned)} <small>/ {ratioItem.points} pts</small></span>
       </div>
       {limits.length > 0 && Number.isFinite(pct) && <TrafficBar limits={limits} value={pct} />}
-      <p className="psObjective">Hablaste el {pct} % de la llamada{clientName ? ` con ${clientName}` : ""}: <b>{ratioLevel.label}</b>.{limits.length ? ` El ideal es hasta ${limits[0]} %.` : ""}</p>
+      <p className="psObjective">Hablaste el {pct} % de la llamada{clientName ? ` con ${clientName}` : ""}: <b>{ratioLabel}</b>.{limits.length ? ` El ideal es hasta ${limits[0]} %.` : ""}</p>
     </section>}
 
-    {muletillasItem && <section className="psCard">
+    {muletillasItem && <section className="psCard psIndicator">
       <div className="psCardTop">
         <strong>Muletillas</strong>
         <span className="psPoints" style={{ color: muletillasLevel.color }}>{formatPoints(muletillasItem.earned)} <small>/ {muletillasItem.points} pts</small></span>
@@ -138,9 +146,9 @@ export default function PointsScorecard({ scoring, speech, clientName }) {
         <p className="psObjective">Las que más repetiste:</p>
         <div className="psWords">{scoring.muletillas.byWord.slice(0, 8).map((entry) => <span key={entry.word}>{entry.word} · {entry.count}</span>)}</div>
       </>}
-      {scoring.muletillas?.notListed?.length > 0 && <>
+      {otherWords.length > 0 && <>
         <p className="psObjective">Otras repeticiones detectadas:</p>
-        <div className="psWords">{scoring.muletillas.notListed.map((word) => <span key={word}>{word}</span>)}</div>
+        <div className="psWords">{otherWords.map((word) => <span key={word}>{word}</span>)}</div>
       </>}
       {muletillasItem.que_paso && <p>{muletillasItem.que_paso}</p>}
       {muletillasItem.como_mejorar && <div className="psFix"><b>Cómo mejorarlo:</b> {muletillasItem.como_mejorar}</div>}
