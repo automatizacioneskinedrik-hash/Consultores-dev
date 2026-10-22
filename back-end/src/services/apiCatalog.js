@@ -25,6 +25,71 @@ const SESSION_EXAMPLE = {
 };
 
 export const API_CATALOG = {
+  // "Cómo funciona Speech": how the system is built, for an engineer who has to understand or continue it.
+  system: {
+    layers: [
+      { title: "Quien usa Speech", items: [["Navegador", "Speech se abre dentro del Portal de Admisiones (iframe) o directo. Inicio de sesión con Google."]] },
+      { title: "Web", items: [["Frontend", "React 18 + Vite, servido por nginx en Cloud Run. Código en front-end/."]] },
+      { title: "API", items: [["Backend", "Node.js + Express en Cloud Run. Código en back-end/. Valida cada petición con el correo y el token de la sesión."]] },
+      { title: "Servicios", items: [
+        ["Firestore", "Base de datos: usuarios, sesiones, speech, configuración y costos."],
+        ["Cloud Storage", "Los audios de las llamadas."],
+        ["AssemblyAI", "Transcribe y separa al consultor del cliente, con la hora de cada palabra."],
+        ["OpenAI o Claude", "Califica la llamada con el speech activo. El modelo se elige en Configuración avanzada."],
+        ["Correo (SMTP)", "Envía la alerta diaria de grabaciones."],
+        ["BigQuery", "Exportación de la facturación de Google Cloud, para Costos."],
+        ["Secret Manager", "Guarda todas las llaves y contraseñas. Nunca están en el código."],
+      ] },
+    ],
+    callFlow: [
+      ["Subir", "La web pide una URL firmada (POST /api/upload/signed-url) y sube el audio directo a Cloud Storage, en audios/{usuario}/{año}/{mes}/{día}/.", "uploadController.js"],
+      ["Avisar", "La web avisa que terminó (POST /api/upload/complete). Una transacción en analysis_status evita analizar dos veces el mismo audio; la llamada queda «En cola».", "uploadController.js · analysisStatus.js"],
+      ["Transcribir", "El backend descarga el audio y lo envía a AssemblyAI con separación de hablantes. Se registran los segundos de audio para Costos.", "analysisService.js"],
+      ["Calificar", "Se arma el prompt con el speech activo (fases, reglas, ayuda para la IA) y se envía al modelo activo. La IA devuelve un nivel por regla, las muletillas que detecta, Producto/Precio/Acuerdos y el mensaje de WhatsApp.", "pointsEngine.js · pointsGrading.js · aiClient.js"],
+      ["Calcular la nota", "El motor de puntos convierte cada nivel en puntos. El sistema mide el ratio de habla y el tiempo entre muletillas; las reglas «No aplica» salen del cálculo. Resultado: nota de 0 a 100.", "pointsEngine.js · speechRules.js"],
+      ["Guardar", "La sesión se guarda en meetings_analysis con una copia del speech usado, así una llamada vieja se sigue viendo igual aunque el speech cambie. El mensaje de WhatsApp va a followUps.", "analysisService.js"],
+      ["Mostrar", "analysis_status pasa a «Listo» con el tiempo que tardó. Historial, Cuantitativas y Coach leen meetings_analysis según el cargo de quien mira.", "sessionController.js · coachMetrics.js"],
+    ],
+    collections: [
+      ["users", "Personas: correo, nombre, cargo, foto y token de sesión."],
+      ["meetings_analysis", "Una por llamada analizada: transcripción, análisis de la IA, nota, calificación por regla y copia del speech."],
+      ["analysis_status", "Estado de cada subida (en cola, transcribiendo, calificando, listo o error) y sus tiempos."],
+      ["speech_config / speech_versions", "speech_config/state dice qué versión está activa; speech_versions guarda cada versión publicada."],
+      ["ai_config", "Modelo de IA activo, modelos visibles e historial de cambios."],
+      ["followupPrompts", "Instrucciones para el mensaje de WhatsApp (con versiones)."],
+      ["followUps", "Mensajes de WhatsApp sugeridos por llamada y si se enviaron o descartaron."],
+      ["settings", "settings/email_config: quién recibe la alerta de grabaciones."],
+      ["audit_log", "Quién cambió qué y cuándo, por sección."],
+      ["daily_costs · cost_meta · assembly_usage", "Costos diarios por proveedor, estado de la última recolección y uso de AssemblyAI."],
+      ["alert_meta", "Último día enviado de la alerta de grabaciones."],
+      ["api_keys", "Llaves de otros sistemas (solo el hash)."],
+      ["prompts", "Prompt del formato anterior de calificación. Solo lo usan llamadas antiguas."],
+    ],
+    environments: [
+      ["develop", "Rama develop → activador Activador-Consultores-develop → Cloud Build (cloudbuild.yaml) construye dos imágenes Docker → Artifact Registry → Cloud Run backend-dev y frontend-dev, en us-central1."],
+      ["producción", "Rama main → activador Activador-Consultores-main → mismos pasos hacia los servicios de producción."],
+      ["Base compartida", "Develop y producción usan la misma Firestore: lo que se prueba en develop (borrar, enviar la alerta) afecta datos reales."],
+      ["Si no despliega", "El activador corre cuando GitHub avisa del push. Si en un minuto no aparece en Cloud Build › Historial, ejecútalo a mano en Cloud Build › Activadores › Ejecutar."],
+    ],
+    configuration: [
+      ["Speech comercial", "Fases, reglas, puntos, ayuda para la IA, «No aplica», ratio de habla y muletillas. Cada publicación crea una versión; solo las llamadas nuevas usan la activa."],
+      ["Configuración avanzada", "Modelo de IA, instrucción del mensaje de WhatsApp y destinatarios de la alerta de grabaciones."],
+      ["Matriz de roles", "En el código: back-end/src/roles.js (manda) y front-end/src/utils/roles.js (lo que muestra la pantalla). Define qué ve y qué gestiona cada cargo."],
+      ["Secretos", "OPENAI_API_KEY, ANTHROPIC_API_KEY, ASSEMBLYAI_API_KEY, EMAIL_HOST/PORT/USER/PASS/FROM, OPENAI_ADMIN_KEY y ANTHROPIC_ADMIN_KEY, en Secret Manager; Cloud Build los inyecta al desplegar."],
+    ],
+    background: [
+      ["Costos", "La primera visita a Costos después del cierre diario (03:00 UTC) lee OpenAI (Costs API), Anthropic (cost report), BigQuery (facturación de Google, convertida a USD) y calcula AssemblyAI por hora de audio."],
+      ["Alerta de grabaciones", "La primera petición de un día hábil desde las 7:00 (UTC−5) envía el resumen del día hábil anterior. Una transacción en alert_meta evita enviarla dos veces."],
+    ],
+    code: [
+      ["back-end/src/routes", "Rutas de la API (qué URL atiende cada archivo)."],
+      ["back-end/src/controllers", "Lógica de cada pantalla: subidas, sesiones, usuarios, speech."],
+      ["back-end/src/services", "Procesos: análisis, estados, costos, Coach, alerta, API pública."],
+      ["back-end/src/prompts", "Speech: reglas, motor de puntos, prompts de la IA."],
+      ["front-end/src/pages", "Una página por sección del menú."],
+      ["front-end/src/components", "Piezas compartidas: menú, reporte, recorridos, historial de cambios."],
+    ],
+  },
   version: "v1",
   basePath: "/api/v1",
   rateLimit: 60,

@@ -17,22 +17,24 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001
 const MAX_SHOWN_CHARS = 60000;
 
 const TABS = [
-  ["start", "Inicio"],
+  ["system", "Cómo funciona"],
+  ["start", "Conectar"],
   ["keys", "Llaves de acceso"],
   ["reference", "Referencia"],
   ["model", "Modelo de datos"],
   ["errors", "Errores y límites"],
 ];
 
-const API_TOUR_CLEANUP = [{ click: "#api-tab-start" }];
+const API_TOUR_CLEANUP = [{ click: "#api-tab-system" }];
 const API_TOUR = [
   { title: "¡Hola! Soy el guía técnico", text: "Aquí está todo para conectar otros sistemas con Speech. Te muestro cada parte." },
-  { do: [{ click: "#api-tab-start" }], target: ".apiBase", title: "Empieza por aquí", text: "La dirección de la API y cómo autenticarte en cada consulta." },
+  { do: [{ click: "#api-tab-system" }], target: ".sysMap", title: "Cómo está construido", text: "Las piezas del sistema, el recorrido de una llamada y dónde vive cada dato." },
+  { do: [{ click: "#api-tab-start" }], target: ".apiBase", title: "Para conectar otro sistema", text: "La dirección de la API y cómo autenticarte en cada consulta." },
   { do: [{ click: "#api-tab-keys" }], target: ".apiKeyCreate", title: "Una llave por sistema", text: "Crea una llave para cada sistema que se conecte. Solo se muestra una vez: guárdala." },
   { do: [{ click: "#api-tab-reference" }], target: ".apiTry", title: "Prueba sin instalar nada", text: "Cada consulta trae ejemplos en cURL, JavaScript y Python, y un botón para probarla en vivo." },
   { do: [{ click: "#api-tab-model" }], target: ".apiMysql", title: "Tablas listas para MySQL", text: "Qué significa cada campo y un esquema para copiar y crear las tablas." },
   { do: [{ click: "#api-tab-errors" }], target: ".apiErrors", title: "Si algo falla", text: "Qué significa cada código de error y qué hacer." },
-  { do: [{ click: "#api-tab-start" }], title: "¡Listo!", text: "Si quieres repetir el recorrido, haz clic en mí, abajo a la izquierda." },
+  { do: [{ click: "#api-tab-system" }], title: "¡Listo!", text: "Si quieres repetir el recorrido, haz clic en mí, abajo a la izquierda." },
 ];
 
 const formatDate = (iso) => (iso ? new Date(iso).toLocaleString("es-CO", { dateStyle: "medium", timeStyle: "short" }) : "—");
@@ -90,6 +92,74 @@ function snippets(base, endpoint, values) {
     javascript: `const res = await fetch("${fullUrl}", {\n  headers: { Authorization: \`Bearer \${process.env.SPEECH_API_KEY}\` },\n});\nif (!res.ok) throw new Error((await res.json()).error.message);\nconst data = await res.json();`,
     python: `import os, requests\n\nres = requests.get(\n    "${url}",\n    headers={"Authorization": f"Bearer {os.environ['SPEECH_API_KEY']}"},${query.length ? `\n    params={${query.map(([name, value]) => `"${name}": ${pyValue(value)}`).join(", ")}},` : ""}\n    timeout=30,\n)\nres.raise_for_status()\ndata = res.json()`,
   };
+}
+
+function KeyValueList({ rows }) {
+  return <dl className="sysList">{rows.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{value}</dd></div>)}</dl>;
+}
+
+function SystemTab({ system }) {
+  return <div className="acPanel">
+    <section className="acCard sysMap">
+      <div className="acCardHead"><div><h2>Mapa del sistema</h2><p>De arriba abajo: quien usa Speech, la web, la API y los servicios que usa.</p></div></div>
+      <div className="sysLayers">
+        {system.layers.map((layer, index) => <div key={layer.title} className="sysLayerWrap">
+          {index > 0 && <div className="sysArrow" aria-hidden="true" />}
+          <div className="sysLayer">
+            <span className="sysLayerTitle">{layer.title}</span>
+            <div className={layer.items.length > 1 ? "sysBoxes many" : "sysBoxes"}>
+              {layer.items.map(([name, text]) => <div key={name} className="sysBox"><b>{name}</b><p>{text}</p></div>)}
+            </div>
+          </div>
+        </div>)}
+      </div>
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Recorrido de una llamada</h2><p>Qué pasa desde que se sube un audio hasta que se ve el reporte.</p></div></div>
+      <ol className="sysFlow">
+        {system.callFlow.map(([title, text, files], index) => <li key={title}>
+          <span className="sysStep" aria-hidden="true">{index + 1}</span>
+          <div><b>{title}</b><p>{text}</p><div className="sysFiles">{files.split(" · ").map((file) => <code key={file}>{file}</code>)}</div></div>
+        </li>)}
+      </ol>
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Dónde vive cada dato</h2><p>Colecciones de Firestore. Los audios están en Cloud Storage.</p></div></div>
+      <div className="apiTableWrap">
+        <table className="apiTable">
+          <thead><tr><th>Colección</th><th>Qué guarda</th></tr></thead>
+          <tbody>{system.collections.map(([name, text]) => <tr key={name}><td><code>{name}</code></td><td>{text}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Ambientes y despliegue</h2></div></div>
+      <KeyValueList rows={system.environments} />
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Qué se configura y dónde</h2></div></div>
+      <KeyValueList rows={system.configuration} />
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Procesos automáticos</h2><p>No hay tareas programadas: corren con la primera petición que llega cuando toca.</p></div></div>
+      <KeyValueList rows={system.background} />
+    </section>
+
+    <section className="acCard">
+      <div className="acCardHead"><div><h2>Dónde está el código</h2></div></div>
+      <div className="apiTableWrap">
+        <table className="apiTable">
+          <thead><tr><th>Carpeta</th><th>Qué contiene</th></tr></thead>
+          <tbody>{system.code.map(([folder, text]) => <tr key={folder}><td><code>{folder}</code></td><td>{text}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>;
 }
 
 function StartTab({ base, catalog }) {
@@ -381,7 +451,7 @@ function ErrorsTab({ catalog }) {
 export default function ApiDocs() {
   const user = useMemo(() => getUser() || {}, []);
   const authHeaders = useMemo(() => ({ "X-Admin-Email": user.email || "", "X-Auth-Token": user.authToken || "" }), [user]);
-  const [activeTab, setActiveTab] = useState("start");
+  const [activeTab, setActiveTab] = useState("system");
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState("");
   const base = catalog ? `${API_BASE_URL}${catalog.basePath}` : "";
@@ -413,6 +483,7 @@ export default function ApiDocs() {
       <section className="speechTabPanel" id="api-tab-panel" role="tabpanel" aria-labelledby={`api-tab-${activeTab}`}>
         {error && <div role="status" className="speechNotice error">{error}</div>}
         {!catalog && !error && <p className="acHint">Cargando documentación…</p>}
+        {catalog && activeTab === "system" && <SystemTab system={catalog.system} />}
         {catalog && activeTab === "start" && <StartTab base={base} catalog={catalog} />}
         {catalog && activeTab === "keys" && <KeysTab authHeaders={authHeaders} />}
         {catalog && activeTab === "reference" && <ReferenceTab base={base} catalog={catalog} authHeaders={authHeaders} />}
