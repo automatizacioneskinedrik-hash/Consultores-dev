@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getUser, clearUser } from "../utils/user";
 import { canManage, cargoOf } from "../utils/roles";
-import { BookOpenText, ChartNoAxesCombined, CloudUpload, Coins, Menu, Settings, Users } from "lucide-react";
+import { BookOpenText, Braces, ChartNoAxesCombined, CloudUpload, Coins, Menu, Settings, Users } from "lucide-react";
 import "../styles/Sidebar.css";
 
 // Each section has its own mascot peeking over the sidebar.
@@ -15,6 +15,7 @@ const SECTION_MASCOTS = {
   "/speech-comercial": "/mascots/dots/dot-lila-asomado.webp",
   "/configuracion-avanzada": "/mascots/dots/dot-naranja-asomado.webp",
   "/costos": "/mascots/dots/dot-azul-costos-asomado.webp",
+  "/documentacion-api": "/mascots/dots/dot-digital-blue-asomado.webp",
 };
 
 export default function Sidebar() {
@@ -36,9 +37,11 @@ export default function Sidebar() {
   const isAdvancedConfigPage = location.pathname === "/configuracion-avanzada";
   const isSpeechConfigPage = location.pathname === "/speech-comercial";
   const isCostsPage = location.pathname === "/costos";
+  const isApiDocsPage = location.pathname === "/documentacion-api";
 
   // Every cargo sees Subir archivo and Métricas; the managing cargos also see the rest.
   const managesApp = canManage(user);
+  const isEngineer = cargoOf(user).id === "ingeniero";
   const storedName = fullName || cargoOf(user).label;
 
   const sidebarClassName = `sidebar ${isMobileSidebarOpen ? "open" : ""} uploadSidebar ${isSidebarCollapsed ? "collapsed" : ""}`.trim();
@@ -180,6 +183,12 @@ export default function Sidebar() {
             <button className={`sidebarItem ${isCostsPage ? "active" : ""}`} onClick={() => { navigate("/costos"); setIsMobileSidebarOpen(false); }} title="Costos">
               <Coins className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
               <span className="sidebarItemLabel">Costos</span>
+            </button>
+          )}
+          {isEngineer && (
+            <button className={`sidebarItem ${isApiDocsPage ? "active" : ""}`} onClick={() => { navigate("/documentacion-api"); setIsMobileSidebarOpen(false); }} title="Documentación y API">
+              <Braces className="sidebarNavIcon" size={21} strokeWidth={2} aria-hidden="true" />
+              <span className="sidebarItemLabel">Documentación<br />y API</span>
             </button>
           )}
         </nav>

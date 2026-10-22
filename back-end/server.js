@@ -13,6 +13,8 @@ import followUpRoutes from "./src/routes/followUpRoutes.js";
 import aiConfigRoutes from "./src/routes/aiConfigRoutes.js";
 import costRoutes from "./src/routes/costRoutes.js";
 import metricsRoutes from "./src/routes/metricsRoutes.js";
+import apiV1Routes from "./src/routes/apiV1Routes.js";
+import devRoutes from "./src/routes/devRoutes.js";
 import { ensureUploadAlert } from "./src/services/uploadAlert.js";
 
 const app = express();
@@ -61,6 +63,8 @@ app.use("/api/followups", followUpRoutes);
 app.use("/api/ai-config", aiConfigRoutes);
 app.use("/api/costs", costRoutes);
 app.use("/api/metrics", metricsRoutes);
+app.use("/api/v1", apiV1Routes);
+app.use("/api/dev", devRoutes);
 
 // Manejo de errores global
 app.use((err, req, res, next) => {

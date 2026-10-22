@@ -37,6 +37,7 @@ const SECTION_PREFIXES = {
   ai: ["ai."],
   whatsapp: ["followup."],
   email: ["email."],
+  api: ["api."],
 };
 export const AUDIT_SECTIONS = Object.keys(SECTION_PREFIXES);
 

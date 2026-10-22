@@ -1,0 +1,255 @@
+// What Documentación y API shows. It lives next to the API (publicApi.js, apiV1Routes.js) so a change
+// in an endpoint and its documentation go in the same commit. Examples use made-up people and clients.
+const SESSION_EXAMPLE = {
+  id: "7Qk2mZ9xPa3LrT8vYc1D",
+  consultantEmail: "ana.torres@kinedrik.com",
+  consultantName: "Ana Torres",
+  uploadedBy: "ana.torres@kinedrik.com",
+  createdAt: "2026-10-21T15:42:10.512Z",
+  duration: "18:42",
+  clientName: "Juan Pérez",
+  leadId: null,
+  score: 72.5,
+  scoreFormat: "points",
+  speechVersionId: "v8Hn3kQ2",
+  interest: 70,
+  closeProximity: 55,
+  closeStage: "Negociación",
+  commitment: "condicionado",
+  leadChecks: {
+    product: { state: "yes", reason: "Dice que el máster encaja con su cambio de puesto." },
+    price: { state: "partial", reason: "Pidió pensar las cuotas antes de decidir." },
+    agreements: { state: "yes", reason: "Quedaron en hablar el jueves a las 10." },
+  },
+  aiModel: "gpt-6-luna",
+};
+
+export const API_CATALOG = {
+  version: "v1",
+  basePath: "/api/v1",
+  rateLimit: 60,
+  endpoints: [
+    {
+      id: "ping",
+      method: "GET",
+      path: "/ping",
+      title: "Probar la conexión",
+      description: "Comprueba que la llave funciona. Devuelve el nombre de la llave usada y la hora del servidor.",
+      params: [],
+      example: { ok: true, client: "MySQL TI", time: "2026-10-22T14:03:51.020Z" },
+    },
+    {
+      id: "sessions",
+      method: "GET",
+      path: "/sessions",
+      title: "Listar sesiones",
+      description: "Llamadas analizadas, de la más reciente a la más antigua. Para traer todas, repite la consulta pasando en cursor el valor nextCursor hasta que llegue null.",
+      params: [
+        { name: "from", in: "query", type: "date", required: false, example: "2026-10-01", description: "Desde este día (UTC), incluido. Formato AAAA-MM-DD." },
+        { name: "to", in: "query", type: "date", required: false, example: "2026-10-21", description: "Hasta este día (UTC), incluido. Formato AAAA-MM-DD." },
+        { name: "consultant", in: "query", type: "string", required: false, example: "", description: "Correo del consultor dueño de la llamada." },
+        { name: "limit", in: "query", type: "integer", required: false, example: "20", description: "Sesiones por página, de 1 a 200. Por defecto 50." },
+        { name: "cursor", in: "query", type: "string", required: false, example: "", description: "Valor nextCursor de la página anterior." },
+      ],
+      example: { data: [SESSION_EXAMPLE], nextCursor: "7Qk2mZ9xPa3LrT8vYc1D" },
+    },
+    {
+      id: "session",
+      method: "GET",
+      path: "/sessions/{id}",
+      title: "Detalle de una sesión",
+      description: "Todo lo de la lista más la calificación de cada regla, el ratio de habla, las muletillas, las objeciones y los próximos pasos. Las llamadas del formato anterior (scoreFormat legacy) traen legacyScorecard en lugar de rules. La transcripción solo viene si se pide con include=transcript.",
+      params: [
+        { name: "id", in: "path", type: "string", required: true, example: "", description: "id de la sesión (sale en Listar sesiones)." },
+        { name: "include", in: "query", type: "string", required: false, example: "", description: "transcript para añadir la transcripción completa." },
+      ],
+      example: {
+        ...SESSION_EXAMPLE,
+        summary: "Juan busca un máster compatible con su trabajo. Le interesa la modalidad online y pidió detalle de cuotas.",
+        rules: [
+          { ruleId: "diagnostico-presupuesto", title: "Explora el presupuesto o la capacidad económica antes de dar el precio", phaseId: "F2", phaseName: "Diagnóstico", level: "bien", points: 8, earned: 6, quote: "¿Qué inversión tenías pensada para tu formación?", whatHappened: "Preguntó por el presupuesto antes de presentar el precio.", howToImprove: "Pregunta también quién más participa en la decisión." },
+        ],
+        talkRatio: { consultantPct: 62, level: "excelente", points: 6, earned: 6 },
+        muletillas: { perMinute: 1.4, level: "bien", points: 3, earned: 2.25, words: [{ word: "vale", count: 9 }] },
+        needs: ["Horarios compatibles con su trabajo"],
+        objections: [{ description: "Le preocupa el precio total", category: "precio", resolved: false }],
+        nextSteps: ["Enviar el plan de cuotas por WhatsApp"],
+        legacyScorecard: null,
+      },
+    },
+    {
+      id: "speech-active",
+      method: "GET",
+      path: "/speech/active",
+      title: "Speech activo",
+      description: "Fases y reglas del speech con el que se califican las llamadas nuevas. Sirve para saber qué significa cada ruleId y cuánto vale.",
+      params: [],
+      example: {
+        id: "v8Hn3kQ2", name: "Speech comercial", format: "points",
+        phases: [{ id: "F2", name: "Diagnóstico", objective: "Explorar la situación profesional y económica del cliente.", points: 21 }],
+        rules: [{ id: "diagnostico-presupuesto", phaseId: "F2", title: "Explora el presupuesto o la capacidad económica antes de dar el precio", points: 8, allowNotApplicable: false }],
+        talkRatio: { points: 6, limits: [65, 70, 75, 80] },
+        muletillas: { points: 3 },
+      },
+    },
+    {
+      id: "speech-version",
+      method: "GET",
+      path: "/speech/versions/{id}",
+      title: "Una versión del speech",
+      description: "Igual que Speech activo, para la versión con la que se calificó una sesión (campo speechVersionId).",
+      params: [{ name: "id", in: "path", type: "string", required: true, example: "", description: "speechVersionId de la sesión." }],
+      example: { id: "v8Hn3kQ2", name: "Speech comercial", format: "points", phases: [], rules: [], talkRatio: null, muletillas: null },
+    },
+    {
+      id: "users",
+      method: "GET",
+      path: "/users",
+      title: "Personas",
+      description: "Todas las personas con acceso a Speech y su cargo.",
+      params: [],
+      example: { data: [{ email: "ana.torres@kinedrik.com", name: "Ana Torres", role: "kadvisor", roleLabel: "KAdvisor", picture: null }] },
+    },
+    {
+      id: "uploads-daily",
+      method: "GET",
+      path: "/uploads/daily",
+      title: "Grabaciones del día",
+      description: "Quién subió grabaciones un día y quién no; lo mismo que la alerta diaria por correo.",
+      params: [{ name: "date", in: "query", type: "date", required: true, example: "2026-10-21", description: "Día a revisar. Formato AAAA-MM-DD." }],
+      example: {
+        date: "2026-10-21", totalRecordings: 41,
+        people: [
+          { email: "luis.gomez@kinedrik.com", name: "Luis Gómez", role: "KAdvisor", status: "missing", recordings: 0, lastRecordingAt: "2026-10-20T16:10:00.000Z" },
+          { email: "ana.torres@kinedrik.com", name: "Ana Torres", role: "KAdvisor", status: "uploaded", recordings: 6, lastRecordingAt: "2026-10-21T21:02:00.000Z" },
+        ],
+      },
+    },
+    {
+      id: "costs",
+      method: "GET",
+      path: "/costs",
+      title: "Costos diarios",
+      description: "Gasto diario en dólares por tecnología. Los proveedores publican sus cifras con uno o dos días de retraso.",
+      params: [
+        { name: "from", in: "query", type: "date", required: true, example: "2026-10-01", description: "Desde este día, incluido." },
+        { name: "to", in: "query", type: "date", required: true, example: "2026-10-21", description: "Hasta este día, incluido." },
+      ],
+      example: { currency: "USD", collectedAt: "2026-10-22T03:10:00.000Z", days: [{ date: "2026-10-20", total: 4.82, providers: { assembly: 1.1, openai: 2.9, claude: 0, google: 0.82 }, transcriptions: 37, audioSeconds: 23400 }] },
+    },
+  ],
+  upcoming: [
+    { method: "PUT", path: "/sessions/{id}/lead", title: "Vincular el lead", description: "Guardará el ID del lead del Portal de Admisiones (por ejemplo L-24011) en una sesión." },
+  ],
+  dataModel: [
+    {
+      entity: "Sesión",
+      source: "GET /sessions y GET /sessions/{id}",
+      fields: [
+        ["id", "string", "Identificador único de la sesión."],
+        ["consultantEmail", "string", "Correo del consultor dueño de la llamada."],
+        ["consultantName", "string | null", "Nombre del consultor en Speech."],
+        ["uploadedBy", "string", "Correo de quien subió la grabación (puede ser su coordinador)."],
+        ["createdAt", "datetime", "Fecha y hora del análisis, en UTC (ISO 8601)."],
+        ["duration", "string | null", "Duración de la llamada, mm:ss."],
+        ["clientName", "string | null", "Nombre del cliente tal como lo entendió la IA."],
+        ["leadId", "string | null", "ID del lead del Portal de Admisiones. Vacío hasta que exista la vinculación."],
+        ["score", "number | null", "Nota de la llamada de 0 a 100, según su versión del speech."],
+        ["scoreFormat", "string", "points (speech por puntos) o legacy (formato anterior)."],
+        ["speechVersionId", "string | null", "Versión del speech con la que se calificó."],
+        ["interest", "number | null", "Interés del cliente, 0 a 100."],
+        ["closeProximity", "number | null", "Proximidad al cierre, 0 a 100."],
+        ["closeStage", "string | null", "Gestión LP, Seguimiento, Negociación o Inminente."],
+        ["commitment", "string | null", "firme, condicionado, aplazado o sin_compromiso."],
+        ["leadChecks.product | price | agreements", "object | null", "state: yes, partial o no; reason: por qué. Llamadas anteriores al 21/10/2026 pueden no tenerlo."],
+        ["aiModel", "string | null", "Modelo de IA que calificó la llamada."],
+      ],
+    },
+    {
+      entity: "Regla calificada",
+      source: "rules[] en GET /sessions/{id}",
+      fields: [
+        ["ruleId", "string", "Regla del speech (ver GET /speech/versions/{id})."],
+        ["title", "string | null", "Texto de la regla."],
+        ["phaseId / phaseName", "string | null", "Fase a la que pertenece."],
+        ["level", "string", "excelente, bien, regular, debil, no_lo_hizo o no_aplica."],
+        ["points", "number", "Puntos que vale la regla."],
+        ["earned", "number", "Puntos obtenidos. no_aplica no cuenta en la nota."],
+        ["quote", "string | null", "Frase de la llamada en la que se basa."],
+        ["whatHappened / howToImprove", "string | null", "Explicación y recomendación de la IA."],
+      ],
+    },
+    {
+      entity: "Calificación anterior (legacy)",
+      source: "legacyScorecard en GET /sessions/{id}, solo si scoreFormat es legacy",
+      fields: [
+        ["fillerWords", "object", "Muletillas: score (0 a 100, más alto es peor), count y comment."],
+        ["closingNegotiation", "object", "Cierre y negociación: score (0 a 100) y comment."],
+        ["objectionHandling", "object", "Manejo de objeciones: score (0 a 100) y comment."],
+        ["valueProposition", "object", "Propuesta de valor: score (0 a 100) y comment."],
+      ],
+    },
+    {
+      entity: "Persona",
+      source: "GET /users",
+      fields: [
+        ["email", "string", "Correo, identificador de la persona."],
+        ["name", "string | null", "Nombre."],
+        ["role / roleLabel", "string", "Cargo: atencion_temprana, waymaker, kadvisor, coordinador_calidad, supervisor_operacion, directivo o ingeniero."],
+        ["picture", "string | null", "Foto de Google, si la tiene."],
+      ],
+    },
+  ],
+  mysql: `-- Esquema sugerido para guardar los datos de Speech en MySQL 8.
+CREATE TABLE speech_users (
+  email        VARCHAR(190) PRIMARY KEY,
+  name         VARCHAR(190),
+  role         VARCHAR(40)  NOT NULL,
+  updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE speech_sessions (
+  id                 VARCHAR(40)  PRIMARY KEY,
+  consultant_email   VARCHAR(190) NOT NULL,
+  uploaded_by        VARCHAR(190),
+  created_at         DATETIME(3)  NOT NULL,   -- UTC
+  duration           VARCHAR(10),
+  client_name        VARCHAR(190),
+  lead_id            VARCHAR(40),             -- ID del Portal de Admisiones, ej. L-24011
+  score              DECIMAL(5,2),
+  score_format       VARCHAR(10)  NOT NULL,
+  speech_version_id  VARCHAR(40),
+  interest           TINYINT UNSIGNED,
+  close_proximity    TINYINT UNSIGNED,
+  close_stage        VARCHAR(30),
+  commitment         VARCHAR(20),
+  product_check      ENUM('yes','partial','no'),
+  price_check        ENUM('yes','partial','no'),
+  agreements_check   ENUM('yes','partial','no'),
+  ai_model           VARCHAR(60),
+  INDEX idx_consultant_date (consultant_email, created_at),
+  INDEX idx_lead (lead_id)
+);
+
+CREATE TABLE speech_session_rules (
+  session_id  VARCHAR(40)  NOT NULL,
+  rule_id     VARCHAR(80)  NOT NULL,
+  phase_id    VARCHAR(40),
+  level       VARCHAR(12)  NOT NULL,
+  points      DECIMAL(5,2),
+  earned      DECIMAL(5,2),
+  PRIMARY KEY (session_id, rule_id),
+  FOREIGN KEY (session_id) REFERENCES speech_sessions(id) ON DELETE CASCADE
+);`,
+  errors: [
+    { status: 400, code: "invalid_parameter / missing_parameter", meaning: "Un parámetro falta o tiene un formato incorrecto.", action: "Lee el mensaje: dice qué parámetro y qué formato espera." },
+    { status: 401, code: "missing_key / invalid_key", meaning: "No se envió la llave o no existe.", action: "Envía la cabecera Authorization: Bearer <llave> con la llave completa." },
+    { status: 403, code: "revoked_key", meaning: "La llave fue revocada.", action: "Crea una llave nueva en la pestaña Llaves de acceso." },
+    { status: 404, code: "not_found", meaning: "La sesión, la versión o la ruta no existe.", action: "Revisa el id o la ruta en la Referencia." },
+    { status: 429, code: "rate_limited", meaning: "Más de 60 consultas en un minuto con la misma llave.", action: "Espera el tiempo de la cabecera Retry-After (segundos) y reintenta." },
+    { status: 500, code: "internal_error", meaning: "Falla nuestra.", action: "Reintenta en unos minutos; si sigue, avisa al equipo de Speech." },
+  ],
+  changelog: [
+    { date: "2026-10-22", text: "Primera versión: sesiones, speech, personas, grabaciones del día y costos (solo lectura)." },
+  ],
+};

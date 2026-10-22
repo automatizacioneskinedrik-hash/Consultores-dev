@@ -8,8 +8,9 @@ import Dashboard from "./pages/Dashboard";
 import SpeechConfig from "./pages/SpeechConfig";
 import Costs from "./pages/Costs";
 import Coach from "./pages/Coach";
+import ApiDocs from "./pages/ApiDocs";
 import { getUser } from "./utils/user";
-import { canManage } from "./utils/roles";
+import { canManage, cargoOf } from "./utils/roles";
 import "./App.css";
 
 function isLoggedIn() {
@@ -29,6 +30,13 @@ const ProtectedRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
   if (!managesApp()) return <Navigate to="/upload" replace />;
+  return children;
+};
+
+// Documentación y API is only for the Ingeniero cargo.
+const EngineerRoute = ({ children }) => {
+  if (!isLoggedIn()) return <Navigate to="/login" replace />;
+  if (cargoOf(getUser()).id !== "ingeniero") return <Navigate to="/upload" replace />;
   return children;
 };
 
@@ -69,6 +77,7 @@ export default function App() {
         />
         <Route path="/speech-comercial" element={<AdminRoute><SpeechConfig /></AdminRoute>} />
         <Route path="/costos" element={<AdminRoute><Costs /></AdminRoute>} />
+        <Route path="/documentacion-api" element={<EngineerRoute><ApiDocs /></EngineerRoute>} />
 
 
         <Route path="/" element={<Navigate to={isLoggedIn() ? "/upload" : "/login"} replace />} />

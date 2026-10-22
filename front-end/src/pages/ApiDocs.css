@@ -1,0 +1,73 @@
+/* Documentación y API: same shell, tabs and cards as Configuración avanzada; code in Roboto Mono on navy. */
+.apiCode { position: relative; background: #040025; border-radius: 12px; min-width: 0; }
+.apiCode pre { margin: 0; padding: 14px 16px; padding-right: 96px; overflow-x: auto; color: #E7E7E7; font: 13px/1.55 "Roboto Mono", ui-monospace, monospace; white-space: pre; }
+.apiCode code { font: inherit; }
+.apiCodeInline pre { padding-top: 11px; padding-bottom: 11px; }
+.apiResult pre { max-height: 420px; overflow: auto; }
+.apiCopy { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(231, 231, 231, .25); background: rgba(231, 231, 231, .08); color: #E7E7E7; border-radius: 8px; padding: 4px 9px; font: 600 12px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; }
+.apiCopy:hover { background: rgba(231, 231, 231, .16); }
+.apiCopy:focus-visible { outline: 2px solid #2885FF; outline-offset: 2px; }
+
+.acCard code, .apiText code, .apiFacts code, .apiSteps code, .apiTable code { font: 12.5px "Roboto Mono", ui-monospace, monospace; background: #f1f5f9; color: #040025; padding: 1px 5px; border-radius: 5px; }
+.apiCode code { background: none; color: inherit; padding: 0; }
+.apiText { margin: 0; font-size: 14px; line-height: 1.55; color: #34435c; max-width: 80ch; }
+.apiFacts, .apiChangelog { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; line-height: 1.55; color: #34435c; }
+.apiFacts b, .apiChangelog b { color: #040025; }
+.apiSteps { margin: 0; padding-left: 20px; display: grid; gap: 14px; font-size: 14px; line-height: 1.55; color: #34435c; }
+.apiSteps li { display: block; }
+.apiSteps li .apiCode { margin-top: 8px; }
+.apiSteps b { color: #040025; }
+
+.apiMethod { display: inline-block; min-width: 40px; text-align: center; padding: 2px 7px; border-radius: 6px; font: 700 11px "Roboto Mono", ui-monospace, monospace; letter-spacing: .03em; }
+.apiMethodGET { background: #eaf2ff; color: #0040A4; }
+.apiMethodPUT { background: #f1f5f9; color: #65728a; }
+
+.apiTableWrap { overflow-x: auto; }
+.apiTable { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.apiTable th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #65728a; padding: 8px 12px 8px 0; border-bottom: 1px solid #cfd5de; white-space: nowrap; }
+.apiTable td { padding: 10px 12px 10px 0; border-bottom: 1px solid #eef1f5; vertical-align: top; color: #34435c; }
+.apiTable td b { color: #040025; }
+.apiRevoked td { color: #94a3b8; }
+.apiActions { white-space: nowrap; text-align: right; }
+.apiActions > * + * { margin-left: 6px; }
+.apiStatus { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11.5px; font-weight: 700; }
+.apiStatus.on { background: rgba(138, 188, 67, .2); color: #3F5F12; }
+.apiStatus.off { background: #f1f5f9; color: #65728a; }
+
+.apiNewKey { display: grid; gap: 8px; padding: 14px; border-radius: 12px; background: #eaf2ff; border: 1px solid #0040A4; }
+.apiNewKey strong { color: #040025; font-size: 15px; }
+.apiNewKey p { margin: 0; font-size: 13px; font-weight: 700; color: #0040A4; }
+.apiNewKey .speechSecondaryButton { justify-self: start; }
+
+.apiReference { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+.apiEndpoints { display: grid; gap: 4px; position: sticky; top: 16px; border: 1px solid #dce3ed; border-radius: 14px; padding: 8px; background: #fff; }
+.apiEndpoint { display: flex; gap: 10px; align-items: flex-start; width: 100%; text-align: left; border: 0; background: none; border-radius: 10px; padding: 9px 10px; cursor: pointer; color: #040025; font: 14px Roboto, Helvetica, Arial, sans-serif; }
+.apiEndpoint:hover { background: #f5f8fd; }
+.apiEndpoint[aria-current="true"] { background: #eaf2ff; }
+.apiEndpoint span { display: grid; gap: 2px; min-width: 0; }
+.apiEndpoint code { font: 12.5px "Roboto Mono", ui-monospace, monospace; background: none; padding: 0; overflow-wrap: anywhere; }
+.apiEndpoint small { font-size: 12px; color: #65728a; }
+.apiUpcoming { cursor: default; opacity: .6; }
+.apiUpcoming:hover { background: none; }
+.apiDetail { display: grid; gap: 16px; min-width: 0; }
+.apiDetailHead { display: flex; align-items: center; gap: 10px; }
+.apiDetailHead h2 { margin: 0; font-size: 18px; color: #040025; }
+
+.apiInputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.apiInputs label { display: grid; gap: 4px; font-size: 12.5px; color: #65728a; }
+.apiInputs em { font-style: normal; color: #FF5900; font-weight: 600; }
+.apiInputs input { padding: 8px 10px; border: 1px solid #dce3ed; border-radius: 8px; color: #040025; font: 13px "Roboto Mono", ui-monospace, monospace; min-width: 0; }
+.apiInputs input:focus { outline: none; border-color: #0040A4; }
+.apiRunRow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.apiHttp { font: 700 12.5px "Roboto Mono", ui-monospace, monospace; padding: 3px 9px; border-radius: 7px; }
+.apiHttp.ok { background: rgba(138, 188, 67, .2); color: #3F5F12; }
+.apiHttp.bad { background: rgba(255, 89, 0, .12); color: #B33E00; }
+
+.apiLangs { display: inline-flex; gap: 2px; background: #f1f5f9; border-radius: 999px; padding: 3px; justify-self: start; }
+.apiLangs button { border: 0; background: none; padding: 5px 12px; border-radius: 999px; font: 600 12.5px Roboto, Helvetica, Arial, sans-serif; color: #65728a; cursor: pointer; }
+.apiLangs button[aria-selected="true"] { background: #fff; color: #040025; box-shadow: 0 1px 4px rgba(4, 0, 37, .15); }
+
+@media (max-width: 980px) {
+  .apiReference { grid-template-columns: 1fr; }
+  .apiEndpoints { position: static; }
+}
