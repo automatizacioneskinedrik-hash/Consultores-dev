@@ -122,9 +122,8 @@ export function renderUploadEmail(report) {
         </tr>
         ${report.missing.length ? `${sepRow("No subieron")}${missingRows}` : ""}
         ${report.uploaded.length ? `${sepRow("Sí subieron")}${uploadedRows}` : ""}
-        ${report.inactive.length ? `${sepRow(`Sin actividad en 2 meses (${report.inactive.length}) · revisa en Gestionar usuarios si siguen activas`)}${inactiveRows}` : ""}
-      </table>
-      <p style="margin:16px 0 0;font-size:11.5px;line-height:1.5;color:#5b6478;">Cuenta cualquier grabación a nombre de la persona, también si la subió otra persona por ella o si el análisis dio error. Vacaciones, incapacidades y festivos todavía no se descuentan.</p>`;
+        ${report.inactive.length ? `${sepRow(`Sin actividad en 2 meses (${report.inactive.length})`)}${inactiveRows}` : ""}
+      </table>`;
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:24px 12px;background:#eef1f6;font-family:Roboto,'Helvetica Neue',Arial,sans-serif;color:#040025;">

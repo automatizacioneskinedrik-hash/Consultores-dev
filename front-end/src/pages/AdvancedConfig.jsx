@@ -15,7 +15,7 @@ const ADVANCED_TOUR = [
   { target: ".changeHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
   { do: [{ click: "#advanced-tab-whatsapp" }], target: ".acTextarea", title: "El mensaje de WhatsApp", text: "Aquí escribes la instrucción que sigue la IA para redactar el mensaje de seguimiento de cada llamada. Guárdala cuando la cambies." },
   { target: ".acVersions", title: "Versiones del mensaje", text: "Cada instrucción guardada queda aquí. Puedes volver a una anterior o borrar las que ya no sirvan." },
-  { do: [{ click: "#advanced-tab-email" }], target: ".acEmailBlock", title: "Alerta de grabaciones", text: "Aquí decides quién recibe cada mañana el correo con las personas que no subieron grabaciones el día hábil anterior." },
+  { do: [{ click: "#advanced-tab-email" }], target: ".acEmailBlock", title: "Alerta de grabaciones", text: "Aquí decides quién recibe el correo con quién no subió grabaciones." },
   { do: [{ click: ".speechTabs .speechTab:first-child" }], title: "¡Listo, ya conoces la configuración!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
 
@@ -305,13 +305,13 @@ export default function AdvancedConfig() {
             {successMsg && <div role="status" className="speechNotice">{successMsg}</div>}
             {errorMsg && <div role="status" className="speechNotice error">{errorMsg}</div>}
             <section className="acCard">
-              <div className="acCardHead"><div><h2>Alerta de grabaciones</h2><p>De lunes a viernes, desde las 7 a. m. (hora Colombia), estas personas reciben un correo con quién no subió grabaciones el día hábil anterior. Se revisan los cargos que venden y cualquiera que haya subido sus propias llamadas en las últimas dos semanas.</p></div></div>
+              <div className="acCardHead"><div><h2>Alerta de grabaciones</h2><p>Quién no subió grabaciones el día hábil anterior.</p></div></div>
               {isLoading ? <p className="acHint">Cargando configuración…</p> : <div className="acEmailBlock">
                 <strong>Quién recibe la alerta</strong>
                 <div className="acChips">
                   {alertEmails.length
                     ? alertEmails.map((email) => <span key={email}>{email}<button type="button" aria-label={`Quitar ${email}`} onClick={() => saveEmailConfig(alertEmails.filter((item) => item !== email))} disabled={isSaving}>✕</button></span>)
-                    : <span className="acEmpty">Nadie todavía: sin correos en la lista, la alerta no se envía.</span>}
+                    : <span className="acEmpty">Sin correos</span>}
                 </div>
                 <div className="acAdd">
                   <input id="alert-email-input" type="text" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addEmail(); } }} placeholder="correo@empresa.com" aria-label="Añadir correo a la alerta" />
