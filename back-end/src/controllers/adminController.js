@@ -129,16 +129,12 @@ export const getEmailConfig = async (req, res) => {
 
 export const updateEmailConfig = async (req, res) => {
   try {
-    if (req.body.ccEmails != null && !Array.isArray(req.body.ccEmails)) {
-      return res.status(400).json({ ok: false, error: "ccEmails debe ser un arreglo" });
-    }
-    if (req.body.bccEmails != null && !Array.isArray(req.body.bccEmails)) {
-      return res.status(400).json({ ok: false, error: "bccEmails debe ser un arreglo" });
+    if (!Array.isArray(req.body.alertEmails)) {
+      return res.status(400).json({ ok: false, error: "alertEmails debe ser un arreglo" });
     }
 
-    const ccEmails = sanitizeEmailArray(req.body.ccEmails || []);
-    const bccEmails = sanitizeEmailArray(req.body.bccEmails || []).filter((email) => !ccEmails.includes(email));
-    const invalidEmails = [...ccEmails, ...bccEmails].filter((email) => !isValidEmailValue(email));
+    const alertEmails = sanitizeEmailArray(req.body.alertEmails);
+    const invalidEmails = alertEmails.filter((email) => !isValidEmailValue(email));
 
     if (invalidEmails.length > 0) {
       return res.status(400).json({ ok: false, error: "Hay correos invalidos en la configuracion", invalidEmails });
@@ -148,16 +144,15 @@ export const updateEmailConfig = async (req, res) => {
 
     await db.collection("settings").doc("email_config").set(
       {
-        ccEmails,
-        bccEmails,
+        alertEmails,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy: requesterEmail || "",
       },
       { merge: true }
     );
-    await logChange(req.requester, "email.update", "Actualizó las copias de los reportes por correo", { ccEmails, bccEmails });
+    await logChange(req.requester, "email.update", "Actualizó quién recibe la alerta de grabaciones", { alertEmails });
 
-    return res.json({ ok: true, message: "Configuracion de correo actualizada correctamente", config: { ccEmails, bccEmails, updatedBy: requesterEmail || "" } });
+    return res.json({ ok: true, message: "Configuracion de correo actualizada correctamente", config: { alertEmails, updatedBy: requesterEmail || "" } });
   } catch (err) {
     console.error("Error updating email config:", err);
     return res.status(500).json({ ok: false, error: "Error al actualizar la configuracion de correo" });

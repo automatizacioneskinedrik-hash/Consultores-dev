@@ -15,7 +15,7 @@ const ADVANCED_TOUR = [
   { target: ".changeHistory", title: "Quién lo cambió y cuándo", text: "Cada cambio de modelo queda registrado con la persona y la fecha, para saber siempre qué pasó." },
   { do: [{ click: "#advanced-tab-whatsapp" }], target: ".acTextarea", title: "El mensaje de WhatsApp", text: "Aquí escribes la instrucción que sigue la IA para redactar el mensaje de seguimiento de cada llamada. Guárdala cuando la cambies." },
   { target: ".acVersions", title: "Versiones del mensaje", text: "Cada instrucción guardada queda aquí. Puedes volver a una anterior o borrar las que ya no sirvan." },
-  { do: [{ click: "#advanced-tab-email" }], target: ".acTwoCol", title: "Copias por correo", text: "Aquí decides quién recibe copia de los reportes que se envían por correo." },
+  { do: [{ click: "#advanced-tab-email" }], target: ".acEmailBlock", title: "Alerta de grabaciones", text: "Aquí decides quién recibe cada mañana el correo con las personas que no subieron grabaciones el día hábil anterior." },
   { do: [{ click: ".speechTabs .speechTab:first-child" }], title: "¡Listo, ya conoces la configuración!", text: "Si algo no te quedó claro, haz clic en mí, abajo a la izquierda, y repetimos el recorrido." },
 ];
 
@@ -47,10 +47,8 @@ function formatTimestamp(ts) {
 
 export default function AdvancedConfig() {
   const user = useMemo(() => getUser(), []);
-  const [ccEmails, setCcEmails] = useState([]);
-  const [bccEmails, setBccEmails] = useState([]);
-  const [ccInput, setCcInput] = useState("");
-  const [bccInput, setBccInput] = useState("");
+  const [alertEmails, setAlertEmails] = useState([]);
+  const [emailInput, setEmailInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -87,10 +85,7 @@ export default function AdvancedConfig() {
       }
 
       const config = data.config || {};
-      const loadedCc = normalizeEmailArray(config.ccEmails || []);
-      const loadedBcc = normalizeEmailArray(config.bccEmails || []).filter((email) => !loadedCc.includes(email));
-      setCcEmails(loadedCc);
-      setBccEmails(loadedBcc);
+      setAlertEmails(normalizeEmailArray(config.alertEmails || []));
       setUpdatedBy(config.updatedBy || "");
       setUpdatedAt(formatTimestamp(config.updatedAt));
     } catch (error) {
@@ -190,108 +185,41 @@ export default function AdvancedConfig() {
     }
   }, [user]);
 
-  const saveEmailConfig = async (newCc, newBcc) => {
+  const saveEmailConfig = async (nextEmails) => {
     setErrorMsg("");
     setSuccessMsg("");
     setIsSaving(true);
     try {
-      const parsedCc = normalizeEmailArray(newCc);
-      const parsedBcc = normalizeEmailArray(newBcc).filter((email) => !parsedCc.includes(email));
-
-      const invalidEmails = [...parsedCc, ...parsedBcc].filter((email) => !BASIC_EMAIL_REGEX.test(email));
-      if (invalidEmails.length > 0) {
-        setErrorMsg(`Corrige estos correos invalidos: ${invalidEmails.join(", ")}`);
-        setIsSaving(false);
-        return;
-      }
-
+      const parsed = normalizeEmailArray(nextEmails);
       const res = await fetch(`${API_BASE_URL}/api/admin/email-config`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Role": user.role || "user",
-          "X-Admin-Email": user.email || "",
-          "X-Auth-Token": user.authToken || "",
-        },
-        body: JSON.stringify({
-          ccEmails: parsedCc,
-          bccEmails: parsedBcc,
-        }),
+        headers: { "Content-Type": "application/json", ...authHeaders },
+        body: JSON.stringify({ alertEmails: parsed }),
       });
-
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "No se pudo guardar la configuracion");
-      }
-
-      setCcEmails(parsedCc);
-      setBccEmails(parsedBcc);
-      setSuccessMsg("Configuracion actualizada automáticamente.");
-      
-      if (data.config) {
-        setUpdatedBy(data.config.updatedBy || "");
-      }
+      if (!res.ok || !data.ok) throw new Error(data.error || "No se pudo guardar la configuración");
+      setAlertEmails(parsed);
+      setSuccessMsg("Lista guardada.");
+      if (data.config) setUpdatedBy(data.config.updatedBy || "");
     } catch (error) {
-      setErrorMsg(error.message || "Error guardando configuracion");
+      setErrorMsg(error.message || "Error guardando la configuración");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const addEmailToList = async (listType) => {
-    setErrorMsg("");
-    setSuccessMsg("");
-
-    const rawValue = listType === "cc" ? ccInput : bccInput;
-    const email = normalizeEmailValue(rawValue);
-
-    if (!email) {
-      setErrorMsg("Ingresa un correo para agregar.");
-      return;
-    }
-
+  const addEmail = async () => {
+    const email = normalizeEmailValue(emailInput);
     if (!BASIC_EMAIL_REGEX.test(email)) {
-      setErrorMsg("Ingresa un correo valido.");
+      setErrorMsg("Escribe un correo válido, por ejemplo nombre@empresa.com.");
       return;
     }
-
-    if (listType === "cc") {
-      if (ccEmails.includes(email)) {
-        setErrorMsg("Ese correo ya existe en la lista de CC.");
-        return;
-      }
-      setCcInput("");
-      await saveEmailConfig([...ccEmails, email], bccEmails);
+    if (alertEmails.includes(email)) {
+      setErrorMsg("Ese correo ya está en la lista.");
       return;
     }
-
-    if (bccEmails.includes(email)) {
-      setErrorMsg("Ese correo ya existe en la lista de BCC.");
-      return;
-    }
-
-    if (ccEmails.includes(email)) {
-      setErrorMsg("Ese correo ya esta en CC. No puede repetirse en BCC.");
-      return;
-    }
-
-    setBccInput("");
-    await saveEmailConfig(ccEmails, [...bccEmails, email]);
-  };
-
-  const removeEmailFromList = async (listType, emailToRemove) => {
-    if (listType === "cc") {
-      await saveEmailConfig(ccEmails.filter(e => e !== emailToRemove), bccEmails);
-      return;
-    }
-    await saveEmailConfig(ccEmails, bccEmails.filter(e => e !== emailToRemove));
-  };
-
-  const handleInputKeyDown = (e, listType) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addEmailToList(listType);
-    }
+    setEmailInput("");
+    await saveEmailConfig([...alertEmails, email]);
   };
 
   const tabs = [
@@ -377,24 +305,22 @@ export default function AdvancedConfig() {
             {successMsg && <div role="status" className="speechNotice">{successMsg}</div>}
             {errorMsg && <div role="status" className="speechNotice error">{errorMsg}</div>}
             <section className="acCard">
-              <div className="acCardHead"><div><h2>Copias de los reportes por correo</h2><p>Quién recibe copia de los reportes que se envían a los consultores.</p></div></div>
-              {isLoading ? <p className="acHint">Cargando configuración…</p> : <div className="acTwoCol">
-                {[["cc", "Con copia (CC)", ccEmails, ccInput, setCcInput], ["bcc", "Con copia oculta (CCO)", bccEmails, bccInput, setBccInput]].map(([type, label, emails, value, setValue]) => <div className="acEmailBlock" key={type}>
-                  <strong>{label}</strong>
-                  <div className="acChips">
-                    {emails.length
-                      ? emails.map((email) => <span key={email}>{email}<button type="button" aria-label={`Quitar ${email}`} onClick={() => removeEmailFromList(type, email)} disabled={isSaving}>✕</button></span>)
-                      : <span className="acEmpty">Sin correos</span>}
-                  </div>
-                  <div className="acAdd">
-                    <input id={`${type}-input`} type="text" value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => handleInputKeyDown(e, type)} placeholder="correo@empresa.com" aria-label={`Añadir correo ${label}`} />
-                    <button type="button" className="speechSecondaryButton" onClick={() => addEmailToList(type)} disabled={isSaving}>Añadir</button>
-                  </div>
-                </div>)}
+              <div className="acCardHead"><div><h2>Alerta de grabaciones</h2><p>De lunes a viernes, desde las 7 a. m. (hora Colombia), estas personas reciben un correo con quién no subió grabaciones el día hábil anterior. Se revisan los cargos que venden y cualquiera que haya subido sus propias llamadas en las últimas dos semanas.</p></div></div>
+              {isLoading ? <p className="acHint">Cargando configuración…</p> : <div className="acEmailBlock">
+                <strong>Quién recibe la alerta</strong>
+                <div className="acChips">
+                  {alertEmails.length
+                    ? alertEmails.map((email) => <span key={email}>{email}<button type="button" aria-label={`Quitar ${email}`} onClick={() => saveEmailConfig(alertEmails.filter((item) => item !== email))} disabled={isSaving}>✕</button></span>)
+                    : <span className="acEmpty">Nadie todavía: sin correos en la lista, la alerta no se envía.</span>}
+                </div>
+                <div className="acAdd">
+                  <input id="alert-email-input" type="text" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addEmail(); } }} placeholder="correo@empresa.com" aria-label="Añadir correo a la alerta" />
+                  <button type="button" className="speechSecondaryButton" onClick={addEmail} disabled={isSaving}>Añadir</button>
+                </div>
               </div>}
               {(updatedBy || updatedAt) && <p className="acHint">{updatedBy && `Actualizado por ${updatedBy}`}{updatedBy && updatedAt ? " · " : ""}{updatedAt}</p>}
             </section>
-            <ChangeHistory section="email" description="Cambios en las copias de los reportes por correo." refreshKey={successMsg} />
+            <ChangeHistory section="email" description="Cambios en quién recibe la alerta de grabaciones." refreshKey={successMsg} />
           </div>}
         </section>
       </main>

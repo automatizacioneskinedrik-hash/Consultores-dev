@@ -34,3 +34,8 @@ test("producción sigue recibiendo un rol antiguo coherente con el cargo", () =>
   assert.equal(legacyRoleFor("directivo"), "admin");
   assert.equal(legacyRoleFor("ingeniero"), "superadmin");
 });
+
+test("la alerta diaria revisa a los cargos que venden; los demás entran si subieron sus propias llamadas", () => {
+  for (const id of ["atencion_temprana", "waymaker", "kadvisor"]) assert.equal(cargoOf({ cargo: id }).dailyUploads, true);
+  for (const id of ["coordinador_calidad", "supervisor_operacion", "directivo", "ingeniero"]) assert.equal(cargoOf({ cargo: id }).dailyUploads, false);
+});

@@ -13,6 +13,7 @@ import followUpRoutes from "./src/routes/followUpRoutes.js";
 import aiConfigRoutes from "./src/routes/aiConfigRoutes.js";
 import costRoutes from "./src/routes/costRoutes.js";
 import metricsRoutes from "./src/routes/metricsRoutes.js";
+import { ensureUploadAlert } from "./src/services/uploadAlert.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -45,6 +46,12 @@ app.get("/", (req, res) => {
 });
 
 // Definición de Rutas
+// The daily recordings alert goes out with the first request after 7 a.m. (Colombia) on working days.
+app.use("/api", (req, res, next) => {
+  const timeout = new Promise((resolve) => setTimeout(resolve, 10000));
+  Promise.race([ensureUploadAlert(), timeout]).catch((error) => console.error("Alerta de grabaciones:", error.message)).finally(() => next());
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/sessions", sessionRoutes);
