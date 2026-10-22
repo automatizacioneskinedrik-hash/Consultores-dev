@@ -305,7 +305,7 @@ export default function AdvancedConfig() {
             {successMsg && <div role="status" className="speechNotice">{successMsg}</div>}
             {errorMsg && <div role="status" className="speechNotice error">{errorMsg}</div>}
             <section className="acCard">
-              <div className="acCardHead"><div><h2>Alerta de grabaciones</h2><p>Quién no subió grabaciones el día hábil anterior.</p></div></div>
+              <div className="acCardHead"><div><h2>Alerta de grabaciones</h2></div></div>
               {isLoading ? <p className="acHint">Cargando configuración…</p> : <div className="acEmailBlock">
                 <strong>Quién recibe la alerta</strong>
                 <div className="acChips">
