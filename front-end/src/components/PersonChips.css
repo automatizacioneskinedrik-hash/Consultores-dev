@@ -1,0 +1,9 @@
+.personChips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: thin; min-width: 0; }
+.personChip { flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 4px 14px 4px 4px; border-radius: 999px; border: 1px solid #dce3ed; background: #fff; color: #34435c; font: 600 13px Roboto, Helvetica, Arial, sans-serif; cursor: pointer; transition: background .2s, border-color .2s, box-shadow .2s, transform .2s; }
+.personChip:hover { border-color: #0040A4; transform: translateY(-1px); }
+.personChip.on { background: #040025; border-color: #040025; color: #fff; box-shadow: 0 6px 16px -6px rgba(4, 0, 37, .55); }
+.personChip.on .profileAvatar { box-shadow: 0 0 0 2px #FBB42A; }
+.personChip:focus-visible { outline: 2px solid #2885FF; outline-offset: 2px; }
+.personChip .profileAvatar.avatarXs { width: 30px; height: 30px; flex-basis: 30px; }
+.personChipTeam { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #eaf2ff; color: #0040A4; }
+.personChip.on .personChipTeam { background: #FBB42A; color: #040025; }

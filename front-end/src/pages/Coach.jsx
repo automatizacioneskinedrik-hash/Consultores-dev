@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ConfigProvider, Select, Spin } from "antd";
+import { ConfigProvider, Spin } from "antd";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import MetricsTabs from "../components/MetricsTabs";
-import PersonOption from "../components/PersonOption";
 import WaCard from "../components/WaCard";
 import MiCamino from "../components/MiCamino";
+import PersonChips from "../components/PersonChips";
 import { badgeSrc, ruleBadge } from "../utils/badges";
 import { getUser } from "../utils/user";
 import { seesAll } from "../utils/roles";
@@ -102,23 +102,47 @@ function LeadCard({ lead, headers, onClose, onFollowUpDone }) {
   </div>;
 }
 
+const firstName = (name) => String(name || "").trim().split(/\s+/)[0] || "";
+
+// Mi camino with its own person filter ("Yo" and each person; insignias are personal, so no team option).
+function CaminoSection({ headers, user, options }) {
+  const [who, setWho] = useState("me");
+  const [state, setState] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/api/metrics/coach/path?${new URLSearchParams({ consultant: who })}`, { headers })
+      .then((response) => response.json())
+      .then((body) => { if (!cancelled && body.ok && body.path) setState(body); })
+      .catch(() => { /* el resto de Coach sigue funcionando */ });
+    return () => { cancelled = true; };
+  }, [who, headers]);
+  if (!state) return null;
+  const own = state.owner === String(user.email || "").toLowerCase();
+  const person = options.find((option) => option.value === state.owner);
+  return <MiCamino key={state.owner} path={state.path} own={own}
+    title={own ? "Tu camino" : `Camino de ${person?.fullName || state.owner}`}
+    storageKey={`kinedrik_camino_${user.email || ""}`}
+    filter={options.length > 1 ? <PersonChips options={options} value={who} onChange={setWho} label="Ver el camino de" /> : null} />;
+}
+
 export default function Coach() {
   const [user] = useState(() => getUser() || {});
   const viewsEveryone = seesAll(user);
   const [headers] = useState(() => ({ "X-Admin-Email": user.email || "", "X-Auth-Token": user.authToken || "" }));
-  const [consultant, setConsultant] = useState("all");
-  const [people, setPeople] = useState([{ value: "all", label: "Todos los consultores" }]);
+  const [consultant, setConsultant] = useState("me");
+  const [people, setPeople] = useState([]);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
   const [refresh, setRefresh] = useState(0);
+  const myEmail = String(user.email || "").toLowerCase();
 
   useEffect(() => {
     if (!viewsEveryone) return;
     fetch(`${API_BASE_URL}/api/admin/dashboard-consultants`, { headers })
       .then((response) => response.json())
-      .then((body) => { if (body.ok) setPeople([{ value: "all", label: "Todos los consultores" }, ...body.consultants]); })
-      .catch(() => { /* sin lista, se ve todo el equipo */ });
+      .then((body) => { if (body.ok) setPeople(body.consultants); })
+      .catch(() => { /* sin lista, solo "Yo" y "Equipo" */ });
   }, [viewsEveryone, headers]);
 
   useEffect(() => {
@@ -136,8 +160,23 @@ export default function Coach() {
     return () => { cancelled = true; };
   }, [consultant, headers, refresh]);
 
-  // With "Todos los consultores" the selection is the team, so there is nothing to compare against.
-  const showTeam = !(viewsEveryone && consultant === "all");
+  // Only people with calls on the active speech, so nobody shows up empty.
+  const me = { value: "me", label: "Yo", fullName: user.fullName, email: myEmail, picture: user.picture };
+  const others = people.filter((person) => person.value !== myEmail && (data?.teamEmails || []).includes(person.value))
+    .map((person) => ({ ...person, fullName: person.label }));
+  const metricOptions = viewsEveryone ? [me, { value: "all", label: "Equipo" }, ...others] : [];
+  const caminoOptions = viewsEveryone ? [me, ...others] : [me];
+
+  // Texts speak to whoever is being looked at: you, another person or the team.
+  const viewing = consultant === "me" ? "me" : consultant === "all" ? "team" : "person";
+  const first = firstName(viewing === "me" ? user.fullName : others.find((person) => person.value === consultant)?.label);
+  const t = {
+    me: { title: [`${first ? `${first}, lo` : "Lo"} que haces bien.`, "Lo que puedes mejorar."], legend: "Tu media", repeated: "Lo que más se me repite", focus: "dónde más puntos pierdes", next: "Tu próxima insignia", recent: "tus últimas", missing: "te", leads: "Mis leads" },
+    person: { title: [`${first}: lo que hace bien.`, "Lo que puede mejorar."], legend: `Media de ${first}`, repeated: `Lo que más se le repite a ${first}`, focus: `dónde más puntos pierde ${first}`, next: `Próxima insignia de ${first}`, recent: "sus últimas", missing: "le", leads: `Leads de ${first}` },
+    team: { title: ["El equipo: lo que hace bien.", "Lo que puede mejorar."], legend: "Media del equipo", repeated: "Lo que más se repite en el equipo", focus: "dónde más puntos pierde el equipo", next: "", recent: "", missing: "", leads: "Leads del equipo" },
+  }[viewing];
+
+  const showTeam = viewing !== "team";
   const pendingWa = (data?.leads || []).filter((lead) => lead.waPending).length;
   const next = nextInsignia(data?.path);
   const leads = [...(data?.leads || [])].sort((a, b) => (b.interest ?? -1) - (a.interest ?? -1));
@@ -149,10 +188,8 @@ export default function Coach() {
       <MetricsTabs />
       <ConfigProvider theme={{ token: { colorPrimary: "#0040A4", borderRadius: 12, fontFamily: "Roboto, Helvetica, Arial, sans-serif" } }}>
         <div className="coachVh">
-          <div><h2>Lo que haces bien.<br />Lo que puedes mejorar.</h2><p>Tus fases frente al equipo, en qué enfocarte y el siguiente paso con cada lead.</p></div>
-          {viewsEveryone && <Select className="coachPerson" value={consultant} onChange={setConsultant} options={people} showSearch optionFilterProp="label"
-            optionRender={(option) => <PersonOption option={option.data} allLabel="Todos los consultores" />}
-            labelRender={({ value }) => <PersonOption option={people.find((person) => person.value === value) || { value, label: value }} allLabel="Todos los consultores" />} />}
+          <h2>{t.title[0]}<br />{t.title[1]}</h2>
+          {metricOptions.length > 0 && <PersonChips options={metricOptions} value={consultant} onChange={setConsultant} label="Ver las métricas de" />}
         </div>
 
         {error && <p className="coachError">{error}</p>}
@@ -163,21 +200,21 @@ export default function Coach() {
           <div className="coachGrid">
             <div className="coachCard coachMatrix">
               <div className="coachCardHead"><h3>Matriz de calidad</h3><span className="coachChip">puntos por llamada</span></div>
-              <div className="coachLegend"><span><i />{showTeam ? "Tu media" : "Media del equipo"}</span>{showTeam && <span><s />Media del equipo</span>}</div>
+              <div className="coachLegend"><span><i />{t.legend}</span>{showTeam && <span><s />Media del equipo</span>}</div>
               {data.phases.map((phase) => <div key={phase.id} className="coachPhase" title={phase.rules.join(" · ")}>
                 <div className="coachPhaseTop"><span><b>{phase.name}</b> <em>{phase.points} pts</em></span>
                   <span>{phase.mine == null ? <em>sin llamadas</em> : <><b style={{ color: notaColor(share(phase.mine)) }}>{formatScore(phase.mine.earned)}</b> <em>de {formatScore(phase.mine.possible)}{showTeam && phase.team ? ` · equipo ${formatScore(phase.team.earned)}` : ""}</em></>}</span></div>
                 <div className="coachTrack"><i style={{ width: `${share(phase.mine) ?? 0}%`, background: barColor(share(phase.mine) ?? 0) }} />{showTeam && phase.team && <s style={{ left: `${share(phase.team)}%` }} />}</div>
               </div>)}
               <p className="coachMut">Pasa el ratón por cada fase para ver sus reglas.</p>
-              <p className="coachLbl">Lo que más se me repite</p>
+              <p className="coachLbl">{t.repeated}</p>
               {data.repeated.length ? data.repeated.map((rule) => <div key={rule.title} className="coachRep"><span>{rule.title}</span><i><u style={{ width: `${(100 * rule.pct) / data.repeated[0].pct}%` }} /></i><b>{rule.pct}%</b></div>)
                 : <p className="coachMut">Nada que se repita todavía.</p>}
               <p className="coachMut">Equipo: {data.counts.team} llamadas analizadas con «{data.speech.name}».</p>
             </div>
 
             <div className="coachCard coachBadgesCard">
-              <div className="coachCardHead"><h3>Foco de mejora</h3><span className="coachChip">dónde más puntos se pierden</span></div>
+              <div className="coachCardHead"><h3>Foco de mejora</h3><span className="coachChip">{t.focus}</span></div>
               {data.improvements?.length ? <ol className="coachImprove">
                 {data.improvements.map((entry, index) => <li key={entry.ruleId} className={index === 0 ? "main" : ""}>
                   <span className="coachImproveNum" aria-hidden="true">{index + 1}</span>
@@ -188,19 +225,17 @@ export default function Coach() {
                   </div>
                 </li>)}
               </ol> : <p className="coachMut">Todavía no hay llamadas con el speech activo para calcularlo.</p>}
-              {next && <div className="coachNextBadge">
+              {next && t.next && <div className="coachNextBadge">
                 {ruleBadge(next.rule) && <img src={badgeSrc(ruleBadge(next.rule))} alt="" />}
-                <div><small>Tu próxima insignia</small><b>{next.rule.title}</b><span>{next.phase.name} · Excelente o Bien en {next.good} de tus últimas {next.window} · te {next.missing === 1 ? "falta 1" : `faltan ${next.missing}`}</span></div>
+                <div><small>{t.next}</small><b>{next.rule.title}</b><span>{next.phase.name} · Excelente o Bien en {next.good} de {t.recent} {next.window} · {t.missing} {next.missing === 1 ? "falta 1" : `faltan ${next.missing}`}</span></div>
               </div>}
             </div>
           </div>
 
-          {data.path && <MiCamino key={data.pathOwner} path={data.path}
-            title={data.pathOwner === String(user.email || "").toLowerCase() ? "Mi camino" : `Camino de ${people.find((person) => person.value === data.pathOwner)?.label || data.pathOwner}`}
-            storageKey={`kinedrik_camino_${user.email || ""}_${data.pathOwner}`} />}
+          <CaminoSection headers={headers} user={user} options={caminoOptions} />
 
           <div className="coachCard coachLeads">
-            <div className="coachNavhd"><div><h3>Mis leads</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>
+            <div className="coachNavhd"><div><h3>{t.leads}</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>
               {pendingWa > 0 ? <span className="coachChipDark">💬 {pendingWa} {pendingWa === 1 ? "mensaje" : "mensajes"} por enviar</span> : <span className="coachChipDark">Validaciones por llamada</span>}</div>
             <div className="coachTableWrap"><table className="coachTable">
               <thead><tr><th>Lead · perfil</th><th>En qué punto está</th><th className="num">Interés</th><th className="num">Nota</th>{data.validations.map((label) => <th key={label}>{label}</th>)}</tr></thead>

@@ -114,3 +114,9 @@
 @media (prefers-reduced-motion: reduce) {
   .camFloat, .camFloat::after, .camDetailImg, .camRuleBadge.risk::after, .camTrailSpark, .camPlatformGlow, .camWinRays { animation: none !important; }
 }
+
+.camTools { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.camTools .personChips { flex: 1; }
+.camReplay { flex: none; margin-left: auto; border: 1px solid #FBB42A; background: #fff8e8; color: #8a5e00; border-radius: 999px; padding: 8px 14px; font: 700 13px Roboto, sans-serif; cursor: pointer; }
+.camReplay:hover { background: #FBB42A; color: #040025; }
+.camReplay:focus-visible { outline: 2px solid #0040A4; outline-offset: 2px; }

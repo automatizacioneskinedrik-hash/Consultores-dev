@@ -155,7 +155,22 @@ const toCall = (doc) => {
   };
 };
 
-export async function coachMetrics({ requester, consultant = "all", versionId = "" }) {
+// Who a request is about: own-scope roles are always themselves; the rest may name someone ("all" = the team).
+const targetOf = (requester, consultant) => {
+  if (!requester.cargo.seesAll) return requester.email;
+  const value = String(consultant || "").toLowerCase();
+  return !value || value === "me" ? requester.email : value === "all" ? null : value;
+};
+
+// Mi camino has its own person filter, so it loads on its own without reloading the rest of Coach.
+export async function coachPath({ requester, consultant = "me" }) {
+  const speech = await getActiveSpeech();
+  if (speech.legacy || !Array.isArray(speech.rules)) return { ok: true, legacy: true };
+  const owner = targetOf(requester, consultant) || requester.email;
+  return { ok: true, owner, path: await pathFor(owner, speech) };
+}
+
+export async function coachMetrics({ requester, consultant = "me", versionId = "" }) {
   const speech = versionId ? await getSpeechVersion(versionId) : await getActiveSpeech();
   if (speech.legacy || !Array.isArray(speech.rules)) return { ok: true, legacy: true };
   const rulesById = new Map(speech.rules.map((rule) => [rule.id, rule]));
@@ -166,7 +181,7 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
       "analysis.probabilidades", "analysis.tipo_compromiso_cierre", "analysis.validaciones_lead", "analysis.proximos_pasos").get();
   const team = snap.docs.map(toCall).filter((call) => call.items.length);
   // Own-scope roles always see themselves; roles that see everyone may pick one consultant.
-  const scope = requester.cargo.seesAll ? (consultant && consultant !== "all" ? String(consultant).toLowerCase() : null) : requester.email;
+  const scope = targetOf(requester, consultant);
   const mine = scope ? team.filter((call) => call.email === scope) : team;
 
   const teamScores = phaseScores(team, phases, rulesById);
@@ -206,8 +221,11 @@ export async function coachMetrics({ requester, consultant = "all", versionId = 
     leads,
     counts: { team: team.length, mine: mine.length },
     // Everyone sees their own path; roles that see everyone can pick another person above.
-    path: await pathFor(scope || requester.email, speech),
-    pathOwner: scope || requester.email,
+    scope,
+    // People with calls on the active speech, for the person filters.
+    teamEmails: [...new Set(team.map((call) => call.email))],
+    // The selected person's path, only for "next insignia" in Foco de mejora (the team has none).
+    path: scope ? await pathFor(scope, speech) : null,
     improvements: improvements(mine, rulesById, phases),
   };
 }

@@ -9,6 +9,7 @@ const MASTERY_SPOT = [92.5, 42];
 const HELD = new Set(["earned", "risk"]);
 const SCENE_RATIO = 3; // the background is 2172 × 724
 const MAX_CELEBRATIONS = 5;
+const REPLAY_MAX = 8;
 const BIG = 260;
 
 // Phases take the platforms in order (a spare one stays before Maestría); with more phases, they share the line.
@@ -81,7 +82,8 @@ function Detail({ item, path, onClose }) {
   </div>;
 }
 
-export default function MiCamino({ path, title = "Mi camino", storageKey }) {
+// own: the viewer's own path (celebrations and "tú" texts). filter: the person selector shown in the header.
+export default function MiCamino({ path, title = "Tu camino", storageKey, own = true, filter = null }) {
   const [detail, setDetail] = useState(null);
   const sectionRef = useRef(null);
   const scrollRef = useRef(null);
@@ -99,16 +101,18 @@ export default function MiCamino({ path, title = "Mi camino", storageKey }) {
     ...(path.mastered ? [{ key: "mastery", badge: MASTERY_BADGE, title: "Maestría del speech", kind: "Meta del camino" }] : []),
   ], [phases, path.mastered]);
 
-  // Insignias won since the last visit are celebrated once; the first visit only records what is held.
-  const [queue] = useState(() => {
+// On one's own path: the first visit celebrates what is already held, later visits only what is new.
+  const [queue, setQueue] = useState(() => {
+    if (!own) return [];
     try {
-      const seen = JSON.parse(localStorage.getItem(storageKey) || "null");
-      return seen ? held.filter((item) => item.badge && !seen.includes(item.key)).slice(0, MAX_CELEBRATIONS) : [];
+      const seen = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      return held.filter((item) => item.badge && !seen.includes(item.key)).slice(0, MAX_CELEBRATIONS);
     } catch { return []; }
   });
   useEffect(() => {
+    if (!own) return;
     try { localStorage.setItem(storageKey, JSON.stringify(held.map((item) => item.key))); } catch { /* sin almacenamiento, sin celebración */ }
-  }, [storageKey, held]);
+  }, [own, storageKey, held]);
 
   const [step, setStep] = useState(-1);
   const [stage, setStage] = useState("idle");
@@ -146,6 +150,16 @@ export default function MiCamino({ path, title = "Mi camino", storageKey }) {
     }, 1700);
   }, [step, queue]);
 
+  // "Ver mis insignias": play the celebration again with everything held.
+  const replay = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setStage("idle");
+    setStep(-1);
+    setLanded(new Set());
+    setQueue(held.filter((item) => item.badge).slice(0, REPLAY_MAX));
+  };
+
   // Bring the path into view, then start.
   useEffect(() => {
     if (!queue.length) return;
@@ -171,8 +185,12 @@ export default function MiCamino({ path, title = "Mi camino", storageKey }) {
   return <section className="coachCard camCard" aria-label={title} ref={sectionRef}>
     <div className="camHead">
       <h3>{title}</h3>
-      <p>Domina el <b>{path.pct} %</b> del speech{nextPhase ? <> · {missing === 1 ? "falta 1 insignia" : `faltan ${missing} insignias`} para completar <b>{nextPhase.name}</b></> : " · camino completo"}</p>
+      <p>{own ? "Dominas" : "Domina"} el <b>{path.pct} %</b> del speech{nextPhase ? <> · {own ? "te " : ""}{missing === 1 ? "falta 1 insignia" : `faltan ${missing} insignias`} para completar <b>{nextPhase.name}</b></> : " · camino completo"}</p>
     </div>
+    {(filter || (own && held.length > 0)) && <div className="camTools">
+      {filter}
+      {own && held.length > 0 && <button type="button" className="camReplay" onClick={replay}>Ver mis insignias</button>}
+    </div>}
     <div className="camScroll" ref={scrollRef}>
       <div className="camScene">
         <svg className="camTrail" viewBox={`0 0 ${100 * SCENE_RATIO} 100`} preserveAspectRatio="none" aria-hidden="true">

@@ -1,6 +1,6 @@
 import express from "express";
 import { getRequester } from "../middleware/auth.js";
-import { coachMetrics } from "../services/coachMetrics.js";
+import { coachMetrics, coachPath } from "../services/coachMetrics.js";
 
 const router = express.Router();
 
@@ -19,6 +19,15 @@ router.get("/coach", async (req, res) => {
   } catch (error) {
     console.error("Error en métricas Coach:", error);
     res.status(500).json({ ok: false, error: "No se pudieron calcular las métricas." });
+  }
+});
+
+router.get("/coach/path", async (req, res) => {
+  try {
+    res.json(await coachPath({ requester: req.requester, consultant: req.query.consultant }));
+  } catch (error) {
+    console.error("Error en Mi camino:", error);
+    res.status(500).json({ ok: false, error: "No se pudo cargar el camino." });
   }
 });
 
