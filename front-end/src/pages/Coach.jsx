@@ -135,6 +135,9 @@ export default function Coach() {
   const [error, setError] = useState("");
   const [open, setOpen] = useState(null);
   const [refresh, setRefresh] = useState(0);
+  // Mis leads has its own person filter; when it matches the one above, it reuses that data.
+  const [leadsWho, setLeadsWho] = useState("me");
+  const [leadsData, setLeadsData] = useState(null);
   const myEmail = String(user.email || "").toLowerCase();
 
   useEffect(() => {
@@ -160,11 +163,21 @@ export default function Coach() {
     return () => { cancelled = true; };
   }, [consultant, headers, refresh]);
 
+  useEffect(() => {
+    if (leadsWho === consultant) return undefined;
+    let cancelled = false;
+    fetch(`${API_BASE_URL}/api/metrics/coach?${new URLSearchParams({ consultant: leadsWho })}`, { headers })
+      .then((response) => response.json())
+      .then((body) => { if (!cancelled && body.ok) setLeadsData({ who: leadsWho, leads: body.leads || [] }); })
+      .catch(() => { /* la tabla conserva lo último que tenía */ });
+    return () => { cancelled = true; };
+  }, [leadsWho, consultant, headers, refresh]);
+
   // Only people with calls on the active speech, so nobody shows up empty.
   const me = { value: "me", label: "Yo", fullName: user.fullName, email: myEmail, picture: user.picture };
   const others = people.filter((person) => person.value !== myEmail && (data?.teamEmails || []).includes(person.value))
     .map((person) => ({ ...person, fullName: person.label }));
-  const metricOptions = viewsEveryone ? [me, { value: "all", label: "Equipo" }, ...others] : [];
+  const metricOptions = viewsEveryone ? [{ value: "all", label: "Equipo" }, me, ...others] : [];
   const caminoOptions = viewsEveryone ? [me, ...others] : [me];
 
   // Texts speak to whoever is being looked at: you, another person or the team.
@@ -177,9 +190,12 @@ export default function Coach() {
   }[viewing];
 
   const showTeam = viewing !== "team";
-  const pendingWa = (data?.leads || []).filter((lead) => lead.waPending).length;
   const next = nextInsignia(data?.path);
-  const leads = [...(data?.leads || [])].sort((a, b) => (b.interest ?? -1) - (a.interest ?? -1));
+  const leadsSource = leadsWho === consultant ? data?.leads : leadsData?.who === leadsWho ? leadsData.leads : null;
+  const leads = [...(leadsSource || [])].sort((a, b) => (b.interest ?? -1) - (a.interest ?? -1));
+  const pendingWa = leads.filter((lead) => lead.waPending).length;
+  const leadsFirst = firstName(others.find((person) => person.value === leadsWho)?.label);
+  const leadsTitle = leadsWho === "me" ? "Mis leads" : leadsWho === "all" ? "Leads del equipo" : `Leads de ${leadsFirst}`;
 
   return <div className="dashboardPage">
     <Sidebar />
@@ -235,7 +251,8 @@ export default function Coach() {
           <CaminoSection headers={headers} user={user} options={caminoOptions} />
 
           <div className="coachCard coachLeads">
-            <div className="coachNavhd"><div><h3>{t.leads}</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>
+            {metricOptions.length > 0 && <div className="coachLeadsFilter"><PersonChips options={metricOptions} value={leadsWho} onChange={setLeadsWho} label="Ver los leads de" /></div>}
+            <div className="coachNavhd"><div><h3>{leadsTitle}</h3><span>{leads.length} conversaciones analizadas · ordenadas por interés · pulsa una fila para abrir la ficha</span></div>
               {pendingWa > 0 ? <span className="coachChipDark">💬 {pendingWa} {pendingWa === 1 ? "mensaje" : "mensajes"} por enviar</span> : <span className="coachChipDark">Validaciones por llamada</span>}</div>
             <div className="coachTableWrap"><table className="coachTable">
               <thead><tr><th>Lead · perfil</th><th>En qué punto está</th><th className="num">Interés</th><th className="num">Nota</th>{data.validations.map((label) => <th key={label}>{label}</th>)}</tr></thead>

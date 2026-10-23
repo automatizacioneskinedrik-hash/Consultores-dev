@@ -113,3 +113,4 @@
 .coachNextBadge span { font-size: 12.5px; color: #52617a; }
 @media (prefers-reduced-motion: reduce) { .coachNextBadge img { animation: none; } }
 .coachVh .personChips { max-width: min(780px, 100%); }
+.coachLeadsFilter { margin-bottom: 10px; }
