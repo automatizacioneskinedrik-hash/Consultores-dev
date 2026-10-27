@@ -17,3 +17,8 @@
 .badgeOption:hover img { transform: translateY(-3px); }
 .badgeOption[aria-pressed="true"] { border: 2px solid #0040A4; background: #eaf2ff; color: #0040A4; }
 .badgeOption:focus-visible { outline: 2px solid #2885FF; outline-offset: 2px; }
+.badgeOption.taken { cursor: not-allowed; background: #f6f8fb; color: #94a3b8; }
+.badgeOption.taken img { filter: grayscale(1); opacity: .35; }
+.badgeOption.taken:hover { border-color: #e2e8f0; }
+.badgeOption.taken:hover img { transform: none; }
+.badgeOption small { font-size: 11px; font-weight: 600; color: #94a3b8; }

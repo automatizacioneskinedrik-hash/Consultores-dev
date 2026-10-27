@@ -45,13 +45,13 @@ function PointsCell({ value, onChange, label, readOnly }) {
   </div>;
 }
 
-function Badge({ kind, value, editable, onChange, label }) {
+function Badge({ kind, value, editable, onChange, label, usedBy }) {
   const [open, setOpen] = useState(false);
   return <>
     <button type="button" className="smBadge" onClick={() => editable && setOpen(true)} disabled={!editable} aria-label={label}>
       {value ? <img src={badgeSrc(value)} alt="" /> : <span className="smNoBadge" aria-hidden="true" />}
     </button>
-    {open && <BadgeField kind={kind} value={value} editable onChange={(id) => { onChange(id); setOpen(false); }} openOnly onClose={() => setOpen(false)} />}
+    {open && <BadgeField kind={kind} value={value} editable usedBy={usedBy} onChange={(id) => { onChange(id); setOpen(false); }} openOnly onClose={() => setOpen(false)} />}
   </>;
 }
 
@@ -64,6 +64,16 @@ function Trash({ label, onConfirm, disabled }) {
 // Speech comercial as one uniform grid: each phase row has the same columns as its rules (1, 1.1, 1.2…).
 export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, muletillasPoints, newId }) {
   const total = sumPoints(speech.rules) + ratioPoints + muletillasPoints;
+  // Each insignia is used once: the library dims the ones already placed and says where.
+  const usedBy = {};
+  speech.phases.forEach((phase, phaseIndex) => {
+    const own = phaseBadge(phase);
+    if (own) usedBy[own] = `la fase ${phaseIndex + 1}`;
+    speech.rules.filter((rule) => rule.phaseId === phase.id).forEach((rule, ruleIndex) => {
+      const badge = ruleBadge(rule);
+      if (badge) usedBy[badge] = `la regla ${phaseIndex + 1}.${ruleIndex + 1}`;
+    });
+  });
   const setPhase = (id, field, value) => onChange({ phases: speech.phases.map((phase) => phase.id === id ? { ...phase, [field]: value } : phase) });
   const setRule = (id, field, value) => onChange({ rules: speech.rules.map((rule) => rule.id === id ? { ...rule, [field]: value } : rule) });
   const addRule = (phaseId) => onChange({ rules: [...speech.rules, { id: newId("regla"), phaseId, title: "", guidance: "", points: 1, allowNotApplicable: false }] });
@@ -102,7 +112,7 @@ export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, 
                 <td />
                 <td><div className="smCell smSum">{sumPoints(rules)}</div></td>
                 <td />
-                <td><Badge kind="phase" value={phaseBadge(phase)} editable={editable} label={`Insignia de la fase ${phase.name}`} onChange={(id) => setPhase(phase.id, "badge", id)} /></td>
+                <td><Badge kind="phase" value={phaseBadge(phase)} usedBy={usedBy} editable={editable} label={`Insignia de la fase ${phase.name}`} onChange={(id) => setPhase(phase.id, "badge", id)} /></td>
                 {editable && <td><Trash label={`Eliminar la fase ${phase.name}`} disabled={speech.phases.length === 1} onConfirm={() => onChange({ phases: speech.phases.filter((entry) => entry.id !== phase.id), rules: speech.rules.filter((rule) => rule.phaseId !== phase.id) })} /></td>}
               </tr>,
               ...rules.map((rule, ruleIndex) => {
@@ -118,7 +128,7 @@ export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, 
                   <td><TextCell value={rule.guidance} readOnly={!editable} label={`Ayuda para la IA, regla ${number}`} onChange={(value) => setRule(rule.id, "guidance", value)} /></td>
                   <td><PointsCell value={rule.points} readOnly={!editable} label={`Puntos de la regla ${number}`} onChange={(value) => setRule(rule.id, "points", value)} /></td>
                   <td><div className="smCheck"><input type="checkbox" checked={Boolean(rule.allowNotApplicable)} disabled={!editable} aria-label={`No resta si no ocurre, regla ${number}`} onChange={(event) => setRule(rule.id, "allowNotApplicable", event.target.checked)} /></div></td>
-                  <td><Badge kind="rule" value={ruleBadge(rule)} editable={editable} label={`Insignia de la regla ${number}`} onChange={(id) => setRule(rule.id, "badge", id)} /></td>
+                  <td><Badge kind="rule" value={ruleBadge(rule)} usedBy={usedBy} editable={editable} label={`Insignia de la regla ${number}`} onChange={(id) => setRule(rule.id, "badge", id)} /></td>
                   {editable && <td><Trash label={`Eliminar la regla ${number}`} onConfirm={() => onChange({ rules: speech.rules.filter((entry) => entry.id !== rule.id) })} /></td>}
                 </tr>;
               }),
