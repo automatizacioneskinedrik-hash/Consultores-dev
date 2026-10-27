@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, X } from "lucide-react";
+import { ChevronRight, Plus, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import ChangeHistory from "../components/ChangeHistory";
