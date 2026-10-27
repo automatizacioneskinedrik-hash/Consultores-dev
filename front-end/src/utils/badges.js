@@ -77,7 +77,8 @@ const DEFAULT_RULE_BADGES = {
 
 const KNOWN = new Set([...PHASE_BADGES, ...RULE_BADGES].map((badge) => badge.id).concat(MASTERY_BADGE));
 
-export const phaseBadge = (phase) => (KNOWN.has(phase?.badge) ? phase.badge : DEFAULT_PHASE_BADGES[phase?.id] || null);
-export const ruleBadge = (rule) => (KNOWN.has(rule?.badge) ? rule.badge : DEFAULT_RULE_BADGES[rule?.id] || null);
+export const NO_BADGE = "none";
+export const phaseBadge = (phase) => (phase?.badge === NO_BADGE ? null : KNOWN.has(phase?.badge) ? phase.badge : DEFAULT_PHASE_BADGES[phase?.id] || null);
+export const ruleBadge = (rule) => (rule?.badge === NO_BADGE ? null : KNOWN.has(rule?.badge) ? rule.badge : DEFAULT_RULE_BADGES[rule?.id] || null);
 export const badgeSrc = (id, size = "s") => `/insignias/${size}/${id}.webp`;
 export const badgeTitle = (id) => [...PHASE_BADGES, ...RULE_BADGES].find((badge) => badge.id === id)?.title || "";

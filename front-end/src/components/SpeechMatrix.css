@@ -78,3 +78,17 @@ body.sidebar-collapsed .speechBar { left: 88px; }
 .speechConflict div { margin-left: auto; display: flex; gap: 8px; }
 .speechConfigContent.withBar { padding-bottom: 110px; }
 @media (max-width: 760px) { body.sidebar-collapsed .speechBar, .speechBar { left: 0; padding-left: 16px; padding-right: 16px; } }
+
+/* Phase rows tinted with their own colour; the number toggles the rules below. */
+.smTable .smPhase td { background: var(--tint, #eef3fb); border-top: 2px solid var(--tint-line, #c7d2e3); }
+.smTable .smPhase td.smBlank { border-left-color: transparent; border-right-color: transparent; }
+.smToggle { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: transparent; padding: 0; cursor: pointer; }
+.smToggle:focus-visible { outline: 2px solid #0040A4; outline-offset: 3px; border-radius: 8px; }
+.smTri { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; transition: transform .2s; }
+.smTri.up { border-bottom: 7px solid var(--c); }
+.smTri.down { border-top: 7px solid var(--c); }
+.smToggle:hover .smTri { transform: scale(1.25); }
+.smBadgeCell { position: relative; }
+.smBadgeX { position: absolute; top: 4px; right: 6px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: #D93B1F; color: #fff; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s; padding: 0; }
+.smBadgeCell:hover .smBadgeX, .smBadgeX:focus-visible { opacity: 1; }
+.smBadgeX:hover { background: #a3220d; }

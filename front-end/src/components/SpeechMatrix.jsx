@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { Trash2 } from "lucide-react";
 import BadgeField from "./BadgePicker";
-import { badgeSrc, phaseBadge, ruleBadge } from "../utils/badges";
+import { NO_BADGE, badgeSrc, phaseBadge, ruleBadge } from "../utils/badges";
 import "./SpeechMatrix.css";
 
 // Kinedrik colours in a fixed order, the same in the phase pills and in each phase's number.
@@ -47,12 +48,13 @@ function PointsCell({ value, onChange, label, readOnly }) {
 
 function Badge({ kind, value, editable, onChange, label, usedBy }) {
   const [open, setOpen] = useState(false);
-  return <>
+  return <div className="smBadgeCell">
     <button type="button" className="smBadge" onClick={() => editable && setOpen(true)} disabled={!editable} aria-label={label}>
       {value ? <img src={badgeSrc(value)} alt="" /> : <span className="smNoBadge" aria-hidden="true" />}
     </button>
+    {editable && value && <button type="button" className="smBadgeX" aria-label="Quitar insignia" title="Quitar insignia" onClick={() => onChange(NO_BADGE)}><X size={12} strokeWidth={3} /></button>}
     {open && <BadgeField kind={kind} value={value} editable usedBy={usedBy} onChange={(id) => { onChange(id); setOpen(false); }} openOnly onClose={() => setOpen(false)} />}
-  </>;
+  </div>;
 }
 
 function Trash({ label, onConfirm, disabled }) {
@@ -64,6 +66,8 @@ function Trash({ label, onConfirm, disabled }) {
 // Speech comercial as one uniform grid: each phase row has the same columns as its rules (1, 1.1, 1.2…).
 export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, muletillasPoints, newId }) {
   const total = sumPoints(speech.rules) + ratioPoints + muletillasPoints;
+  const [collapsed, setCollapsed] = useState(() => new Set());
+  const toggle = (id) => setCollapsed((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   // Each insignia is used once: the library dims the ones already placed and says where.
   const usedBy = {};
   speech.phases.forEach((phase, phaseIndex) => {
@@ -104,18 +108,24 @@ export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, 
           {speech.phases.map((phase, phaseIndex) => {
             const rules = speech.rules.filter((rule) => rule.phaseId === phase.id);
             const [color, ink] = phaseColor(phaseIndex);
+            const isCollapsed = collapsed.has(phase.id);
             return [
-              <tr key={phase.id} className="smPhase">
-                <td className="smNum"><span className="smStep" style={{ background: color, color: ink }}>{phaseIndex + 1}</span></td>
+              <tr key={phase.id} className="smPhase" style={{ "--tint": `${color}1f`, "--tint-line": `${color}55` }}>
+                <td className="smNum">
+                  <button type="button" className="smToggle" onClick={() => toggle(phase.id)} aria-expanded={!isCollapsed} aria-label={`${isCollapsed ? "Desplegar" : "Replegar"} la fase ${phaseIndex + 1}`}>
+                    <span className="smStep" style={{ background: color, color: ink }}>{phaseIndex + 1}</span>
+                    <span className={`smTri ${isCollapsed ? "down" : "up"}`} style={{ "--c": color }} aria-hidden="true" />
+                  </button>
+                </td>
                 <td><TextCell className="smName" value={phase.name} required readOnly={!editable} label={`Nombre de la fase ${phaseIndex + 1}`} onChange={(value) => setPhase(phase.id, "name", value)} /></td>
                 <td><TextCell className="smObjective" value={phase.objective} readOnly={!editable} label={`Objetivo de la fase ${phaseIndex + 1}`} onChange={(value) => setPhase(phase.id, "objective", value)} /></td>
-                <td />
+                <td className="smBlank" />
                 <td><div className="smCell smSum">{sumPoints(rules)}</div></td>
-                <td />
+                <td className="smBlank" />
                 <td><Badge kind="phase" value={phaseBadge(phase)} usedBy={usedBy} editable={editable} label={`Insignia de la fase ${phase.name}`} onChange={(id) => setPhase(phase.id, "badge", id)} /></td>
                 {editable && <td><Trash label={`Eliminar la fase ${phase.name}`} disabled={speech.phases.length === 1} onConfirm={() => onChange({ phases: speech.phases.filter((entry) => entry.id !== phase.id), rules: speech.rules.filter((rule) => rule.phaseId !== phase.id) })} /></td>}
               </tr>,
-              ...rules.map((rule, ruleIndex) => {
+              ...(isCollapsed ? [] : rules).map((rule, ruleIndex) => {
                 const number = `${phaseIndex + 1}.${ruleIndex + 1}`;
                 return <tr key={rule.id}>
                   <td className="smNum smRuleNum">{number}</td>
@@ -132,7 +142,7 @@ export default function SpeechMatrix({ speech, editable, onChange, ratioPoints, 
                   {editable && <td><Trash label={`Eliminar la regla ${number}`} onConfirm={() => onChange({ rules: speech.rules.filter((entry) => entry.id !== rule.id) })} /></td>}
                 </tr>;
               }),
-              editable && <tr key={`${phase.id}-add`} className="smAddRow"><td /><td colSpan={7}><button type="button" className="smAdd" onClick={() => addRule(phase.id)}>+ Añadir regla a {phase.name || "esta fase"}</button></td></tr>,
+              editable && !isCollapsed && <tr key={`${phase.id}-add`} className="smAddRow"><td /><td colSpan={7}><button type="button" className="smAdd" onClick={() => addRule(phase.id)}>+ Añadir regla a {phase.name || "esta fase"}</button></td></tr>,
             ];
           })}
         </tbody>
