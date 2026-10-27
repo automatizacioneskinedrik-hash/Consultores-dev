@@ -1,23 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronRight, Pencil, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import GuideTour from "../components/GuideTour";
 import ChangeHistory from "../components/ChangeHistory";
 import UserAvatar from "../components/UserAvatar";
-import BadgeField from "../components/BadgePicker";
-import { badgeSrc, phaseBadge, ruleBadge } from "../utils/badges";
+import SpeechMatrix from "../components/SpeechMatrix";
 import { DEFAULT_GAPS, GAP_KINDS, GAP_STOPS, formatGap, stopIndex } from "../utils/muletillaGaps";
 
 const SPEECH_TOUR_CLEANUP = [{ click: "#speech-tab-version" }];
 const SPEECH_TOUR = [
   { title: "¡Hola! Yo cuido el speech comercial", text: "Aquí se define cómo se califica cada llamada. Te muestro sus partes, de arriba a abajo." },
   { target: ".speechTabs", title: "Versión e Historial", text: "En Versión ves y editas el speech. En Historial están todas las versiones publicadas, por si quieres volver a una anterior." },
-  { target: ".speechFlow", title: "Primero lees, luego editas", text: "Para cambiar algo, crea una nueva versión: se abre un borrador que se guarda solo. Los consultores no notan nada hasta que lo publiques." },
-  { target: ".speechSummary", title: "El reparto de los 100 puntos", text: "Esta barra muestra cuánto vale cada fase. Para poder publicar, todo debe sumar exactamente 100." },
-  { target: ".speechPhaseHead", title: "Fases y reglas", text: "Cada fase agrupa reglas con su valor en puntos. Haz clic en una fase para ver su objetivo y sus reglas." },
-  { do: [{ show: [".speechPhaseHead", ".speechPhaseCard.open .speechPhaseBody"] }], target: ".speechPhaseCard.open .speechObjective", title: "El objetivo de la fase", text: "Cada fase explica qué debe lograr el consultor en esa parte de la llamada." },
-  { target: ".speechPhaseCard.open .speechRules", title: "Sus reglas", text: "Cada regla dice qué se espera y cuántos puntos vale. Cuando editas, aparecen el lápiz para cambiarla, la papelera para quitarla y el botón para añadir otra." },
-  { title: "Ayuda para la IA", text: "Al editar una regla puedes escribirle a la IA qué cuenta y qué no. Así califica igual en todas las llamadas." },
+  { target: ".speechBar", title: "Primero lees, luego editas", text: "Para cambiar algo, crea una nueva versión. Guardas el borrador cuando quieras y publicas cuando esté listo; los consultores no notan nada antes." },
+  { target: ".smCard", title: "Fases y reglas", text: "Todo el speech en una tabla: cada fase con sus reglas debajo. Escribes directo en las celdas, los puntos solo aceptan números y la insignia se elige de la biblioteca." },
+  { target: ".smPills", title: "El reparto de los 100 puntos", text: "Cada burbuja suma los puntos de su fase. Para publicar, el total debe dar exactamente 100." },
   { target: ".speechRatioHeadRow", title: "Ratio de habla", text: "Aquí defines hasta qué porcentaje puede hablar el consultor antes de perder puntos. Lo mide el sistema, no la IA." },
   { do: [{ show: [".speechRatioHeadRow .speechPhaseHead", ".speechRatio"] }], target: ".speechRatio", title: "Los cuatro límites", text: "Estas marcas dividen el ratio en cinco zonas, de excelente a no lo hizo. Al editar, las mueves para ajustar cada zona." },
   { target: ".speechPhaseCard:last-of-type .speechRatioHeadRow", title: "Muletillas", text: "La IA detecta sola las muletillas. Tú solo indicas cada cuánto se vale repetir una palabra." },
@@ -32,7 +28,6 @@ import "./SpeechConfig.css";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001";
 const TOTAL_POINTS = 100;
 const GENERAL_GROUP_ID = "GENERAL";
-const AUTOSAVE_DELAY = 800;
 const SPEECH_TABS = [
   ["version", "Versión"],
   ["history", "Historial"],
@@ -40,16 +35,6 @@ const SPEECH_TABS = [
 
 const newId = (prefix) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 const sumPoints = (rules) => rules.reduce((sum, rule) => sum + (Number(rule.points) || 0), 0);
-
-// Gradient of brand blues (Navy → Kinedrik Blue → Digital Blue) for the points bar segments.
-const BLUE_STOPS = [[4, 0, 37], [0, 64, 164], [40, 133, 255]];
-function blueShade(index, count) {
-  const position = count > 1 ? (index / (count - 1)) * (BLUE_STOPS.length - 1) : 0;
-  const stop = Math.min(Math.floor(position), BLUE_STOPS.length - 2);
-  const ratio = position - stop;
-  const [r, g, b] = BLUE_STOPS[stop].map((value, channel) => Math.round(value + (BLUE_STOPS[stop + 1][channel] - value) * ratio));
-  return `rgb(${r}, ${g}, ${b})`;
-}
 
 function editableCopy(speech) {
   const { format, name, description, phases, rules, talkRatio, muletillas } = structuredClone(speech);
@@ -180,71 +165,6 @@ function MuletillaExclusions({ words = [], editable, onChange }) {
   </div>;
 }
 
-function PointsSummary({ groups, total }) {
-  return <section className="speechSummary" aria-label="Reparto de puntos">
-    <div className="speechSummaryHead">
-      <strong>Reparto de los 100 puntos</strong>
-      <span className={`speechTotal ${total === TOTAL_POINTS ? "ok" : "error"}`}>
-        {total} <small>/ {TOTAL_POINTS} pts {total === TOTAL_POINTS ? "✓" : total < TOTAL_POINTS ? `· faltan ${TOTAL_POINTS - total}` : `· sobran ${total - TOTAL_POINTS}`}</small>
-      </span>
-    </div>
-    {/* Each label sits under its own bar segment, so both share the segment's width. */}
-    <div className="speechBar">
-      {groups.filter((group) => group.points > 0).map((group, index, shownGroups) => <div className="speechBarSegment" key={group.id} title={`${group.name}: ${group.points} pts`} style={{ flexGrow: group.points }}>
-        <span style={{ background: blueShade(index, shownGroups.length) }} />
-        <small>{group.name} <b>{group.points}</b></small>
-      </div>)}
-    </div>
-    <p className="speechHint">Cada regla vale unos puntos. La IA califica cada regla de Excelente a No lo hizo y el sistema suma.</p>
-  </section>;
-}
-
-function RuleRow({ rule, editable, editing, onEdit, onChange, onRemove }) {
-  const [confirmingRemove, setConfirmingRemove] = useState(false);
-  const badge = ruleBadge(rule);
-  return <div className="speechRule">
-    <div className="speechRuleText">
-      {badge && <img className="speechRuleBadge" src={badgeSrc(badge)} alt="" />}
-      <strong>{rule.title || "Regla sin texto"}</strong>
-      {rule.allowNotApplicable && <span className="speechTag">No resta si no ocurre</span>}
-    </div>
-    <span className={`speechStepper ${editable ? "" : "readOnly"}`}>
-      {editable && <button type="button" aria-label="Restar un punto" onClick={() => onChange("points", Math.max(1, rule.points - 1))}>−</button>}
-      <output>{rule.points} <small>pts</small></output>
-      {editable && <button type="button" aria-label="Sumar un punto" onClick={() => onChange("points", Math.min(TOTAL_POINTS, rule.points + 1))}>+</button>}
-    </span>
-    {editable && <span className="speechRuleActions">
-      <button type="button" className="speechIconButton" aria-label="Editar regla" title="Editar regla" aria-expanded={editing} onClick={onEdit}><Pencil size={15} /></button>
-      <button type="button" className="speechIconButton danger" aria-label="Eliminar regla" title="Eliminar regla" onClick={() => setConfirmingRemove(true)}><Trash2 size={15} /></button>
-    </span>}
-    {editable && confirmingRemove && <div className="speechConfirm speechRuleConfirm">
-      ¿Eliminar esta regla?
-      <button type="button" className="speechSecondaryButton" onClick={() => setConfirmingRemove(false)}>No</button>
-      <button type="button" className="speechDangerButton" onClick={onRemove}>Eliminar</button>
-    </div>}
-    {editable && editing && <div className="speechEditor">
-      <div className="speechInputField">
-        <label htmlFor={`ruleTitle-${rule.id}`}>Qué debe pasar</label>
-        <input id={`ruleTitle-${rule.id}`} autoFocus value={rule.title} maxLength={200} placeholder="Ej. Pregunta por el presupuesto antes del precio" onChange={(event) => onChange("title", event.target.value)} />
-        <span>Una sola acción, fácil de comprobar al escuchar la llamada.</span>
-      </div>
-      <div className="speechInputField">
-        <label htmlFor={`ruleGuidance-${rule.id}`}>Ayuda para la IA (opcional)</label>
-        <input id={`ruleGuidance-${rule.id}`} value={rule.guidance || ""} maxLength={1500} placeholder="Ej. Vale si pregunta por ingresos o capacidad de pago" onChange={(event) => onChange("guidance", event.target.value)} />
-      </div>
-      <BadgeField kind="rule" value={badge} editable onChange={(id) => onChange("badge", id)} />
-      <label className="speechSwitch">
-        <input type="checkbox" checked={rule.allowNotApplicable} onChange={(event) => onChange("allowNotApplicable", event.target.checked)} />
-        <span>No restar si la situación no ocurre<small>Ejemplo: si el cliente no pone objeciones, la regla de objeciones no cuenta.</small></span>
-      </label>
-      <div className="speechEditorActions">
-        <span />
-        <button type="button" className="speechPrimaryButton" onClick={onEdit}>Listo</button>
-      </div>
-    </div>}
-  </div>;
-}
-
 export default function SpeechConfig() {
   const [user] = useState(() => getUser() || {});
   const [activeTab, setActiveTab] = useState("version");
@@ -255,14 +175,12 @@ export default function SpeechConfig() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   const [saveState, setSaveState] = useState("saved");
+  const [savedAt, setSavedAt] = useState(null);
+  const [conflict, setConflict] = useState(null);
   const [expanded, setExpanded] = useState(() => new Set());
-  const [editingRule, setEditingRule] = useState(null);
-  const [editingPhase, setEditingPhase] = useState(null);
-  const [confirming, setConfirming] = useState(null);
   const [publishing, setPublishing] = useState(false);
   const [busy, setBusy] = useState(false);
   const revisionRef = useRef(0);
-  const pendingRef = useRef(false);
 
   const request = useCallback(async (path, options = {}) => {
     const response = await fetch(`${API_BASE_URL}/api/prompts/speech${path}`, {
@@ -287,6 +205,8 @@ export default function SpeechConfig() {
       setVersions(data.versions || []);
       updateRevision(data.revision);
       setSaveState("saved");
+      setSavedAt(data.draftSavedAt);
+      setConflict(null);
       setExpanded(new Set());
     } catch (error) {
       setNotice({ error: true, text: error.message });
@@ -295,31 +215,45 @@ export default function SpeechConfig() {
 
   useEffect(() => { load(); }, [load]);
 
+  // The draft is saved only with "Guardar borrador". If someone saved in between, say who and let the user choose.
   const saveDraft = useCallback(async (config) => {
     setSaveState("saving");
     try {
       const data = await request("/draft", { method: "PUT", body: JSON.stringify({ config, revision: revisionRef.current }) });
       updateRevision(data.revision);
       setSaveState("saved");
+      setSavedAt(new Date().toISOString());
+      setConflict(null);
       return true;
     } catch (error) {
-      setSaveState("error");
-      setNotice({ error: true, text: `No se pudo guardar el borrador: ${error.message}` });
+      if (/otra sesión/.test(error.message)) {
+        const latest = await request("").catch(() => null);
+        setConflict({ by: latest?.draftSavedByName || latest?.draftSavedBy || "Otra persona", at: latest?.draftSavedAt, revision: latest?.revision });
+        setSaveState("dirty");
+      } else {
+        setSaveState("error");
+        setNotice({ error: true, text: `No se pudo guardar el borrador: ${error.message}` });
+      }
       return false;
     }
   }, [request]);
 
-  // Autosave the draft shortly after the last change.
+  // Leaving the page with unsaved changes asks first.
   useEffect(() => {
-    if (!draft || !pendingRef.current) return undefined;
-    const timer = setTimeout(() => { pendingRef.current = false; saveDraft(draft); }, AUTOSAVE_DELAY);
-    return () => clearTimeout(timer);
-  }, [draft, saveDraft]);
+    if (saveState !== "dirty") return undefined;
+    const warn = (event) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [saveState]);
 
   function change(patch) {
-    pendingRef.current = true;
-    setSaveState("pending");
+    setSaveState("dirty");
     setDraft((current) => ({ ...current, ...patch }));
+  }
+
+  async function keepMine() {
+    if (conflict?.revision != null) updateRevision(conflict.revision);
+    await saveDraft(draft);
   }
 
   async function startEdit() {
@@ -330,24 +264,9 @@ export default function SpeechConfig() {
     await saveDraft(start);
   }
 
-  async function discard() {
-    setBusy(true);
-    try {
-      const data = await request("/draft", { method: "DELETE" });
-      updateRevision(data.revision);
-      pendingRef.current = false;
-      setDraft(null);
-      setConfirming(null);
-      setEditingRule(null);
-      setNotice({ text: "Borrador descartado. Sigue activa la versión publicada." });
-    } catch (error) { setNotice({ error: true, text: error.message }); }
-    finally { setBusy(false); }
-  }
-
   async function publish() {
     setBusy(true);
     setNotice(null);
-    pendingRef.current = false;
     try {
       if (!(await saveDraft(draft))) return;
       await request("/publish", { method: "POST", body: JSON.stringify({ revision: revisionRef.current }) });
@@ -380,55 +299,19 @@ export default function SpeechConfig() {
   const editing = Boolean(draft);
   // The fixed-rules version is shown through its points translation (same phases, same criteria).
   const shown = editing ? draft : withIndicators(active?.format === "points" ? active : template, template);
-  const groups = shown ? [
-    ...shown.phases.map((phase, index) => ({ ...phase, number: index + 1 })),
-  ].map((group) => {
-    const rules = shown.rules.filter((rule) => rule.phaseId === group.id);
-    return { ...group, rules, points: sumPoints(rules) };
-  }) : [];
   const ratioPoints = shown?.talkRatio?.points || 0;
   const muletillasPoints = shown?.muletillas?.points || 0;
-  const summaryGroups = [...groups, { id: "talk-ratio", name: "Ratio de habla", points: ratioPoints }, { id: "muletillas", name: "Muletillas", points: muletillasPoints }];
   const total = shown ? sumPoints(shown.rules) + ratioPoints + muletillasPoints : 0;
 
-  function changePhase(id, field, value) {
-    change({ phases: draft.phases.map((phase) => phase.id === id ? { ...phase, [field]: value } : phase) });
-  }
-
-  function addPhase() {
-    const phase = { id: newId("fase"), name: "Nueva fase", objective: "" };
-    change({ phases: [...draft.phases, phase] });
-    setExpanded((current) => new Set(current).add(phase.id));
-    setEditingPhase(phase.id);
-  }
-
-  function removePhase(id) {
-    change({ phases: draft.phases.filter((phase) => phase.id !== id), rules: draft.rules.filter((rule) => rule.phaseId !== id) });
-    setConfirming(null);
-  }
-
-  function changeRule(id, field, value) {
-    change({ rules: draft.rules.map((rule) => rule.id === id ? { ...rule, [field]: value } : rule) });
-  }
-
-  function addRule(phaseId) {
-    const rule = { id: newId("regla"), phaseId, title: "", guidance: "", points: 1, allowNotApplicable: false };
-    change({ rules: [...draft.rules, rule] });
-    setEditingRule(rule.id);
-  }
-
-  function removeRule(id) {
-    change({ rules: draft.rules.filter((rule) => rule.id !== id) });
-    setEditingRule(null);
-  }
-
-  const saveLabel = { saving: "Guardando…", pending: "Guardando…", saved: "Cambios guardados", error: "No se pudo guardar" }[saveState];
+  const minutesAgo = savedAt ? Math.max(0, Math.round((Date.now() - Date.parse(savedAt)) / 60000)) : null;
+  const saveLabel = { saving: "Guardando…", dirty: "Cambios sin guardar", error: "No se pudo guardar" }[saveState]
+    || (minutesAgo == null ? "Borrador guardado" : minutesAgo < 1 ? "Guardado hace un momento" : `Guardado hace ${minutesAgo} min`);
 
   return (
     <div className="speechConfigPage">
       <Sidebar />
       {!loading && <GuideTour id="speech" steps={SPEECH_TOUR} cleanup={SPEECH_TOUR_CLEANUP} mascot="/mascots/dots/dot-lila-editor-speech-guia.webp" mascotName="el personaje lila" aura="rgba(187, 138, 255, .6)" />}
-      <main className="speechConfigContent">
+      <main className={`speechConfigContent ${!loading && active && activeTab === "version" ? "withBar" : ""}`}>
         <header className="speechConfigHeader">
           <div>
             <h1 className="pageTitle">Configurar <span className="titleAccent">Speech Comercial</span></h1>
@@ -464,68 +347,17 @@ export default function SpeechConfig() {
                   <button type="button" className="speechSecondaryButton" onClick={() => setPublishing(false)} disabled={busy}>Seguir editando</button>
                   <button type="button" className="speechPrimaryButton" onClick={publish} disabled={busy || total !== TOTAL_POINTS || !draft.name.trim()}>Publicar</button>
                 </div>
+                {total !== TOTAL_POINTS && <p className="speechHint">El total es {total}; debe dar 100 para publicar.</p>}
               </section>}
 
-              {!publishing && !editing && <div className="speechFlow view">
-                <div><strong>Versión activa: {active.name}</strong><p>Es la que usa hoy el análisis de las llamadas. Estás en modo lectura.</p></div>
-                <button type="button" className="speechPrimaryButton" onClick={startEdit} disabled={busy}>Crear nueva versión</button>
-              </div>}
-
-              {!publishing && editing && <div className="speechFlow edit">
-                <div><strong>Borrador de nueva versión</strong><p>Los cambios se guardan solos. Los consultores no ven nada hasta que publiques. <span className="speechSaveState">{saveLabel}</span></p></div>
-                <div className="speechFlowActions">
-                  {confirming === "discard"
-                    ? <><span>¿Descartar todos los cambios?</span><button type="button" className="speechSecondaryButton" onClick={() => setConfirming(null)}>No</button><button type="button" className="speechDangerButton" onClick={discard} disabled={busy}>Sí, descartar</button></>
-                    : <><button type="button" className="speechSecondaryButton" onClick={() => setConfirming("discard")} disabled={busy}>Descartar borrador</button><button type="button" className="speechPrimaryButton" onClick={() => { setPublishing(true); setEditingRule(null); }} disabled={busy}>Publicar versión</button></>}
-                </div>
+              {conflict && editing && <div className="speechConflict" role="alert">
+                <span><b>{conflict.by} guardó cambios en este borrador{conflict.at ? ` el ${new Date(conflict.at).toLocaleString("es-CO", { dateStyle: "short", timeStyle: "short" })}` : ""}.</b> Tus cambios siguen aquí, sin guardar.</span>
+                <div><button type="button" className="speechSecondaryButton" onClick={load} disabled={busy}>Cargar sus cambios</button><button type="button" className="speechPrimaryButton" onClick={keepMine} disabled={busy}>Guardar los míos encima</button></div>
               </div>}
 
               {shown && <>
-                <PointsSummary groups={summaryGroups} total={total} />
+                <SpeechMatrix speech={shown} editable={editing} onChange={change} ratioPoints={ratioPoints} muletillasPoints={muletillasPoints} newId={newId} />
                 <div className={`speechPhases ${editing ? "" : "readOnly"}`}>
-                  {groups.map((group) => {
-                    const open = expanded.has(group.id);
-                    const count = group.rules.length;
-                    return <section className={`speechPhaseCard ${open ? "open" : ""}`} key={group.id}>
-                      <button type="button" className="speechPhaseHead" aria-expanded={open} onClick={() => toggle(group.id)}>
-                        <span className="speechStep">{group.number}</span>
-                        <span className="speechPhaseTitle"><strong>{group.name || "Fase sin nombre"}</strong><span>{count} {count === 1 ? "regla" : "reglas"}</span></span>
-                        <span className="speechPhasePoints">{group.points} <small>pts</small></span>
-                        <ChevronRight className="speechChevron" size={18} aria-hidden="true" />
-                      </button>
-
-                      {open && <div className="speechPhaseBody">
-                        {editing && editingPhase === group.id
-                            ? <div className="speechEditor">
-                              <div className="speechInputField"><label htmlFor={`phaseName-${group.id}`}>Nombre de la fase</label><input id={`phaseName-${group.id}`} autoFocus value={group.name} maxLength={100} onChange={(event) => changePhase(group.id, "name", event.target.value)} /></div>
-                              <BadgeField kind="phase" value={phaseBadge(group)} editable onChange={(id) => changePhase(group.id, "badge", id)} />
-                              <div className="speechInputField"><label htmlFor={`phaseObjective-${group.id}`}>Objetivo</label><input id={`phaseObjective-${group.id}`} value={group.objective} maxLength={2000} placeholder="Para qué sirve esta fase en la llamada" onChange={(event) => changePhase(group.id, "objective", event.target.value)} /></div>
-                              <div className="speechEditorActions"><span /><button type="button" className="speechPrimaryButton" onClick={() => setEditingPhase(null)}>Listo</button></div>
-                            </div>
-                            : <div className="speechObjective">{phaseBadge(group) && <img className="speechPhaseBadge" src={badgeSrc(phaseBadge(group))} alt="" />}<b>Objetivo</b><p>{group.objective || "Sin objetivo definido."}</p>{editing && <button type="button" className="speechLinkButton" onClick={() => setEditingPhase(group.id)}>Editar fase</button>}</div>}
-
-                        <p className="speechSectionLabel"><span>Reglas de esta fase ({count})</span><span>Puntos</span></p>
-                        <div className="speechRules">
-                          {group.rules.map((rule) => <RuleRow
-                            key={rule.id}
-                            rule={rule}
-                            editable={editing}
-                            editing={editingRule === rule.id}
-                            onEdit={() => setEditingRule(editingRule === rule.id ? null : rule.id)}
-                            onChange={(field, value) => changeRule(rule.id, field, value)}
-                            onRemove={() => removeRule(rule.id)}
-                          />)}
-                          {!count && <div className="speechRule"><span className="speechRuleEmpty">Esta fase aún no tiene reglas.</span></div>}
-                        </div>
-                        {editing && <button type="button" className="speechSecondaryButton speechAddRule" onClick={() => addRule(group.id)}><Plus size={14} /> Añadir regla</button>}
-
-                        {editing && (confirming === group.id
-                          ? <div className="speechConfirm">¿Eliminar la fase "{group.name}"{count ? ` y sus ${count} reglas` : ""}?<button type="button" className="speechSecondaryButton" onClick={() => setConfirming(null)}>Cancelar</button><button type="button" className="speechDangerButton" onClick={() => removePhase(group.id)}>Eliminar</button></div>
-                          : <button type="button" className="speechRemovePhase" onClick={() => setConfirming(group.id)} disabled={draft.phases.length === 1} title={draft.phases.length === 1 ? "El speech necesita al menos una fase" : undefined}><Trash2 size={15} /> Eliminar esta fase</button>)}
-                      </div>}
-                    </section>;
-                  })}
-                  {editing && <button type="button" className="speechAddPhase" onClick={addPhase} disabled={draft.phases.length >= 12}><Plus size={18} /> Añadir fase</button>}
                   <section className={`speechPhaseCard ${expanded.has("talk-ratio") ? "open" : ""}`}>
                     <div className="speechRatioHeadRow">
                       <button type="button" className="speechPhaseHead" aria-expanded={expanded.has("talk-ratio")} onClick={() => toggle("talk-ratio")}>
@@ -568,6 +400,19 @@ export default function SpeechConfig() {
               </>}
             </>}
 
+            {activeTab === "version" && <div className="speechBar" role="region" aria-label="Guardar y publicar">
+              {editing
+                ? <>
+                  <div className={`speechBarState ${saveState === "dirty" ? "dirty" : saveState === "error" ? "error" : ""}`}><i />{saveState === "dirty" ? <b>{saveLabel}</b> : <span>{saveLabel}</span>}</div>
+                  <button type="button" className="speechSecondaryButton" onClick={() => saveDraft(draft)} disabled={busy || saveState !== "dirty"}>Guardar borrador</button>
+                  <button type="button" className="speechPrimaryButton" onClick={() => setPublishing(true)} disabled={busy}>Publicar versión</button>
+                </>
+                : <>
+                  <div className="speechBarState"><i /><span>Versión activa: <b>{active.name}</b> · modo lectura</span></div>
+                  <button type="button" className="speechPrimaryButton" onClick={startEdit} disabled={busy}>Crear nueva versión</button>
+                </>}
+            </div>}
+
             {activeTab === "history" && <section className="speechSection speechVersions">
               <div className="speechVersionList">
                 {versions.map((version) => <div className="speechVersion" key={version.id}>
@@ -588,7 +433,7 @@ export default function SpeechConfig() {
                 </div>)}
               </div>
               <ChangeHistory section="speech" description="Publicaciones, borradores descartados y vueltas a versiones anteriores." refreshKey={`${active?.id}-${versions.length}-${Boolean(draft)}`} />
-              {editing && <p className="speechHint">Para cambiar la versión activa, primero publica o descarta el borrador.</p>}
+              {editing && <p className="speechHint">Para cambiar la versión activa, primero publica el borrador.</p>}
             </section>}
           </section>
         </>}

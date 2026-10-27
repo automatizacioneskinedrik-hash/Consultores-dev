@@ -104,7 +104,7 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
   const phases = value.phases.map((entry, index) => ({
     id: text(entry?.id, `ID de fase ${index + 1}`, 64),
     name: text(entry?.name, `Nombre de fase ${index + 1}`, 100),
-    objective: text(entry?.objective, `Objetivo de fase ${index + 1}`, 2000, { required }),
+    objective: text(entry?.objective, `Objetivo de fase ${index + 1}`, 10000, { required }),
     badge: badgeId(entry?.badge),
   }));
   const phaseIds = new Set(phases.map((entry) => entry.id));
@@ -122,8 +122,8 @@ export function validatePointsSpeech(value, { draft = false } = {}) {
     return {
       id: text(entry?.id, `${label}: ID`, 64),
       phaseId,
-      title: text(entry?.title, `${label}: qué debe pasar`, 200, { required }),
-      guidance: text(entry?.guidance, `${label}: detalle`, 1500, { required: false }),
+      title: text(entry?.title, `${label}: qué debe pasar`, 10000, { required }),
+      guidance: text(entry?.guidance, `${label}: detalle`, 10000, { required: false }),
       points,
       allowNotApplicable: entry?.allowNotApplicable === true,
       badge: badgeId(entry?.badge),

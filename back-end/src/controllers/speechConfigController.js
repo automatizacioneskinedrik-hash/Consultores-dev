@@ -13,7 +13,7 @@ export async function getSpeechConfig(req, res) {
 
 export async function putSpeechDraft(req, res) {
   try {
-    const revision = await saveSpeechDraft(req.body.config, req.body.revision);
+    const revision = await saveSpeechDraft(req.body.config, req.body.revision, req.headers["x-admin-email"]);
     return res.json({ ok: true, revision });
   } catch (error) { return fail(res, error); }
 }

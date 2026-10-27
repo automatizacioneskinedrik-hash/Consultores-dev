@@ -135,6 +135,10 @@ export async function getSpeechEditorData() {
     active,
     draft: currentDraft(state.data()) ? withNormalizedRules(currentDraft(state.data())) : null,
     revision: state.data()?.revision || 0,
+    // Who saved the draft last, so a conflict can say who and when.
+    draftSavedBy: state.data()?.draftSavedBy || "",
+    draftSavedByName: publisher(state.data()?.draftSavedBy).publishedByName,
+    draftSavedAt: state.data()?.draftSavedAt?.toDate?.().toISOString() || null,
     pointsTemplate: POINTS_TEMPLATE,
     ruleLevels: RULE_LEVELS,
     versions: [
@@ -144,14 +148,14 @@ export async function getSpeechEditorData() {
   };
 }
 
-export async function saveSpeechDraft(input, expectedRevision) {
+export async function saveSpeechDraft(input, expectedRevision, savedBy = "") {
   // Drafts may be incomplete while editing; the full checks run on publish.
   const config = validateSpeechConfig(input, { draft: true });
   return db.runTransaction(async (transaction) => {
     const state = await transaction.get(stateRef());
     const revision = state.data()?.revision || 0;
     if (revision !== expectedRevision) throw new Error("El borrador cambió en otra sesión. Recarga antes de guardar.");
-    transaction.set(stateRef(), { [draftField(config)]: config, revision: revision + 1 }, { merge: true });
+    transaction.set(stateRef(), { [draftField(config)]: config, revision: revision + 1, draftSavedBy: String(savedBy || "").toLowerCase(), draftSavedAt: new Date() }, { merge: true });
     return revision + 1;
   });
 }
