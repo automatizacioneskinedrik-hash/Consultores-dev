@@ -19,6 +19,8 @@ const REFRESH_DAYS = 45;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const usageRef = (day) => db.collection("assembly_usage").doc(day);
+// Bump when the way a cost is computed changes, so every stored day is recomputed once.
+const COSTS_METHOD = 2;
 const costsCollection = db.collection("daily_costs");
 const metaRef = db.collection("cost_meta").doc("collection");
 export const utcDay = (date) => new Date(date).toISOString().slice(0, 10);
@@ -136,15 +138,40 @@ async function googleCosts(fromDay, toDay) {
   }
 }
 
-async function assemblyCosts(days) {
-  const snaps = await db.getAll(...days.map(usageRef));
+// "mm:ss" or "h:mm:ss" → seconds.
+const durationSeconds = (value) => {
+  const parts = String(value || "").split(":").map(Number);
+  if (parts.some((part) => !Number.isFinite(part))) return 0;
+  return parts.reduce((total, part) => total * 60 + part, 0);
+};
+
+// Audio transcribed per day, from the calls saved in the shared database (production and develop alike).
+// Days imported from AssemblyAI's own report keep that figure when it is higher, since it also bills
+// failed or repeated transcriptions.
+export async function assemblyCosts(days) {
+  const [snaps, calls] = await Promise.all([
+    db.getAll(...days.map(usageRef)),
+    db.collection("meetings_analysis")
+      .where("createdAt", ">=", new Date(`${days[0]}T00:00:00Z`))
+      .where("createdAt", "<", new Date(`${addDays(days[days.length - 1], 1)}T00:00:00Z`))
+      .select("createdAt", "analysis.participacion.duracion_total").get(),
+  ]);
+  const fromCalls = {};
+  for (const doc of calls.docs) {
+    const day = utcDay(doc.data().createdAt.toMillis());
+    const entry = fromCalls[day] || (fromCalls[day] = { calls: 0, seconds: 0 });
+    entry.calls += 1;
+    entry.seconds += durationSeconds(doc.data().analysis?.participacion?.duracion_total);
+  }
   const byDay = {};
   const usage = {};
   snaps.forEach((snap, index) => {
-    const data = snap.exists ? snap.data() : {};
-    const hours = (data.audioSeconds || 0) / 3600;
-    usage[days[index]] = { calls: data.transcriptions || 0, audioHours: round(hours) };
-    for (const [item, rate] of Object.entries(ASSEMBLY_RATES)) addCost(byDay, days[index], item, hours * rate);
+    const day = days[index];
+    const counted = snap.exists ? snap.data() : {};
+    const seconds = Math.max(counted.audioSeconds || 0, fromCalls[day]?.seconds || 0);
+    const hours = seconds / 3600;
+    usage[day] = { calls: Math.max(counted.transcriptions || 0, fromCalls[day]?.calls || 0), audioHours: round(hours) };
+    for (const [item, rate] of Object.entries(ASSEMBLY_RATES)) addCost(byDay, day, item, hours * rate);
   });
   return { byDay, usage };
 }
@@ -175,7 +202,7 @@ export async function collectCosts(now = new Date(), lastStoredDay = null) {
     }
     batch.set(costsCollection.doc(day), { date: day, ...usage[day], providers, collectedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
   }
-  batch.set(metaRef, { collectedAt: now, lastDay: toDay, startDate: COSTS_START_DATE, errors });
+  batch.set(metaRef, { collectedAt: now, lastDay: toDay, startDate: COSTS_START_DATE, method: COSTS_METHOD, errors });
   await batch.commit();
   if (Object.keys(errors).length) console.warn("Costos: proveedores con error", errors);
 }
@@ -188,7 +215,7 @@ export async function ensureCollected(now = new Date()) {
   const last = meta.exists ? meta.data().collectedAt?.toDate?.() : null;
   const failed = meta.exists && Object.keys(meta.data().errors || {}).length > 0;
   // A new start date (or a reset) reads every day again from the start.
-  const fromStart = !meta.exists || meta.data().startDate !== COSTS_START_DATE;
+  const fromStart = !meta.exists || meta.data().startDate !== COSTS_START_DATE || meta.data().method !== COSTS_METHOD;
   if (!fromStart && last && last >= latestCutoff(now) && (!failed || now - last < 60 * 60 * 1000)) return;
   running ||= collectCosts(now, fromStart ? null : meta.data().lastDay).finally(() => { running = null; });
   await running;

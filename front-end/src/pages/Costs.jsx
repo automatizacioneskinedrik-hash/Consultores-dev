@@ -169,7 +169,7 @@ export default function Costs() {
           <div className="dashboardHeaderTitle">
             <div className="dashboardHeaderText">
               <h1 className="pageTitle">Costos de <span className="titleAccent">procesamiento</span></h1>
-              {data?.collectedAt && <p className="costsUpdated">Último corte: {short(data.collectedAt, "D [de] MMMM")}</p>}
+              {latest && <p className="costsUpdated">Datos hasta el {short(latest.date, "D [de] MMMM")}</p>}
               {error && <p className="costsUpdated costsError">{error}</p>}
             </div>
           </div>
